@@ -1,35 +1,90 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import { ReactNode } from 'react'
 import './App.css'
+import { ThemeProvider, createTheme } from "@mui/material/styles"
+import CssBaseline from '@mui/material/CssBaseline';
+import LoginPage from "./pages/Auth/LoginPage"
+import { isAuthenticated } from "./services/AuthService"
 
-function App() {
-  const [count, setCount] = useState(0)
+const theme = createTheme({
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 960,
+      lg: 1280,
+      xl: 1920,
+    },
+  },
+  palette: {
+    primary: {
+      main: "#4f46e5", // Indigo color
+    },
+    secondary: {
+      main: "#a855f7", // Purple color
+    },
+    background: {
+      default: "#f0f5ff",
+    },
+  },
+  typography: {
+    fontFamily: [
+      "-apple-system",
+      "BlinkMacSystemFont",
+      '"Segoe UI"',
+      "Roboto",
+      '"Helvetica Neue"',
+      "Arial",
+      "sans-serif",
+    ].join(","),
+  },
+});
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+// Protected Route component
+interface ProtectedRouteProps {
+  children: ReactNode;
 }
 
-export default App
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const authenticated = isAuthenticated; // Kiểm tra đăng nhập
+
+  if (!authenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  return <>{children}</>;
+};
+
+const AppContent: React.FC = () => {
+  return (
+    <>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <div>Trang chủ (Cần thay thế bằng component trang chủ thực tế)</div>
+              </ProtectedRoute>
+            }
+          />
+          {/* Thêm các route khác ở đây */}
+        </Routes>
+      </Router>
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider theme={theme}>
+      <ProtectedRoute>
+        <AppContent />
+      </ProtectedRoute>
+    </ThemeProvider>
+  );
+};
+
+export default App;
