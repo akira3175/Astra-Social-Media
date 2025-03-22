@@ -47,7 +47,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const authenticated = isAuthenticated; // Kiểm tra đăng nhập
+  const authenticated = isAuthenticated(); 
 
   if (!authenticated) {
     return <Navigate to="/login" />;
@@ -81,9 +81,7 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
-      <ProtectedRoute>
-        <AppContent />
-      </ProtectedRoute>
+      <AppContent />
     </ThemeProvider>
   );
 };

@@ -22,11 +22,13 @@ import {
   Google as GoogleIcon,
 } from "@mui/icons-material"
 import { login } from "../../services/AuthService"
+import { useNavigate } from "react-router-dom"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const navigate = useNavigate()
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
@@ -39,15 +41,16 @@ export default function LoginPage() {
     event.preventDefault()
   }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    // Xử lý đăng nhập với Spring Boot API
-    console.log({
-      email,
-      password,
-    })
-    login(email, password)
-  }
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      await login(email, password);
+      navigate("/");
+    } catch (error) {
+      alert("Đăng nhập thất bại!");
+    }
+  };
 
   return (
     <Box
@@ -122,7 +125,7 @@ export default function LoginPage() {
               }
             />
             <CardContent>
-              <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+              <Box component="form" onSubmit={handleLogin} sx={{ mt: 1 }}>
                 <TextField
                   margin="normal"
                   required
