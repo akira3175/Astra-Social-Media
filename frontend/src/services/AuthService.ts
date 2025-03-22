@@ -1,4 +1,5 @@
 import axios from "axios";
+import { User } from "../types/user"
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -154,3 +155,16 @@ export const login = async (email: string, password: string) => {
 }
 
 export const isAuthenticated = () => tokenService.getAccessToken() !== null;
+
+export const getCurrentUser = async (): Promise<User> => {
+  try {
+    const token = tokenService.getAccessToken()
+    if (!token) throw new Error("No access token available")
+
+    tokenService.setAuthToken(token)
+    const response = await api.get(`/users/info`)
+    return response.data
+  } catch (error: unknown) {
+    throw new Error("An unknown error occurred")
+  }
+}

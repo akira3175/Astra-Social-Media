@@ -4,6 +4,7 @@ import './App.css'
 import { ThemeProvider, createTheme } from "@mui/material/styles"
 import CssBaseline from '@mui/material/CssBaseline';
 import LoginPage from "./pages/Auth/LoginPage"
+import HomePage from "./pages/Home/HomePage";
 import { isAuthenticated } from "./services/AuthService"
 
 const theme = createTheme({
@@ -66,7 +67,7 @@ const AppContent: React.FC = () => {
             path="/"
             element={
               <ProtectedRoute>
-                <div>Trang chủ (Cần thay thế bằng component trang chủ thực tế)</div>
+                <HomePage />
               </ProtectedRoute>
             }
           />
