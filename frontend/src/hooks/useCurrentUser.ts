@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getCurrentUser } from "../services/AuthService";
+import { getCurrentUser } from "../services/authService";
 
 export const useCurrentUser = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);

@@ -5,7 +5,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles"
 import CssBaseline from '@mui/material/CssBaseline';
 import LoginPage from "./pages/Auth/LoginPage"
 import HomePage from "./pages/Home/HomePage";
-import { isAuthenticated } from "./services/AuthService"
+import { isAuthenticated } from "./services/authService"
 
 const theme = createTheme({
   breakpoints: {

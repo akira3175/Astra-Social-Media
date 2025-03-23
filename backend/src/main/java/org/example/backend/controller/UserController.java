@@ -45,6 +45,7 @@ public class UserController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
+        System.out.println(refreshToken);
 
         if (refreshToken == null || refreshToken.isEmpty()) {
             return ResponseEntity.badRequest().body("Refresh token is required");
@@ -58,7 +59,9 @@ public class UserController {
                     }
 
                     String email = jwtUtil.extractEmail(refreshToken);
+                    System.out.println(222);
                     if (jwtUtil.isTokenValid(refreshToken, email)) {
+                        System.out.println(333);
                         String newAccessToken = jwtUtil.generateAccessToken(email);
                         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
                     } else {

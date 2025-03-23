@@ -18,6 +18,14 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+        String path = request.getRequestURI();  // Lấy đường dẫn request
+
+        // Bỏ qua JWT filter cho API refresh token
+        if (path.equals("/refresh")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
 
         if (header == null || !header.startsWith("Bearer ")) {
@@ -26,21 +34,37 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         String token = header.substring(7);
-        String email = jwtUtil.extractEmail(token);
 
-        if (!jwtUtil.isAccessToken(token)) {
-            System.out.println("⚠️ This is a Refresh Token, rejecting...");
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            return;
+        try {
+            System.out.println('0');
+            String email = jwtUtil.extractEmail(token);
+            System.out.println(email);
+
+            if (!jwtUtil.isAccessToken(token)) {
+                sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "This is a Refresh Token, rejecting...");
+                return;
+            }
+
+            System.out.println(1);
+            if (email != null && jwtUtil.isTokenValid(token, email)) {
+                request.setAttribute("email", email);
+                chain.doFilter(request, response);
+            } else {
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT token");
+            }
+
+            System.out.println(2);
+        } catch (Exception e) {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT: " + e.getMessage());
         }
+    }
 
-        if (email != null && jwtUtil.isTokenValid(token, email)) {
-            request.setAttribute("email", email);
-        } else {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        }
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
 
-        chain.doFilter(request, response);
+        String jsonResponse = String.format("{\"status\": %d, \"error\": \"%s\"}", status, message);
+        response.getWriter().write(jsonResponse);
     }
 }

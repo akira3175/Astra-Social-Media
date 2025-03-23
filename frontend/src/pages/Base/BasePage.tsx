@@ -1,6 +1,6 @@
 import type React from "react"
 import type { ReactNode } from "react"
-import { Box, Toolbar, useMediaQuery, useTheme } from "@mui/material"
+import { Box, Toolbar } from "@mui/material"
 import Navbar from "./components/Navbar"
 
 interface BasePageProps {
@@ -9,9 +9,7 @@ interface BasePageProps {
   disablePadding?: boolean
 }
 
-const BasePage: React.FC<BasePageProps> = ({ children, maxWidth = "xl", disablePadding = false }) => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+const BasePage: React.FC<BasePageProps> = ({ children }) => {
 
   return (
     <Box
@@ -36,7 +34,7 @@ const BasePage: React.FC<BasePageProps> = ({ children, maxWidth = "xl", disableP
           flexGrow: 1,
           width: "100%",
           boxSizing: "border-box",
-          overflow: "hidden", // Ngăn scroll ngang
+          overflow: "hidden", 
           display: "flex",
           flexDirection: "column",
         }}

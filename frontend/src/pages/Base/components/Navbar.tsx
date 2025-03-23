@@ -18,17 +18,20 @@ import {
 } from "@mui/material"
 import { Chat, Notifications, Search, Settings, Logout, Person } from "@mui/icons-material"
 import { useCurrentUser } from "../../../hooks/useCurrentUser"
+import { logout } from "../../../services/authService"
 
 interface NavbarProps {
   onMenuToggle?: () => void
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
+const Navbar: React.FC<NavbarProps> = ({  }) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const currentUser = useCurrentUser();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
+
+  console.log(currentUser)
   
   const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
@@ -39,8 +42,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuToggle }) => {
   }
 
   const handleLogout = () => {
-    // logout()
-    window.location.href = "/login"
+    logout()
   }
 
   return (

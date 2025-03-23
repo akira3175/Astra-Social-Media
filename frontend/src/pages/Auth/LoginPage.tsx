@@ -21,7 +21,7 @@ import {
   Login as LoginIcon,
   Google as GoogleIcon,
 } from "@mui/icons-material"
-import { login } from "../../services/AuthService"
+import { login } from "../../services/authService";
 import { useNavigate } from "react-router-dom"
 
 export default function LoginPage() {
