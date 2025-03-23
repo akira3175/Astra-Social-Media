@@ -66,8 +66,6 @@ export const refreshToken = async (): Promise<string> => {
 
   const { signal, clearTimeout: clearTimeoutFn } = createApiWithTimeout()
 
-  console.log(refreshToken)
-
   try {
     const response: AxiosResponse<RefreshResponse> = await apiNoAuth.post(
       ENDPOINTS.REFRESH,
@@ -87,7 +85,6 @@ export const refreshToken = async (): Promise<string> => {
     const { accessToken } = response.data 
     tokenService.setAccessToken(accessToken)
     setAuthHeader(accessToken)
-    console.log("Token refreshed successfully:", accessToken.substring(0, 10) + "...")
     return accessToken
   } catch (error) {
     if (axios.isAxiosError(error) && error.message === "canceled") {

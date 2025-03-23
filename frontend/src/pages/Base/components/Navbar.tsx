@@ -30,8 +30,6 @@ const Navbar: React.FC<NavbarProps> = ({  }) => {
   const currentUser = useCurrentUser();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
-
-  console.log(currentUser)
   
   const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
