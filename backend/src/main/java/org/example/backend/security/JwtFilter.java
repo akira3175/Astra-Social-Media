@@ -36,24 +36,19 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = header.substring(7);
 
         try {
-            System.out.println('0');
             String email = jwtUtil.extractEmail(token);
-            System.out.println(email);
 
             if (!jwtUtil.isAccessToken(token)) {
                 sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "This is a Refresh Token, rejecting...");
                 return;
             }
 
-            System.out.println(1);
             if (email != null && jwtUtil.isTokenValid(token, email)) {
                 request.setAttribute("email", email);
                 chain.doFilter(request, response);
             } else {
                 sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT token");
             }
-
-            System.out.println(2);
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT: " + e.getMessage());
         }
