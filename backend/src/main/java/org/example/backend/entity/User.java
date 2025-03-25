@@ -35,4 +35,13 @@ public class User {
 
     @Column(nullable = false)
     private String avatar;
+
+    @Column(nullable = true)
+    private String background;
+
+    @Column(nullable = false)
+    private Boolean isStaff;
+
+    @Column(nullable = false)
+    private Boolean isSuperUser;
 }
