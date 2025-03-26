@@ -17,8 +17,8 @@ import {
   useTheme,
 } from "@mui/material"
 import { Chat, Notifications, Search, Settings, Logout, Person } from "@mui/icons-material"
-import { useCurrentUser } from "../../../hooks/useCurrentUser"
 import { logout } from "../../../services/authService"
+import { useCurrentUser } from "../../../contexts/currentUserContext"
 
 interface NavbarProps {
   onMenuToggle?: () => void
@@ -27,7 +27,7 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({  }) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-  const currentUser = useCurrentUser();
+  const { currentUser } = useCurrentUser() ?? {};
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
   
@@ -150,7 +150,7 @@ const Navbar: React.FC<NavbarProps> = ({  }) => {
               transformOrigin={{ horizontal: "right", vertical: "top" }}
               anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
             >
-              <MenuItem onClick={handleClose} component={Link} to="/profile">
+              <MenuItem onClick={handleClose} component={Link} to={currentUser ? `/profile/${currentUser.email}` : "/profile"}>
                 <Person fontSize="small" sx={{ mr: 1 }} />
                 Trang cá nhân
               </MenuItem>

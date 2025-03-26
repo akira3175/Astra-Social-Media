@@ -2,6 +2,7 @@ import type React from "react"
 import type { ReactNode } from "react"
 import { Box, Toolbar } from "@mui/material"
 import Navbar from "./components/Navbar"
+import { CurrentUserProvider } from "../../contexts/currentUserContext";
 
 interface BasePageProps {
   children: ReactNode

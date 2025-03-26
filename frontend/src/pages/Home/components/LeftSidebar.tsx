@@ -21,7 +21,6 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className }) => {
     { text: "Khám phá", icon: <Explore />, path: "/explore" },
     { text: "Thông báo", icon: <Notifications />, path: "/notifications" },
     { text: "Tin nhắn", icon: <Chat />, path: "/messages" },
-    { text: "Trang cá nhân", icon: <Person />, path: "/profile" },
     { text: "Cài đặt", icon: <Settings />, path: "/settings" },
   ]
 

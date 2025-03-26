@@ -24,6 +24,8 @@ const ENDPOINTS = {
   LOGIN: "/users/login",
   REFRESH: "/users/refresh",
   USER_INFO: "/users/info",
+  USER_INFO_BY_EMAIL: "/users/",
+  UPDATE_USER_INFO: "/users/update"
 }
 
 // Authentication Functions
@@ -127,12 +129,66 @@ export const getCurrentUser = async (): Promise<User> => {
     const token = tokenService.getAccessToken()
     if (!token) throw new Error("Not authenticated")
 
-    setAuthHeader(token)
     const response: AxiosResponse<User> = await api.get(ENDPOINTS.USER_INFO)
+    return response.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("API error:", error.response?.data || error.message)
+      throw new Error(`API error: ${error.response?.status} - ${error.response?.statusText}`)
+    } else {
+      console.error("Unexpected error:", error)
+      throw error 
+    }
+  } 
+}
+
+export const getUserByEmail = async (email: string): Promise<User> => {
+  try {
+    const response: AxiosResponse<User> = await apiNoAuth.get(ENDPOINTS.USER_INFO_BY_EMAIL + email)
     return response.data
   } catch (error) {
     throw new Error("An unknown error occurred")
   }
 }
+
+export const updateUserName = async (firstName: string, lastName: string): Promise<User> => {
+  try {
+    const response: AxiosResponse<User> = await api.patch(ENDPOINTS.UPDATE_USER_INFO, {
+      firstName,
+      lastName
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error("Error updating user name");
+  }
+};
+
+export const updateUserAvatar = async (avatarFile: File): Promise<User> => {
+  try {
+    const formData = new FormData();
+    formData.append("avatar", avatarFile);
+
+    const response: AxiosResponse<User> = await api.patch(ENDPOINTS.UPDATE_USER_INFO, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error("Error updating avatar");
+  }
+};
+
+export const updateUserBackground = async (backgroundFile: File): Promise<User> => {
+  try {
+    const formData = new FormData();
+    formData.append("background", backgroundFile);
+
+    const response: AxiosResponse<User> = await api.patch(ENDPOINTS.UPDATE_USER_INFO, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error("Error updating background");
+  }
+};
 
 

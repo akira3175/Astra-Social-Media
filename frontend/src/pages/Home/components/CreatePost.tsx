@@ -4,7 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import { Avatar, Box, Button, Card, CardContent, Divider, type SxProps, TextField, type Theme } from "@mui/material"
 import { Image, Send, Videocam } from "@mui/icons-material"
-import { useCurrentUser } from "../../../hooks/useCurrentUser"
+import { useCurrentUser } from "../../../contexts/currentUserContext"
 import type { Post } from "../../../types/post"
 
 interface CreatePostProps {
@@ -15,7 +15,7 @@ interface CreatePostProps {
 
 const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated, className, sx }) => {
   const [content, setContent] = useState<string>("")
-  const currentUser = useCurrentUser()
+  const { currentUser } = useCurrentUser() ?? {}
 
   const handleCreatePost = () => {
     if (!content.trim()) return

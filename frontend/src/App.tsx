@@ -6,6 +6,9 @@ import CssBaseline from '@mui/material/CssBaseline';
 import LoginPage from "./pages/Auth/LoginPage"
 import HomePage from "./pages/Home/HomePage";
 import { isAuthenticated } from "./services/authService"
+import NotFound from "./pages/Status/NotFound";
+import ProfilePage from "./pages/Profile/ProfilePage";
+import { CurrentUserProvider } from "./contexts/currentUserContext";
 
 const theme = createTheme({
   breakpoints: {
@@ -61,18 +64,30 @@ const AppContent: React.FC = () => {
     <>
       <CssBaseline />
       <Router>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            }
-          />
-          {/* Thêm các route khác ở đây */}
-        </Routes>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/404" element={<NotFound />} />
+
+            {/* Các Route cần bảo vệ */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/:email"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Các route khác có thể thêm vào đây */}
+          </Routes>
       </Router>
     </>
   );
@@ -81,7 +96,10 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
-      <AppContent />
+      <CurrentUserProvider>
+        <AppContent />
+      </CurrentUserProvider>
+
     </ThemeProvider>
   );
 };
