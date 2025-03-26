@@ -195,7 +195,7 @@ const HomePage: React.FC = () => {
           boxSizing: "border-box",
           display: "flex",
           position: "relative",
-          height: "calc(100vh - 64px)", // Chiều cao = viewport - navbar
+          height: "95vh", // Chiều cao = viewport - navbar
         }}
       >
         {/* Left sidebar - Navigation */}
@@ -206,10 +206,9 @@ const HomePage: React.FC = () => {
               flexShrink: 0,
               position: "sticky",
               top: 0,
-              height: "calc(100vh - 64px)",
+              height: "calc(100vh - 140px)",
               overflowY: "auto", // Thanh cuộn riêng cho sidebar
               pr: 1,
-              pb: 9,
               // Tùy chỉnh thanh cuộn
               "&::-webkit-scrollbar": {
                 width: "6px",
@@ -236,7 +235,7 @@ const HomePage: React.FC = () => {
             flex: 1,
             overflowY: "auto", // Thanh cuộn riêng cho feed
             px: { xs: 0, md: 2 },
-            height: "calc(100vh - 64px)",
+            height: "calc(100vh - 140px)",
             // Tùy chỉnh thanh cuộn
             "&::-webkit-scrollbar": {
               width: "8px",
@@ -251,7 +250,6 @@ const HomePage: React.FC = () => {
             "&::-webkit-scrollbar-thumb:hover": {
               background: "rgba(0,0,0,0.2)",
             },
-            pb: 3,
           }}
         >
           <CreatePost onPostCreated={handleCreatePost} sx={{ mb: 3 }} />
@@ -269,10 +267,9 @@ const HomePage: React.FC = () => {
               flexShrink: 0,
               position: "sticky",
               top: 0,
-              height: "calc(100vh - 64px)",
+              height: "calc(100vh - 140px)",
               overflowY: "auto", // Thanh cuộn riêng cho sidebar
               pl: 2,
-              pb: 9,
               pr: 1,
               // Tùy chỉnh thanh cuộn
               "&::-webkit-scrollbar": {

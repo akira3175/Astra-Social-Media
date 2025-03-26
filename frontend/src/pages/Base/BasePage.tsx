@@ -17,13 +17,13 @@ const BasePage: React.FC<BasePageProps> = ({ children }) => {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "100vh", 
+        height: "auto", 
         width: "100%",
         maxWidth: "100%",
         margin: 0,
         padding: 0,
         boxSizing: "border-box",
-        overflow: "hidden", // Ngăn scroll ngang
+        overflow: "auto",
       }}
     >
       <Navbar />
@@ -35,7 +35,7 @@ const BasePage: React.FC<BasePageProps> = ({ children }) => {
           flexGrow: 1,
           width: "100%",
           boxSizing: "border-box",
-          overflow: "hidden", 
+          overflow: "auto", 
           display: "flex",
           flexDirection: "column",
         }}

@@ -21,10 +21,12 @@ import {
   Login as LoginIcon,
   Google as GoogleIcon,
 } from "@mui/icons-material"
-import { login } from "../../services/authService";
+import { login, getCurrentUser } from "../../services/authService";
 import { useNavigate } from "react-router-dom"
+import { useCurrentUser } from "../../contexts/currentUserContext"
 
 export default function LoginPage() {
+  const { setCurrentUser } = useCurrentUser();
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -45,7 +47,9 @@ export default function LoginPage() {
     event.preventDefault();
 
     try {
-      await login(email, password);
+      await login(email, password)
+      const user = await getCurrentUser()
+      setCurrentUser(user)
       navigate("/");
     } catch (error) {
       alert("Đăng nhập thất bại!");

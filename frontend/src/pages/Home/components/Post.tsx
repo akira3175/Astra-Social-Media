@@ -48,7 +48,21 @@ const Post: React.FC<PostProps> = ({
 }) => {
   return (
     <Card className={className} sx={sx}>
-      <CardHeader avatar={<Avatar src={user.avatar} alt={user.name} />} title={user.name} subheader={timestamp} />
+      <CardHeader
+        avatar={<Avatar src={user.avatar} alt={user.name} />}
+        title={user.name}
+        subheader={timestamp}
+        sx={{
+          textAlign: "left",
+          "& .MuiCardHeader-content": {
+            textAlign: "left",
+          },
+          "& .MuiCardHeader-subheader": {
+            fontSize: "0.8em",
+            fontWeight: 500,
+          },
+        }}
+      />
       <CardContent>
         <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
           {content}

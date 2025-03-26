@@ -16,7 +16,7 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
       .catch(error => {
         console.error("Error fetching user:", error);
       });
-  }, [currentUser]);
+  }, []);
 
   return (
     <CurrentUserContext.Provider value={{currentUser, setCurrentUser}}>
