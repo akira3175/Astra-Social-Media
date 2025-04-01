@@ -163,10 +163,10 @@ const ProfilePage: React.FC = () => {
         email: "",
       },
       content: "Hôm nay là một ngày tuyệt vời! #sunshine #happy",
-      image: "https://source.unsplash.com/random/600x400?nature",
+      images: [{ url: "https://source.unsplash.com/random/600x400?nature", id: 0 }], 
       timestamp: "2 giờ trước",
-      likes: 24,
-      comments: 5,
+      likes: [], 
+      comments: [], 
       liked: false,
       saved: true,
     },
@@ -180,9 +180,10 @@ const ProfilePage: React.FC = () => {
       },
       content:
         "Vừa hoàn thành dự án mới! Rất hào hứng để chia sẻ với mọi người về những gì chúng tôi đã làm được. Đây là kết quả của nhiều tháng làm việc chăm chỉ và sáng tạo. #project #achievement #teamwork",
+      images: [], 
       timestamp: "5 giờ trước",
-      likes: 42,
-      comments: 12,
+      likes: [], 
+      comments: [], 
       liked: true,
       saved: false,
     },
@@ -284,32 +285,19 @@ const ProfilePage: React.FC = () => {
 
   const handleLikePost = (postId: number) => {
     setPosts(
-      posts.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            liked: !post.liked,
-            likes: post.liked ? post.likes - 1 : post.likes + 1,
-          }
-        }
-        return post
-      }),
-    )
-  }
+      posts.map((post) =>
+        post.id === postId ? { ...post, liked: !post.liked } : post
+      )
+    );
+  };
 
   const handleSavePost = (postId: number) => {
     setPosts(
-      posts.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            saved: !post.saved,
-          }
-        }
-        return post
-      }),
-    )
-  }
+      posts.map((post) =>
+        post.id === postId ? { ...post, saved: !post.saved } : post
+      )
+    );
+  };
 
   if (isLoading) {
     return (
@@ -500,4 +488,3 @@ const ProfilePage: React.FC = () => {
 }
 
 export default ProfilePage
-

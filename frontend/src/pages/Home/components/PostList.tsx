@@ -34,10 +34,10 @@ const PostList: React.FC<PostListProps> = ({ posts, isLoading, onLikePost, onSav
           id={post.id}
           user={post.user}
           content={post.content}
-          image={post.image}
+          images={post.images} // Changed to images={post.images}
           timestamp={post.timestamp}
-          likes={post.likes}
-          comments={post.comments}
+          likes={Array.isArray(post.likes) ? post.likes.length : 0} // Pass likes.length
+          comments={Array.isArray(post.comments) ? post.comments.length : 0} // Pass comments.length
           liked={post.liked}
           saved={post.saved}
           onLike={onLikePost}
@@ -50,4 +50,3 @@ const PostList: React.FC<PostListProps> = ({ posts, isLoading, onLikePost, onSav
 }
 
 export default PostList
-
