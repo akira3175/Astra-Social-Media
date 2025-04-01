@@ -32,7 +32,7 @@ public class UserController {
         String email = loginRequest.get("email");
         String password = loginRequest.get("password");
 
-        Map<String, String> tokens = userService.login(email, password);
+        Map<String, Object> tokens = userService.login(email, password);
 
         if (tokens != null) {
             return ResponseEntity.ok(tokens);
@@ -59,7 +59,8 @@ public class UserController {
 
                     String email = jwtUtil.extractEmail(refreshToken);
                     if (jwtUtil.isTokenValid(refreshToken, email)) {
-                        String newAccessToken = jwtUtil.generateAccessToken(email);
+                        Long userId = jwtUtil.extractUserId(refreshToken);
+                        String newAccessToken = jwtUtil.generateAccessToken(email, userId);
                         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
                     } else {
                         return ResponseEntity.status(401).body("Invalid refresh token");

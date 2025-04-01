@@ -28,7 +28,7 @@ public class UserService {
 
     // Kiểm tra user đăng nhập hợp lệ
     @Transactional
-    public Map<String, String> login(String email, String password) {
+    public Map<String, Object> login(String email, String password) {
         Optional<User> optionalUser = userRepository.findByEmail(email);
 
         if (optionalUser.isPresent()) {
@@ -38,14 +38,14 @@ public class UserService {
                 // Xóa refresh token cũ (nếu có)
                 refreshTokenRepository.deleteByEmail(email);
 
-                // Tạo token mới
-                String accessToken = jwtUtil.generateAccessToken(email);
-                String refreshToken = jwtUtil.generateRefreshToken(email);
+                // Tạo token mới với userId
+                String accessToken = jwtUtil.generateAccessToken(email, user.getId());
+                String refreshToken = jwtUtil.generateRefreshToken(email, user.getId());
 
                 return Map.of(
                         "accessToken", accessToken,
-                        "refreshToken", refreshToken
-                );
+                        "refreshToken", refreshToken,
+                        "userId", user.getId());
             }
         }
         return null;

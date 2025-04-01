@@ -20,23 +20,25 @@ public class JwtUtil {
     private final RefreshTokenRepository refreshTokenRepository;
 
     // Tạo Access Token
-    public String generateAccessToken(String email) {
+    public String generateAccessToken(String email, Long userId) {
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + ACCESS_EXPIRATION_TIME))
                 .claim("type", "access")
+                .claim("userId", userId)
                 .signWith(SECRET_KEY)
                 .compact();
     }
 
     // Tạo Refresh Token
-    public String generateRefreshToken(String email) {
+    public String generateRefreshToken(String email, Long userId) {
         String token = Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + REFRESH_EXPIRATION_TIME))
                 .claim("type", "refresh")
+                .claim("userId", userId)
                 .signWith(SECRET_KEY)
                 .compact();
 
@@ -53,6 +55,12 @@ public class JwtUtil {
     // Lấy email từ token
     public String extractEmail(String token) {
         return getClaims(token).getSubject();
+    }
+
+    // Lấy userId từ token
+    public Long extractUserId(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("userId", Long.class);
     }
 
     // Kiểm tra token có hợp lệ không

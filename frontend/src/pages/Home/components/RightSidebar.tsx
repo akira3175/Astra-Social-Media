@@ -1,4 +1,4 @@
-import type React from "react"
+import React, { useEffect, useState } from "react"
 import {
   Avatar,
   Box,
@@ -12,6 +12,14 @@ import {
   Paper,
   Typography,
 } from "@mui/material"
+import { PersonAdd } from "@mui/icons-material"
+
+interface User {
+  id: number
+  firstName: string
+  lastName: string
+  avatar: string
+}
 
 interface SuggestedUser {
   id: number
@@ -21,46 +29,46 @@ interface SuggestedUser {
 }
 
 interface RightSidebarProps {
-  className?: string
+  currentUserId: number
 }
 
 // Giả lập dữ liệu người dùng được đề xuất
-const SUGGESTED_USERS: SuggestedUser[] = [
+const SUGGESTED_USERS: User[] = [
   {
     id: 201,
-    name: "Phạm Thị D",
+    firstName: "Phạm",
+    lastName: "Thị",
     avatar: "https://i.pravatar.cc/150?img=10",
-    mutualFriends: 5,
   },
   {
     id: 202,
-    name: "Hoàng Văn E",
+    firstName: "Hoàng",
+    lastName: "Văn",
     avatar: "https://i.pravatar.cc/150?img=11",
-    mutualFriends: 2,
   },
   {
     id: 203,
-    name: "Vũ Thị F",
+    firstName: "Vũ",
+    lastName: "Thị",
     avatar: "https://i.pravatar.cc/150?img=12",
-    mutualFriends: 8,
   },
   {
     id: 204,
-    name: "Nguyễn Văn G",
+    firstName: "Nguyễn",
+    lastName: "Văn",
     avatar: "https://i.pravatar.cc/150?img=13",
-    mutualFriends: 3,
   },
   {
     id: 205,
-    name: "Trần Thị H",
+    firstName: "Trần",
+    lastName: "Thị",
     avatar: "https://i.pravatar.cc/150?img=14",
-    mutualFriends: 6,
   },
   {
     id: 206,
-    name: "Lê Văn I",
+    firstName: "Lê",
+    lastName: "Văn",
     avatar: "https://i.pravatar.cc/150?img=15",
-    mutualFriends: 4,
   },
 ]
 
@@ -78,10 +86,53 @@ const TRENDING_TOPICS = [
   "#KinhTế",
 ]
 
-const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
+const RightSidebar: React.FC<RightSidebarProps> = ({ currentUserId }) => {
+  const [suggestions, setSuggestions] = useState<User[]>([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetchSuggestions()
+  }, [])
+
+  const fetchSuggestions = async () => {
+    try {
+      setLoading(true)
+      const token = localStorage.getItem('token')
+      console.log('Fetching suggestions for userId:', currentUserId)
+      console.log('Using token:', token)
+      const response = await fetch(`/api/friendships/suggestions/${currentUserId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const data = await response.json()
+      console.log('Suggestions response:', data)
+      setSuggestions(data)
+    } catch (error) {
+      console.error("Error fetching suggestions:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSendFriendRequest = async (userId: number) => {
+    try {
+      const token = localStorage.getItem('token')
+      await fetch(`/api/friendships/request/${userId}`, {
+        method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      // Cập nhật lại danh sách gợi ý
+      fetchSuggestions()
+    } catch (error) {
+      console.error("Error sending friend request:", error)
+    }
+  }
+
   return (
     <Paper
-      className={className}
       sx={{
         p: 2,
         height: "auto",
@@ -92,46 +143,33 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
         Gợi ý kết bạn
       </Typography>
       <List disablePadding>
-        {SUGGESTED_USERS.map((user) => (
-          <ListItem
-            key={user.id}
-            secondaryAction={
-              <Button
-                variant="outlined"
-                size="small"
-                sx={{
-                  borderColor: "#4f46e5",
-                  color: "#4f46e5",
-                  "&:hover": {
-                    borderColor: "#4338ca",
-                    bgcolor: "rgba(79, 70, 229, 0.05)",
-                  },
-                  textTransform: "none",
-                }}
-              >
-                Kết bạn
-              </Button>
-            }
-            disablePadding
-            sx={{ mb: 2 }}
-          >
-            <ListItemAvatar sx={{ minWidth: "42px"}}>
+        {/* Hiển thị gợi ý từ API */}
+        {suggestions.map((user) => (
+          <ListItem key={user.id} sx={{ px: 0 }}>
+            <ListItemAvatar>
               <Avatar src={user.avatar} />
             </ListItemAvatar>
-            <ListItemText 
-                primary={user.name} 
-                secondary={`${user.mutualFriends} bạn chung`} 
-                sx={{
-                    "& span": { 
-                        display: "block",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      },
-                      maxWidth: "91px"
-                  }}/>
+            <ListItemText
+              primary={`${user.firstName} ${user.lastName}`}
+              secondary="Gợi ý cho bạn"
+              sx={{ mr: 2 }}
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<PersonAdd />}
+              sx={{ minWidth: 100 }}
+              onClick={() => handleSendFriendRequest(user.id)}
+            >
+              Kết bạn
+            </Button>
           </ListItem>
         ))}
+        {suggestions.length === 0 && !loading && (
+          <ListItem>
+            <ListItemText primary="Không có gợi ý kết bạn nào" />
+          </ListItem>
+        )}
       </List>
       <Divider sx={{ my: 2 }} />
       <Typography variant="h6" sx={{ mb: 2 }}>
@@ -162,6 +200,11 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
           </Typography>
         </Box>
       </Box>
+      {loading && (
+        <Box sx={{ textAlign: "center", py: 2 }}>
+          <Typography>Đang tải...</Typography>
+        </Box>
+      )}
     </Paper>
   )
 }
