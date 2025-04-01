@@ -5,9 +5,13 @@ import org.example.backend.entity.User;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.security.JwtUtil;
 import org.example.backend.service.UserService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -78,15 +82,67 @@ public class UserController {
 
     // API lấy User theo email
     @GetMapping("/{email}")
-    public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
-        Optional<User> user = userService.getUserByEmail(email);
-        return user.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<?> getUserByEmail(@PathVariable String email, HttpServletRequest request) {
+        Optional<User> optionalUser = userService.getUserByEmail(email);
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User user = optionalUser.get();
+
+        // 🔥 Lấy base URL động
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+
+        // 🔥 Thêm domain vào avatar và background nếu có
+        user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
+        user.setBackground((user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground() : null);
+
+        // 🔥 Tạo response từ user
+        User response = user.toBuilder().build();
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/info")
-    public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String token, HttpServletRequest request) {
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
-        return ResponseEntity.ok(userService.getUserInfo(email));
+        User user = userService.getUserInfo(email); // Thay đổi từ findByEmail nếu cần
+
+        // 🔥 Lấy base URL động
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+
+        // 🔥 Thêm domain vào avatar và background
+        user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
+        user.setBackground((user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground() : null);
+
+        // 🔥 Trả về response có đường dẫn đầy đủ
+        User response = user.toBuilder()
+                .build();
+
+        return ResponseEntity.ok(response);
     }
+
+    @PatchMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateUser(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(value = "firstName", required = false) String firstName,
+            @RequestParam(value = "lastName", required = false) String lastName,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatar,
+            @RequestParam(value = "background", required = false) MultipartFile background,
+            HttpServletRequest request) {
+
+        String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+
+        try {
+            User updatedUser = userService.updateUser(email, firstName, lastName, avatar, background);
+            updatedUser.setAvatar((updatedUser.getAvatar() != null && !updatedUser.getAvatar().isEmpty()) ? baseUrl + updatedUser.getAvatar() : null);
+            updatedUser.setBackground((updatedUser.getBackground() != null && !updatedUser.getBackground().isEmpty()) ? baseUrl + updatedUser.getBackground() : null);
+            return ResponseEntity.ok(updatedUser);
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("Error saving profile");
+        }
+    }
+
 }

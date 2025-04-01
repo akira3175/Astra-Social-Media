@@ -8,7 +8,11 @@ import org.example.backend.repository.UserRepository;
 import org.example.backend.security.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -19,11 +23,48 @@ public class UserService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final FileStorageService fileStorageService;
 
     // Tạo user mới (mã hóa mật khẩu)
     public User createUser(User user) {
+        user.setDateJoined(LocalDateTime.now());
+        user.setIsSuperUser(false);
+        user.setIsStaff(false);
+        user.setIsActive(true);
         user.setPassword(passwordEncoder.encode(user.getPassword())); // Hash password
         return userRepository.save(user);
+    }
+
+    public User updateUser(String email, String firstName, String lastName, MultipartFile avatar, MultipartFile background) throws IOException {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = userOptional.get();
+
+        // Cập nhật firstName và lastName nếu có
+        if (firstName != null && !firstName.isEmpty()) {
+            user.setFirstName(firstName);
+        }
+        if (lastName != null && !lastName.isEmpty()) {
+            user.setLastName(lastName);
+        }
+
+        // Cập nhật avatar nếu có
+        if (avatar != null && !avatar.isEmpty()) {
+            String avatarUrl = fileStorageService.saveFile(avatar);
+            user.setAvatar(avatarUrl);
+        }
+
+        // Cập nhật background nếu có
+        if (background != null && !background.isEmpty()) {
+            String backgroundUrl = fileStorageService.saveFile(background);
+            user.setBackground(backgroundUrl);
+        }
+
+        userRepository.save(user);
+        return user;
     }
 
     // Kiểm tra user đăng nhập hợp lệ
@@ -41,6 +82,10 @@ public class UserService {
                 // Tạo token mới
                 String accessToken = jwtUtil.generateAccessToken(email);
                 String refreshToken = jwtUtil.generateRefreshToken(email);
+
+                // Cập nhật lastLogin
+                user.setLastLogin(LocalDateTime.now());
+                userRepository.save(user);
 
                 return Map.of(
                         "accessToken", accessToken,
