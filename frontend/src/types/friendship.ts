@@ -1,7 +1,7 @@
 export interface SuggestedUser {
-  id: number
-  name: string
-  avatar: string
-  mutualFriends: number
+    id: number
+    name: string
+    avatar: string
+    mutualFriends: number
 }
 

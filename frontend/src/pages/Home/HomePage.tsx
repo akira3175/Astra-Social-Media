@@ -116,7 +116,7 @@ const HomePage: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"))
-  const [currentUserId, setCurrentUserId] = useState<number>(1)
+  const [currentUserId, setCurrentUserId] = useState("current-user")
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedReceiverId, setSelectedReceiverId] = useState("default-receiver")
 
@@ -300,7 +300,7 @@ const HomePage: React.FC = () => {
               },
             }}
           >
-            <RightSidebar currentUserId={currentUserId} />
+            <RightSidebar />
           </Box>
         )}
       </Box>
@@ -313,7 +313,7 @@ const HomePage: React.FC = () => {
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         receiverId={selectedReceiverId}
-        currentUserId={currentUserId.toString()}
+        currentUserId={currentUserId}
       />
     </BasePage>
   )

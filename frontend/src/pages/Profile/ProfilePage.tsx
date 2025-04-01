@@ -335,164 +335,164 @@ const ProfilePage: React.FC = () => {
     <BasePage>
       <ProfileContainer>
         <ProfileScrollContainer>
-        {isLoading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-            <CircularProgress />
-          </Box>
-        ) : !profile ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-            <Typography>Profile not found.</Typography>
-          </Box>
-        ) : (
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={12}>
-              <ProfileHeader elevation={3}>
-                <BackgroundImageBox>
-                  <BackgroundImage src={profile.background || "/placeholder.svg"} alt="Profile background" />
-                  {isCurrentUser && (
-                    <ChangeBackgroundButton
-                      onClick={triggerBackgroundUpload}
-                      size="small"
-                      sx={{
-                        position: "absolute",
-                        right: (theme) => theme.spacing(1),
-                        bottom: (theme) => theme.spacing(1),
-                      }}
-                    >
-                      <CameraAltIcon fontSize="small" />
-                    </ChangeBackgroundButton>
-                  )}
-                </BackgroundImageBox>
-                <ProfileContent>
-                  <AvatarBox>
-                    <AvatarContainer sx={{ left: "17%" }}>
-                      <ProfileAvatar src={profile.avatar || undefined}>{profile.firstName.charAt(0)}</ProfileAvatar>
-                      {isCurrentUser && (
-                        <ChangeAvatarButton onClick={triggerAvatarUpload} size="small">
-                          <CameraAltIcon fontSize="small" />
-                        </ChangeAvatarButton>
-                      )}
-                    </AvatarContainer>
+          {isLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+              <CircularProgress />
+            </Box>
+          ) : !profile ? (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+              <Typography>Profile not found.</Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={12}>
+                <ProfileHeader elevation={3}>
+                  <BackgroundImageBox>
+                    <BackgroundImage src={profile.background || "/placeholder.svg"} alt="Profile background" />
+                    {isCurrentUser && (
+                      <ChangeBackgroundButton
+                        onClick={triggerBackgroundUpload}
+                        size="small"
+                        sx={{
+                          position: "absolute",
+                          right: (theme) => theme.spacing(1),
+                          bottom: (theme) => theme.spacing(1),
+                        }}
+                      >
+                        <CameraAltIcon fontSize="small" />
+                      </ChangeBackgroundButton>
+                    )}
+                  </BackgroundImageBox>
+                  <ProfileContent>
+                    <AvatarBox>
+                      <AvatarContainer sx={{ left: "17%" }}>
+                        <ProfileAvatar src={profile.avatar || undefined}>{profile.firstName.charAt(0)}</ProfileAvatar>
+                        {isCurrentUser && (
+                          <ChangeAvatarButton onClick={triggerAvatarUpload} size="small">
+                            <CameraAltIcon fontSize="small" />
+                          </ChangeAvatarButton>
+                        )}
+                      </AvatarContainer>
 
-                    <Box display="flex" alignItems="center" justifyContent="center">
-                      <Typography variant="h5" component="h1">
-                        {profile.lastName + " " + profile.firstName}
+                      <Box display="flex" alignItems="center" justifyContent="center">
+                        <Typography variant="h5" component="h1">
+                          {profile.lastName + " " + profile.firstName}
+                        </Typography>
+                        {isCurrentUser && (
+                          <IconButton onClick={handleEditProfile} size="small" sx={{ ml: 1 }}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                      <Typography variant="subtitle1" color="text.secondary">
+                        {profile.email}
                       </Typography>
-                      {isCurrentUser && (
-                        <IconButton onClick={handleEditProfile} size="small" sx={{ ml: 1 }}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                    </Box>
-                    <Typography variant="subtitle1" color="text.secondary">
-                      {profile.email}
-                    </Typography>
-                  </AvatarBox>
-                </ProfileContent>
+                    </AvatarBox>
+                  </ProfileContent>
+                  {isCurrentUser && (
+                    <>
+                      <input
+                        ref={avatarInputRef}
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        id="avatar-upload"
+                        type="file"
+                        onChange={(e) => handleImageUpload(e, "avatar")}
+                      />
+                      <input
+                        ref={backgroundInputRef}
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        id="background-upload"
+                        type="file"
+                        onChange={(e) => handleImageUpload(e, "background")}
+                      />
+                    </>
+                  )}
+                </ProfileHeader>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                {/* Tiểu sử */}
+                <ProfileBio profile={profile} isCurrentUser={isCurrentUser} />
+
+                {/* Danh sách hình ảnh */}
+                <ProfilePhotos />
+
+                {/* Danh sách bạn bè */}
+                <ProfileFriends />
+              </Grid>
+
+              <Grid item xs={12} md={8}>
+                {/* Khung đăng bài */}
                 {isCurrentUser && (
-                  <>
-                    <input
-                      ref={avatarInputRef}
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      id="avatar-upload"
-                      type="file"
-                      onChange={(e) => handleImageUpload(e, "avatar")}
-                    />
-                    <input
-                      ref={backgroundInputRef}
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      id="background-upload"
-                      type="file"
-                      onChange={(e) => handleImageUpload(e, "background")}
-                    />
-                  </>
+                  <ProfileCreatePost currentUser={profile} onPostCreated={handleCreatePost} sx={{ mb: 3 }} />
                 )}
-              </ProfileHeader>
+
+                {/* Danh sách bài đăng */}
+                <ProfilePostList
+                  posts={posts}
+                  isLoading={false}
+                  onLikePost={handleLikePost}
+                  onSavePost={handleSavePost}
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={12} md={4}>
-              {/* Tiểu sử */}
-              <ProfileBio profile={profile} isCurrentUser={isCurrentUser} />
+          )}
+          {isUpdating && (
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              bgcolor="rgba(255, 255, 255, 0.7)"
+              zIndex={9999}
+            >
+              <GradientCircularProgress />
+            </Box>
+          )}
 
-              {/* Danh sách hình ảnh */}
-              <ProfilePhotos />
+          <Dialog open={openEditModal} onClose={handleCloseEditModal}>
+            <DialogTitle>Chỉnh sửa tên</DialogTitle>
+            <DialogContent>
+              <Stack spacing={2} sx={{ mt: 1, minWidth: 300 }}>
+                <TextField
+                  label="Họ"
+                  fullWidth
+                  value={editedLastName}
+                  onChange={(e) => setEditedLastName(e.target.value)}
+                  variant="outlined"
+                />
+                <TextField
+                  label="Tên"
+                  fullWidth
+                  value={editedFirstName}
+                  onChange={(e) => setEditedFirstName(e.target.value)}
+                  variant="outlined"
+                />
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseEditModal}>Hủy</Button>
+              <Button onClick={handleSaveProfile} variant="contained" color="primary" disabled={isUpdating}>
+                {isUpdating ? "Đang lưu..." : "Lưu"}
+              </Button>
+            </DialogActions>
+          </Dialog>
 
-              {/* Danh sách bạn bè */}
-              <ProfileFriends />
-            </Grid>
-
-            <Grid item xs={12} md={8}>
-              {/* Khung đăng bài */}
-              {isCurrentUser && (
-                <ProfileCreatePost currentUser={profile} onPostCreated={handleCreatePost} sx={{ mb: 3 }} />
-              )}
-
-              {/* Danh sách bài đăng */}
-              <ProfilePostList
-                posts={posts}
-                isLoading={false}
-                onLikePost={handleLikePost}
-                onSavePost={handleSavePost}
-              />
-            </Grid>
-          </Grid>
-        )}
-        {isUpdating && (
-          <Box
-            position="absolute"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            bgcolor="rgba(255, 255, 255, 0.7)"
-            zIndex={9999}
+          <Snackbar
+            open={!!notification}
+            autoHideDuration={6000}
+            onClose={handleCloseNotification}
+            anchorOrigin={{ vertical: "top", horizontal: "right" }}
           >
-            <GradientCircularProgress />
-          </Box>
-        )}
-
-        <Dialog open={openEditModal} onClose={handleCloseEditModal}>
-          <DialogTitle>Chỉnh sửa tên</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1, minWidth: 300 }}>
-              <TextField
-                label="Họ"
-                fullWidth
-                value={editedLastName}
-                onChange={(e) => setEditedLastName(e.target.value)}
-                variant="outlined"
-              />
-              <TextField
-                label="Tên"
-                fullWidth
-                value={editedFirstName}
-                onChange={(e) => setEditedFirstName(e.target.value)}
-                variant="outlined"
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseEditModal}>Hủy</Button>
-            <Button onClick={handleSaveProfile} variant="contained" color="primary" disabled={isUpdating}>
-              {isUpdating ? "Đang lưu..." : "Lưu"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={6000}
-          onClose={handleCloseNotification}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert onClose={handleCloseNotification} severity={notification?.type || "info"} sx={{ width: "100%" }}>
-            {notification?.message}
-          </Alert>
-        </Snackbar>
+            <Alert onClose={handleCloseNotification} severity={notification?.type || "info"} sx={{ width: "100%" }}>
+              {notification?.message}
+            </Alert>
+          </Snackbar>
         </ProfileScrollContainer>
       </ProfileContainer>
     </BasePage>

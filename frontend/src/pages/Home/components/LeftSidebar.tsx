@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react"
+import type React from "react"
 import { Link } from "react-router-dom"
-import { Badge, Button, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper, Menu, MenuItem } from "@mui/material"
+import { Button, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper } from "@mui/material"
 import { Chat, Explore, Home as HomeIcon, Notifications, Person, Settings } from "@mui/icons-material"
+import { useState } from "react"
 import ChatBox from "../../../components/ChatBox/ChatBox"
 
 interface MenuItem {
@@ -9,81 +10,28 @@ interface MenuItem {
   icon: React.ReactNode
   path: string
   active?: boolean
-  onClick?: (event: React.MouseEvent<HTMLElement>) => void
-  badge?: number
+  onClick?: () => void
 }
 
 interface LeftSidebarProps {
   className?: string
-  currentUserId: number
+  currentUserId: string
   onToggleChat: () => void
 }
 
 const LeftSidebar: React.FC<LeftSidebarProps> = ({ className, currentUserId, onToggleChat }) => {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedReceiverId, setSelectedReceiverId] = useState("default-receiver")
-  const [pendingRequests, setPendingRequests] = useState<any[]>([])
-  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null)
 
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen)
-  }
-
-  useEffect(() => {
-    fetchPendingRequests()
-  }, [])
-
-  const fetchPendingRequests = async () => {
-    try {
-      const response = await fetch("/api/friendships/pending")
-      const data = await response.json()
-      setPendingRequests(data)
-    } catch (error) {
-      console.error("Error fetching pending requests:", error)
-    }
-  }
-
-  const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
-    setNotificationAnchorEl(event.currentTarget)
-  }
-
-  const handleNotificationClose = () => {
-    setNotificationAnchorEl(null)
-  }
-
-  const handleAcceptRequest = async (friendshipId: number) => {
-    try {
-      await fetch(`/api/friendships/${friendshipId}/accept`, {
-        method: "POST",
-      })
-      fetchPendingRequests()
-    } catch (error) {
-      console.error("Error accepting friend request:", error)
-    }
-  }
-
-  const handleRejectRequest = async (friendshipId: number) => {
-    try {
-      await fetch(`/api/friendships/${friendshipId}/reject`, {
-        method: "POST",
-      })
-      fetchPendingRequests()
-    } catch (error) {
-      console.error("Error rejecting friend request:", error)
-    }
   }
 
   // Danh sách menu chính
   const mainMenuItems: MenuItem[] = [
     { text: "Trang chủ", icon: <HomeIcon />, path: "/", active: true },
     { text: "Khám phá", icon: <Explore />, path: "/explore" },
-    {
-      text: "Thông báo",
-      icon: <Notifications />,
-      path: "#",
-      onClick: handleNotificationClick,
-      badge: pendingRequests.length
-    },
+    { text: "Thông báo", icon: <Notifications />, path: "/notifications" },
     {
       text: "Tin nhắn",
       icon: <Chat />,
@@ -112,7 +60,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className, currentUserId, onT
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         receiverId={selectedReceiverId}
-        currentUserId={currentUserId.toString()}
+        currentUserId={currentUserId}
       />
     )
   }
@@ -150,13 +98,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className, currentUserId, onT
                     minWidth: 40,
                   }}
                 >
-                  {item.badge ? (
-                    <Badge badgeContent={item.badge} color="error">
-                      {item.icon}
-                    </Badge>
-                  ) : (
-                    item.icon
-                  )}
+                  {item.icon}
                 </ListItemIcon>
                 <ListItemText primary={item.text} />
               </ListItemButton>
@@ -207,47 +149,6 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className, currentUserId, onT
           ))}
         </List>
       </Paper>
-
-      <Menu
-        anchorEl={notificationAnchorEl}
-        open={Boolean(notificationAnchorEl)}
-        onClose={handleNotificationClose}
-        PaperProps={{
-          sx: {
-            width: 320,
-            maxHeight: 400,
-          },
-        }}
-      >
-        {pendingRequests.length === 0 ? (
-          <MenuItem disabled>Không có thông báo mới</MenuItem>
-        ) : (
-          pendingRequests.map((request) => (
-            <MenuItem key={request.id} sx={{ display: "block", py: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-                <Person sx={{ mr: 1 }} />
-                <span>{`${request.firstName} ${request.lastName} muốn kết bạn với bạn`}</span>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <Button
-                  size="small"
-                  variant="contained"
-                  onClick={() => handleAcceptRequest(request.id)}
-                >
-                  Đồng ý
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => handleRejectRequest(request.id)}
-                >
-                  Từ chối
-                </Button>
-              </div>
-            </MenuItem>
-          ))
-        )}
-      </Menu>
     </>
   )
 }
