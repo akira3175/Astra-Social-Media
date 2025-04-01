@@ -2,6 +2,7 @@ import axios from "axios";
 import type { Post } from "../types/post";
 import type { ApiResponse } from "../types/apiResponse";
 import { tokenService } from "./tokenService";
+import { api, apiNoAuth } from "../configs/api"
 
 // Cấu hình base URL nếu chưa có trong instance axios
 const API_URL =
@@ -19,7 +20,7 @@ const createPost = async (payload: CreatePostPayload): Promise<Post> => {
   }
 
   try {
-    const response = await axios.post<ApiResponse<Post>>(
+    const response = await api.post<ApiResponse<Post>>(
       `${API_URL}/posts`,
       payload,
       {
@@ -48,7 +49,7 @@ const getAllPosts = async (): Promise<Post[]> => {
   }
 
   try {
-    const response = await axios.get<ApiResponse<Post[]>>(
+    const response = await api.get<ApiResponse<Post[]>>(
       `${API_URL}/posts`,
       {
         headers: {
@@ -76,7 +77,7 @@ const likePost = async (postId: number): Promise<Post> => {
   }
 
   try {
-    const response = await axios.post<ApiResponse<Post>>(
+    const response = await api.post<ApiResponse<Post>>(
       `${API_URL}/likes/post/${postId}`,
       {},
       {
@@ -108,7 +109,7 @@ const unlikePost = async (postId: number): Promise<Post> => {
   }
 
   try {
-    const response = await axios.delete<ApiResponse<Post>>(
+    const response = await api.delete<ApiResponse<Post>>(
       `${API_URL}/likes/post/${postId}`,
       {
         headers: {
