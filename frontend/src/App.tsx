@@ -9,6 +9,7 @@ import { isAuthenticated } from "./services/authService"
 import NotFound from "./pages/Status/NotFound";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
 
 const theme = createTheme({
   breakpoints: {
@@ -59,6 +60,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   return <>{children}</>;
 };
 
+// Protected Admin Route component
+interface ProtectedAdminRouteProps {
+  children: ReactNode;
+}
+
+const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) => {
+  const authenticated = isAuthenticated();
+  // TODO: Add admin role check here
+  const isAdmin = true; // This should be replaced with actual admin role check
+
+  if (!authenticated || !isAdmin) {
+    return <Navigate to="/login" />;
+  }
+
+  return <>{children}</>;
+};
+
 const AppContent: React.FC = () => {
   return (
     <>
@@ -68,7 +86,7 @@ const AppContent: React.FC = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/404" element={<NotFound />} />
 
-            {/* Các Route cần bảo vệ */}
+            {/* Protected Routes */}
             <Route
               path="/"
               element={
@@ -86,7 +104,26 @@ const AppContent: React.FC = () => {
               }
             />
 
-            {/* Các route khác có thể thêm vào đây */}
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminDashboard />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminDashboard />
+                </ProtectedAdminRoute>
+              }
+            />
+
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>
       </Router>
     </>
