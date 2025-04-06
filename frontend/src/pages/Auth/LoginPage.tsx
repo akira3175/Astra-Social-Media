@@ -135,7 +135,7 @@ export default function LoginPage() {
                   required
                   fullWidth
                   id="email"
-                  label="Email hoặc tên người dùng"
+                  label="Email"
                   name="email"
                   autoComplete="email"
                   autoFocus

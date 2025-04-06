@@ -153,9 +153,12 @@ export const getUserByEmail = async (email: string): Promise<User> => {
 
 export const updateUserName = async (firstName: string, lastName: string): Promise<User> => {
   try {
-    const response: AxiosResponse<User> = await api.patch(ENDPOINTS.UPDATE_USER_INFO, {
-      firstName,
-      lastName
+    const formData = new FormData();
+    formData.append("firstName", firstName);
+    formData.append("lastName", lastName);
+
+    const response: AxiosResponse<User> = await api.patch(ENDPOINTS.UPDATE_USER_INFO, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   } catch (error) {
