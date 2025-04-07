@@ -11,6 +11,7 @@ import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
 import AdminPage from "./pages/Admin/AdminPage";
 import SearchPage from "./pages/Search/SearchPage";
+import AdminLoginPage from "./pages/Admin/Login/AdminLoginPage";
 
 const theme = createTheme({
   breakpoints: {
@@ -68,6 +69,7 @@ const AppContent: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/404" element={<NotFound />} />
