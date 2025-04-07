@@ -2,6 +2,7 @@ package org.example.backend.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,16 +12,20 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.example.backend.entity.User;
+import org.example.backend.security.JwtUtil;
 import org.example.backend.service.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 
-@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/admin/")
+@RequiredArgsConstructor
 public class AdminController {
     private final UserService userService;
+    private final JwtUtil jwtUtil;
     // private final CommentService commentService;
 
     @GetMapping("/posts")
@@ -37,7 +42,6 @@ public class AdminController {
 
     @GetMapping("/users")
     public ResponseEntity<?> getAllUser() {
-        // List<User> users = userService.getAllUser();
         return ResponseEntity.ok("users");
     }
 

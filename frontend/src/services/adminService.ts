@@ -1,5 +1,6 @@
-import axios from 'axios';
-import { API_URL } from '../config';
+import axios, { AxiosResponse } from "axios";
+import { api, apiNoAuth } from "../configs/api"
+import { tokenService } from "./tokenService";
 
 // Định nghĩa các interface
 export interface Post {
@@ -53,7 +54,7 @@ export interface AdminStats {
 // API calls
 export const getAdminStats = async (): Promise<AdminStats> => {
   try {
-    const response = await axios.get(`${API_URL}/admin/stats`);
+    const response = await api.get(`/admin/stats`);
     return response.data;
   } catch (error) {
     console.error('Error fetching admin stats:', error);
@@ -63,7 +64,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
 
 export const getPosts = async (): Promise<Post[]> => {
   try {
-    const response = await axios.get(`${API_URL}/admin/posts`);
+    const response = await api.get(`/admin/posts`);
     return response.data;
   } catch (error) {
     console.error('Error fetching posts:', error);
@@ -73,7 +74,7 @@ export const getPosts = async (): Promise<Post[]> => {
 
 export const getLockedPosts = async (): Promise<Post[]> => {
   try {
-    const response = await axios.get(`${API_URL}/admin/posts/locked`);
+    const response = await api.get(`/admin/posts/locked`);
     return response.data;
   } catch (error) {
     console.error('Error fetching locked posts:', error);
@@ -83,7 +84,7 @@ export const getLockedPosts = async (): Promise<Post[]> => {
 
 export const lockPost = async (postId: number): Promise<void> => {
   try {
-    await axios.put(`${API_URL}/admin/posts/${postId}/lock`);
+    await api.put(`/admin/posts/${postId}/lock`);
   } catch (error) {
     console.error('Error locking post:', error);
     throw error;
@@ -92,7 +93,7 @@ export const lockPost = async (postId: number): Promise<void> => {
 
 export const unlockPost = async (postId: number): Promise<void> => {
   try {
-    await axios.put(`${API_URL}/admin/posts/${postId}/unlock`);
+    await api.put(`/admin/posts/${postId}/unlock`);
   } catch (error) {
     console.error('Error unlocking post:', error);
     throw error;
@@ -101,7 +102,7 @@ export const unlockPost = async (postId: number): Promise<void> => {
 
 export const getComments = async (): Promise<Comment[]> => {
   try {
-    const response = await axios.get(`${API_URL}/admin/comments`);
+    const response = await api.get(`/admin/comments`);
     return response.data;
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -111,7 +112,7 @@ export const getComments = async (): Promise<Comment[]> => {
 
 export const getLockedComments = async (): Promise<Comment[]> => {
   try {
-    const response = await axios.get(`${API_URL}/admin/comments/locked`);
+    const response = await api.get(`/admin/comments/locked`);
     return response.data;
   } catch (error) {
     console.error('Error fetching locked comments:', error);
@@ -121,7 +122,7 @@ export const getLockedComments = async (): Promise<Comment[]> => {
 
 export const lockComment = async (commentId: number): Promise<void> => {
   try {
-    await axios.put(`${API_URL}/admin/comments/${commentId}/lock`);
+    await api.put(`/admin/comments/${commentId}/lock`);
   } catch (error) {
     console.error('Error locking comment:', error);
     throw error;
@@ -130,7 +131,7 @@ export const lockComment = async (commentId: number): Promise<void> => {
 
 export const unlockComment = async (commentId: number): Promise<void> => {
   try {
-    await axios.put(`${API_URL}/admin/comments/${commentId}/unlock`);
+    await api.put(`/admin/comments/${commentId}/unlock`);
   } catch (error) {
     console.error('Error unlocking comment:', error);
     throw error;
@@ -139,17 +140,34 @@ export const unlockComment = async (commentId: number): Promise<void> => {
 
 export const getUsers = async (): Promise<User[]> => {
   try {
-    const response = await axios.get(`${API_URL}/admin/users`);
+    const response = await api.get(`/admin/users`);
     return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
   }
 };
+// export const getUsers = async (): Promise<User[]> => {
+//   try {
+//     const token = tokenService.getAccessToken()
+//     if (!token) throw new Error("Not authenticated")
+
+//     const response: AxiosResponse<User[]> = await api.get(`/admin/users`)
+//     return response.data
+//   } catch (error) {
+//     if (axios.isAxiosError(error)) {
+//       console.error("API error:", error.response?.data || error.message)
+//       throw new Error(`API error: ${error.response?.status} - ${error.response?.statusText}`)
+//     } else {
+//       console.error("Unexpected error:", error)
+//       throw error 
+//     }
+//   } 
+// }
 
 export const getBannedUsers = async (): Promise<User[]> => {
   try {
-    const response = await axios.get(`${API_URL}/admin/users/banned`);
+    const response = await api.get(`/admin/users/banned`);
     return response.data;
   } catch (error) {
     console.error('Error fetching banned users:', error);
@@ -159,7 +177,7 @@ export const getBannedUsers = async (): Promise<User[]> => {
 
 export const banUser = async (userId: number): Promise<void> => {
   try {
-    await axios.put(`${API_URL}/admin/users/${userId}/ban`);
+    await api.put(`/admin/users/${userId}/ban`);
   } catch (error) {
     console.error('Error banning user:', error);
     throw error;
@@ -168,7 +186,7 @@ export const banUser = async (userId: number): Promise<void> => {
 
 export const unbanUser = async (userId: number): Promise<void> => {
   try {
-    await axios.put(`${API_URL}/admin/users/${userId}/unban`);
+    await api.put(`/admin/users/${userId}/unban`);
   } catch (error) {
     console.error('Error unbanning user:', error);
     throw error;
@@ -177,7 +195,7 @@ export const unbanUser = async (userId: number): Promise<void> => {
 
 export const getReports = async (): Promise<Report[]> => {
   try {
-    const response = await axios.get(`${API_URL}/admin/reports`);
+    const response = await api.get(`/admin/reports`);
     return response.data;
   } catch (error) {
     console.error('Error fetching reports:', error);
@@ -187,7 +205,7 @@ export const getReports = async (): Promise<Report[]> => {
 
 export const resolveReport = async (reportId: number): Promise<void> => {
   try {
-    await axios.put(`${API_URL}/admin/reports/${reportId}/resolve`);
+    await api.put(`/admin/reports/${reportId}/resolve`);
   } catch (error) {
     console.error('Error resolving report:', error);
     throw error;
