@@ -11,7 +11,8 @@ const NotFound: React.FC = () => {
           flexDirection="column"
           justifyContent="center"
           alignItems="center"
-          minHeight="100vh"
+          maxHeight="80vh"
+          minHeight="80vh"
           textAlign="center"
         >
           <Typography variant="h1" component="h1" gutterBottom>

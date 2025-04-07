@@ -5,6 +5,8 @@ import org.example.backend.entity.User;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.security.JwtUtil;
 import org.example.backend.service.UserService;
+import org.example.backend.websocket.WebSocketHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,9 @@ public class UserController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    private WebSocketHandler webSocketHandler;
 
     // API tạo User
     @PostMapping("/register")
@@ -152,6 +157,19 @@ public class UserController {
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Error saving profile");
         }
+    }
+
+    @GetMapping("/{email}/online")
+    public Map<String, Object> checkOnline(@PathVariable String email) {
+        boolean isOnline = webSocketHandler.isUserOnline(email);
+        return Map.of("email", email, "is_online", isOnline);
+    }
+
+    // API lấy trạng thái online của tất cả người dùng
+    @GetMapping("/all-online-status")
+    public ResponseEntity<Map<String, Boolean>> getAllOnlineStatus() {
+        Map<String, Boolean> onlineStatus = webSocketHandler.getAllUsersOnlineStatus();
+        return ResponseEntity.ok(onlineStatus);
     }
 
     @GetMapping("/suggestions")
