@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -96,7 +97,9 @@ public class UserController {
 
         // 🔥 Thêm domain vào avatar và background nếu có
         user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
-        user.setBackground((user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground() : null);
+        user.setBackground(
+                (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
+                        : null);
 
         // 🔥 Tạo response từ user
         User response = user.toBuilder().build();
@@ -114,7 +117,9 @@ public class UserController {
 
         // 🔥 Thêm domain vào avatar và background
         user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
-        user.setBackground((user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground() : null);
+        user.setBackground(
+                (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
+                        : null);
 
         // 🔥 Trả về response có đường dẫn đầy đủ
         User response = user.toBuilder()
@@ -137,12 +142,27 @@ public class UserController {
 
         try {
             User updatedUser = userService.updateUser(email, firstName, lastName, avatar, background);
-            updatedUser.setAvatar((updatedUser.getAvatar() != null && !updatedUser.getAvatar().isEmpty()) ? baseUrl + updatedUser.getAvatar() : null);
-            updatedUser.setBackground((updatedUser.getBackground() != null && !updatedUser.getBackground().isEmpty()) ? baseUrl + updatedUser.getBackground() : null);
+            updatedUser.setAvatar((updatedUser.getAvatar() != null && !updatedUser.getAvatar().isEmpty())
+                    ? baseUrl + updatedUser.getAvatar()
+                    : null);
+            updatedUser.setBackground((updatedUser.getBackground() != null && !updatedUser.getBackground().isEmpty())
+                    ? baseUrl + updatedUser.getBackground()
+                    : null);
             return ResponseEntity.ok(updatedUser);
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Error saving profile");
         }
     }
 
+    @GetMapping("/suggestions")
+    public ResponseEntity<List<Map<String, Object>>> getSuggestedUsers() {
+        List<Map<String, Object>> suggestedUsers = userService.getSuggestedUsers();
+        return ResponseEntity.ok(suggestedUsers);
+    }
+
+    @GetMapping("/{userId}/friends")
+    public ResponseEntity<?> getFriendsList(@PathVariable String userId) {
+        List<User> friends = userService.getFriendsList(userId);
+        return ResponseEntity.ok(friends);
+    }
 }

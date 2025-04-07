@@ -1,170 +1,198 @@
-import type React from "react"
+import React, { useEffect, useState } from "react";
 import {
   Avatar,
-  Box,
   Button,
-  Divider,
   List,
   ListItem,
   ListItemAvatar,
-  ListItemButton,
   ListItemText,
   Paper,
   Typography,
-} from "@mui/material"
+  CircularProgress,
+  Alert as MuiAlert,
+  Snackbar,
+} from "@mui/material";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import { friendshipService } from "../../../services/friendshipService";
+import { userService } from "../../../services/userService";
 
-interface SuggestedUser {
-  id: number
-  name: string
-  avatar: string
-  mutualFriends: number
+interface User {
+  id: number;
+  name: string;
+  avatar?: string;
+  mutualFriends?: number;
 }
 
 interface RightSidebarProps {
-  className?: string
+  className?: string;
 }
-
-// Giả lập dữ liệu người dùng được đề xuất
-const SUGGESTED_USERS: SuggestedUser[] = [
-  {
-    id: 201,
-    name: "Phạm Thị D",
-    avatar: "https://i.pravatar.cc/150?img=10",
-    mutualFriends: 5,
-  },
-  {
-    id: 202,
-    name: "Hoàng Văn E",
-    avatar: "https://i.pravatar.cc/150?img=11",
-    mutualFriends: 2,
-  },
-  {
-    id: 203,
-    name: "Vũ Thị F",
-    avatar: "https://i.pravatar.cc/150?img=12",
-    mutualFriends: 8,
-  },
-  {
-    id: 204,
-    name: "Nguyễn Văn G",
-    avatar: "https://i.pravatar.cc/150?img=13",
-    mutualFriends: 3,
-  },
-  {
-    id: 205,
-    name: "Trần Thị H",
-    avatar: "https://i.pravatar.cc/150?img=14",
-    mutualFriends: 6,
-  },
-  {
-    id: 206,
-    name: "Lê Văn I",
-    avatar: "https://i.pravatar.cc/150?img=15",
-    mutualFriends: 4,
-  },
-]
-
-// Thêm nhiều xu hướng để test scroll
-const TRENDING_TOPICS = [
-  "#TinMới",
-  "#CôngNghệ",
-  "#DuLịch",
-  "#ẨmThực",
-  "#ThểThao",
-  "#GiảiTrí",
-  "#KhoaHọc",
-  "#SứcKhỏe",
-  "#GiáoDục",
-  "#KinhTế",
-]
 
 const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [addingFriend, setAddingFriend] = useState<number | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  const currentUserId = Number(localStorage.getItem("userId"));
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await userService.getSuggestedUsers();
+        console.log("Users response:", response.data);
+        setUsers(response.data);
+        setError(null);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        setError("Có lỗi xảy ra khi tải danh sách người dùng");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleAddFriend = async (userId: number) => {
+    try {
+      setAddingFriend(userId);
+      console.log("Sending friend request to user:", userId);
+      const response = await friendshipService.sendFriendRequest(
+        currentUserId,
+        userId
+      );
+      console.log("Friend request response:", response.data);
+
+      // Cập nhật lại danh sách sau khi gửi yêu cầu
+      const updatedUsers = users.filter((user) => user.id !== userId);
+      setUsers(updatedUsers);
+
+      setSnackbar({
+        open: true,
+        message: "Đã gửi lời mời kết bạn thành công!",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      setSnackbar({
+        open: true,
+        message: "Có lỗi xảy ra khi gửi yêu cầu kết bạn",
+        severity: "error",
+      });
+    } finally {
+      setAddingFriend(null);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  if (loading) {
+    return (
+      <Paper className={className} sx={{ p: 2, textAlign: "center" }}>
+        <CircularProgress />
+      </Paper>
+    );
+  }
+
+  if (error) {
+    return (
+      <Paper className={className} sx={{ p: 2 }}>
+        <MuiAlert severity="error">{error}</MuiAlert>
+      </Paper>
+    );
+  }
+
   return (
-    <Paper
-      className={className}
-      sx={{
-        p: 2,
-        height: "auto",
-        boxShadow: "0 2px 12px rgba(0, 0, 0, 0.08)",
-      }}
-    >
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Gợi ý kết bạn
-      </Typography>
-      <List disablePadding>
-        {SUGGESTED_USERS.map((user) => (
-          <ListItem
-            key={user.id}
-            secondaryAction={
-              <Button
-                variant="outlined"
-                size="small"
-                sx={{
-                  borderColor: "#4f46e5",
-                  color: "#4f46e5",
-                  "&:hover": {
-                    borderColor: "#4338ca",
-                    bgcolor: "rgba(79, 70, 229, 0.05)",
-                  },
-                  textTransform: "none",
-                }}
-              >
-                Kết bạn
-              </Button>
-            }
-            disablePadding
-            sx={{ mb: 2 }}
-          >
-            <ListItemAvatar sx={{ minWidth: "42px"}}>
-              <Avatar src={user.avatar} />
-            </ListItemAvatar>
-            <ListItemText 
-                primary={user.name} 
-                secondary={`${user.mutualFriends} bạn chung`} 
-                sx={{
-                    "& span": { 
-                        display: "block",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      },
-                      maxWidth: "91px"
-                  }}/>
-          </ListItem>
-        ))}
-      </List>
-      <Divider sx={{ my: 2 }} />
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Xu hướng
-      </Typography>
-      <List disablePadding>
-        {TRENDING_TOPICS.map((tag, index) => (
-          <ListItem key={index} disablePadding sx={{ mb: 1 }}>
-            <ListItemButton sx={{ borderRadius: 1 }}>
-              <ListItemText primary={tag} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="caption" color="text.secondary">
-          © 2025 AstraSocial
+    <>
+      <Paper
+        className={className}
+        sx={{
+          p: 2,
+          height: "auto",
+          boxShadow: "0 2px 12px rgba(0, 0, 0, 0.08)",
+        }}
+      >
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Gợi ý kết bạn
         </Typography>
-        <Box sx={{ mt: 1 }}>
-          <Typography variant="caption" color="text.secondary" component="span" sx={{ mr: 1 }}>
-            Giới thiệu
-          </Typography>
-          <Typography variant="caption" color="text.secondary" component="span" sx={{ mr: 1 }}>
-            Điều khoản
-          </Typography>
-          <Typography variant="caption" color="text.secondary" component="span">
-            Quyền riêng tư
-          </Typography>
-        </Box>
-      </Box>
-    </Paper>
-  )
-}
+        <List disablePadding>
+          {users.map((user) => (
+            <ListItem
+              key={user.id}
+              secondaryAction={
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                  onClick={() => handleAddFriend(user.id)}
+                  disabled={addingFriend === user.id}
+                  startIcon={
+                    addingFriend === user.id ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <PersonAddIcon />
+                    )
+                  }
+                >
+                  {addingFriend === user.id ? "" : "Kết bạn"}
+                </Button>
+              }
+              disablePadding
+              sx={{ mb: 2 }}
+            >
+              <ListItemAvatar sx={{ minWidth: "42px" }}>
+                <Avatar src={user.avatar} />
+              </ListItemAvatar>
+              <ListItemText
+                primary={user.name}
+                secondary={
+                  user.mutualFriends
+                    ? `${user.mutualFriends} bạn chung`
+                    : undefined
+                }
+                sx={{
+                  "& span": {
+                    display: "block",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  },
+                  maxWidth: "91px",
+                }}
+              />
+            </ListItem>
+          ))}
+        </List>
+      </Paper>
 
-export default RightSidebar
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <MuiAlert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
+    </>
+  );
+};
 
+export default RightSidebar;

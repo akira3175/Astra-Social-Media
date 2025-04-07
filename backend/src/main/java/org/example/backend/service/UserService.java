@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +38,8 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User updateUser(String email, String firstName, String lastName, MultipartFile avatar, MultipartFile background) throws IOException {
+    public User updateUser(String email, String firstName, String lastName, MultipartFile avatar,
+            MultipartFile background) throws IOException {
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
             throw new RuntimeException("User not found");
@@ -89,8 +93,7 @@ public class UserService {
 
                 return Map.of(
                         "accessToken", accessToken,
-                        "refreshToken", refreshToken
-                );
+                        "refreshToken", refreshToken);
             }
         }
         return null;
@@ -104,5 +107,28 @@ public class UserService {
     public User getUserInfo(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public List<Map<String, Object>> getSuggestedUsers() {
+        return userRepository.findTop6ByOrderByMutualFriendsDesc().stream()
+                .map(user -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("name", user.getName());
+                    userMap.put("avatar", user.getAvatar());
+                    userMap.put("mutualFriends", user.getMutualFriends() != null ? user.getMutualFriends() : 0);
+                    userMap.put("status", null);
+                    return userMap;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<User> getFriendsList(String userId) {
+        try {
+            Long id = Long.parseLong(userId);
+            return userRepository.findFriendsById(id);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid user ID format");
+        }
     }
 }
