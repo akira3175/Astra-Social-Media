@@ -240,7 +240,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
                 return
             }
 
-            connectWebSocket()
+            // Chờ một chút trước khi kết nối lại để đảm bảo kết nối cũ đã hoàn toàn đóng
+            setTimeout(() => {
+                connectWebSocket()
+            }, 500)
         }
 
         return () => {
@@ -252,90 +255,111 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
     }, [isOpen, currentUserId])
 
     const connectWebSocket = () => {
-        const token = localStorage.getItem('accessToken')
-        if (!token) {
-            console.log('User not logged in, redirecting to login page')
-            window.location.href = '/login'
-            return
-        }
+        try {
+            const token = localStorage.getItem('accessToken')
+            if (!token) {
+                console.log('User not logged in, redirecting to login page')
+                window.location.href = '/login'
+                return
+            }
 
-        const socket = new SockJS('http://localhost:8080/ws')
-        const stompClient = Stomp.over(() => socket)
+            // Truyền token như một parameter trong URL
+            const socket = new SockJS(`http://localhost:8080/ws?token=${token}`)
+            const stompClient = Stomp.over(() => socket)
 
-        stompClient.connect({
-            Authorization: `Bearer ${token}`
-        }, () => {
-            console.log("Connected to WebSocket")
-            reconnectAttempts.current = 0
+            // Tùy chọn để tránh log quá nhiều
+            stompClient.debug = () => { };
 
-            // Subscribe vào channel riêng cho user
-            stompClient.subscribe(`/user/${currentUserId}/queue/messages`, (message) => {
-                try {
-                    const data = JSON.parse(message.body)
-                    console.log("Received private message:", data)
+            // Không cần gửi token trong header vì đã có trong URL
+            stompClient.connect({}, () => {
+                console.log("Connected to WebSocket")
+                reconnectAttempts.current = 0
 
-                    // Cập nhật tin nhắn ngay lập tức
-                    if (data.senderId === currentUserId || data.receiverId === currentUserId) {
-                        setMessages(prev => {
-                            if (prev.some(m => m.id === data.id)) {
-                                return prev
-                            }
-                            const newMessages = [...prev, data]
-                            return newMessages.sort((a, b) =>
-                                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-                            )
-                        })
+                // Subscribe vào channel riêng cho user
+                stompClient.subscribe(`/user/${currentUserId}/queue/messages`, (message) => {
+                    try {
+                        const data = JSON.parse(message.body)
+                        console.log("Received private message:", data)
+
+                        // Cập nhật tin nhắn ngay lập tức
+                        if (data.senderId === currentUserId || data.receiverId === currentUserId) {
+                            setMessages(prev => {
+                                if (prev.some(m => m.id === data.id)) {
+                                    return prev
+                                }
+                                const newMessages = [...prev, data]
+                                return newMessages.sort((a, b) =>
+                                    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                                )
+                            })
+                        }
+                    } catch (error) {
+                        console.error('Error parsing private message:', error)
                     }
-                } catch (error) {
-                    console.error('Error parsing private message:', error)
-                }
+                })
+
+                // Subscribe vào channel chung để nhận tin nhắn mới
+                stompClient.subscribe('/topic/public', (message) => {
+                    try {
+                        const data = JSON.parse(message.body)
+                        console.log("Received public message:", data)
+
+                        // Cập nhật tin nhắn cho cả người gửi và người nhận
+                        if (data.senderId === currentUserId || data.receiverId === currentUserId) {
+                            setMessages(prev => {
+                                if (prev.some(m => m.id === data.id)) {
+                                    return prev
+                                }
+                                const newMessages = [...prev, data]
+                                return newMessages.sort((a, b) =>
+                                    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                                )
+                            })
+                        }
+                    } catch (error) {
+                        console.error('Error parsing public message:', error)
+                    }
+                })
+            }, (error: Error) => {
+                console.error('STOMP connection error:', error);
+                handleReconnect();
             })
 
-            // Subscribe vào channel chung để nhận tin nhắn mới
-            stompClient.subscribe('/topic/public', (message) => {
-                try {
-                    const data = JSON.parse(message.body)
-                    console.log("Received public message:", data)
-
-                    // Cập nhật tin nhắn cho cả người gửi và người nhận
-                    if (data.senderId === currentUserId || data.receiverId === currentUserId) {
-                        setMessages(prev => {
-                            if (prev.some(m => m.id === data.id)) {
-                                return prev
-                            }
-                            const newMessages = [...prev, data]
-                            return newMessages.sort((a, b) =>
-                                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-                            )
-                        })
-                    }
-                } catch (error) {
-                    console.error('Error parsing public message:', error)
-                }
-            })
-        })
-
-        stompClient.onStompError = (frame) => {
-            console.error('STOMP error:', frame)
-            if (reconnectAttempts.current < maxReconnectAttempts) {
-                reconnectAttempts.current++
-                setTimeout(() => connectWebSocket(), 5000)
+            stompClient.onStompError = (frame) => {
+                console.error('STOMP error:', frame)
+                handleReconnect();
             }
-        }
 
-        stompClient.onWebSocketError = (event) => {
-            console.error('WebSocket error:', event)
-            if (reconnectAttempts.current < maxReconnectAttempts) {
-                reconnectAttempts.current++
-                setTimeout(() => connectWebSocket(), 5000)
+            stompClient.onWebSocketError = (event) => {
+                console.error('WebSocket error:', event)
+                handleReconnect();
             }
-        }
 
-        setWs(stompClient)
+            stompClient.onWebSocketClose = () => {
+                console.log('WebSocket connection closed');
+                handleReconnect();
+            }
+
+            setWs(stompClient)
+        } catch (error) {
+            console.error('Error initializing WebSocket:', error);
+            handleReconnect();
+        }
+    }
+
+    const handleReconnect = () => {
+        if (reconnectAttempts.current < maxReconnectAttempts) {
+            reconnectAttempts.current++
+            const delay = Math.min(1000 * (2 ** reconnectAttempts.current), 30000)
+            console.log(`Attempting to reconnect in ${delay / 1000} seconds...`)
+            setTimeout(() => connectWebSocket(), delay)
+        } else {
+            console.error('Maximum reconnection attempts reached')
+        }
     }
 
     const handleSendMessage = () => {
-        if (newMessage.trim() && ws) {
+        if (newMessage.trim() && ws && ws.connected) {
             const message: Message = {
                 id: Date.now().toString(),
                 senderId: currentUserId,
@@ -369,7 +393,16 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
             } catch (error) {
                 console.error('Error sending message:', error)
                 setIsLoading(false)
+                // Nếu gặp lỗi kết nối, thử kết nối lại
+                connectWebSocket()
             }
+        } else if (!ws || !ws.connected) {
+            console.error('WebSocket not connected, attempting to reconnect')
+            connectWebSocket()
+            setTimeout(() => {
+                // Thông báo cho người dùng
+                alert("Đang kết nối lại, vui lòng thử lại sau vài giây")
+            }, 100)
         }
     }
 
@@ -492,7 +525,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
     if (!isOpen) return null
 
     // Render vào một portal tách biệt
-    return ReactDOM.createPortal(
+    const chatContent = (
         <ChatContainer elevation={3}>
             <ChatList>
                 <ChatUserList
@@ -595,9 +628,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
                     </IconButton>
                 </Box>
             </ChatMain>
-        </ChatContainer>,
-        document.body // Render trực tiếp vào body, ngoài DOM tree
-    )
+        </ChatContainer>
+    );
+
+    return ReactDOM.createPortal(chatContent, document.body);
 }
 
 export default ChatBox 

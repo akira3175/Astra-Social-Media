@@ -76,6 +76,7 @@ const BackgroundImage = styled("img")(({ theme }) => ({
   width: "100%",
   objectFit: "cover",
   objectPosition: "center",
+  backgroundColor: theme.palette.grey[400],
 }))
 
 const BackgroundImageBox = styled(Box)(({ theme }) => ({
@@ -274,7 +275,9 @@ const ProfilePage: React.FC = () => {
 
       setCurrentUser(updatedUser)
       setProfile(updatedUser)
+      setNotification({ type: "success", message: "Ảnh đã được cập nhật thành công" })
     } catch (error) {
+      setNotification({ type: "error", message: "Không thể cập nhật ảnh hoặc ảnh không hỗ trợ định dạng. Vui lòng thử lại." })
       console.error(`Error updating ${type}:`, error)
     }
   }
@@ -349,6 +352,7 @@ const ProfilePage: React.FC = () => {
     )
   }
 
+  // Đến đây nghĩa là profile không phải null
   const isCurrentUser = currentUser?.id === profile.id
   console.log("Current user:", currentUser)
   console.log("Profile:", profile)
@@ -358,120 +362,110 @@ const ProfilePage: React.FC = () => {
     <BasePage>
       <ProfileContainer>
         <ProfileScrollContainer>
-          {isLoading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-              <CircularProgress />
-            </Box>
-          ) : !profile ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-              <Typography>Profile not found.</Typography>
-            </Box>
-          ) : (
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={12}>
-                <ProfileHeader elevation={3}>
-                  <BackgroundImageBox>
-                    <BackgroundImage src={profile.background || "/placeholder.svg"} alt="Profile background" />
-                    {isCurrentUser && (
-                      <ChangeBackgroundButton
-                        onClick={triggerBackgroundUpload}
-                        size="small"
-                        sx={{
-                          position: "absolute",
-                          right: (theme) => theme.spacing(1),
-                          bottom: (theme) => theme.spacing(1),
-                        }}
-                      >
-                        <CameraAltIcon fontSize="small" />
-                      </ChangeBackgroundButton>
-                    )}
-                  </BackgroundImageBox>
-                  <ProfileContent>
-                    <AvatarBox>
-                      <AvatarContainer>
-                        <ProfileAvatar src={profile.avatar || undefined}>{profile.firstName.charAt(0)}</ProfileAvatar>
-                        {isCurrentUser && (
-                          <ChangeAvatarButton onClick={triggerAvatarUpload} size="small">
-                            <CameraAltIcon fontSize="small" />
-                          </ChangeAvatarButton>
-                        )}
-                      </AvatarContainer>
-
-                      <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
-                        <Typography variant="h5" component="h1">
-                          {profile.lastName + " " + profile.firstName}
-                        </Typography>
-                        {isCurrentUser ? (
-                          <IconButton onClick={handleEditProfile} size="small">
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        ) : null}
-                      </Box>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        {profile.email}
-                      </Typography>
-                      {!isCurrentUser && (
-                        <Button
-                          variant="contained"
-                          startIcon={<Chat />}
-                          onClick={handleStartChat}
-                          size="medium"
-                          sx={{ mt: 1 }}
-                        >
-                          Nhắn tin
-                        </Button>
-                      )}
-                    </AvatarBox>
-                  </ProfileContent>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={12}>
+              <ProfileHeader elevation={3}>
+                <BackgroundImageBox>
+                  <BackgroundImage src={profile.background || "/placeholder.svg"} alt="Profile background" />
                   {isCurrentUser && (
-                    <>
-                      <input
-                        ref={avatarInputRef}
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        id="avatar-upload"
-                        type="file"
-                        onChange={(e) => handleImageUpload(e, "avatar")}
-                      />
-                      <input
-                        ref={backgroundInputRef}
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        id="background-upload"
-                        type="file"
-                        onChange={(e) => handleImageUpload(e, "background")}
-                      />
-                    </>
+                    <ChangeBackgroundButton
+                      onClick={triggerBackgroundUpload}
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        right: (theme) => theme.spacing(1),
+                        bottom: (theme) => theme.spacing(1),
+                      }}
+                    >
+                      <CameraAltIcon fontSize="small" />
+                    </ChangeBackgroundButton>
                   )}
-                </ProfileHeader>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                {/* Tiểu sử */}
-                <ProfileBio profile={profile} isCurrentUser={isCurrentUser} />
+                </BackgroundImageBox>
+                <ProfileContent>
+                  <AvatarBox>
+                    <AvatarContainer sx={{ left: "17%" }}>
+                      <ProfileAvatar src={profile.avatar || undefined}>{profile.firstName.charAt(0)}</ProfileAvatar>
+                      {isCurrentUser && (
+                        <ChangeAvatarButton onClick={triggerAvatarUpload} size="small">
+                          <CameraAltIcon fontSize="small" />
+                        </ChangeAvatarButton>
+                      )}
+                    </AvatarContainer>
 
-                {/* Danh sách hình ảnh */}
-                <ProfilePhotos />
-
-                {/* Danh sách bạn bè */}
-                <ProfileFriends />
-              </Grid>
-
-              <Grid item xs={12} md={8}>
-                {/* Khung đăng bài */}
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                      <Typography variant="h5" component="h1">
+                        {profile.lastName + " " + profile.firstName}
+                      </Typography>
+                      {isCurrentUser ? (
+                        <IconButton onClick={handleEditProfile} size="small">
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      ) : null}
+                    </Box>
+                    <Typography variant="subtitle1" color="text.secondary">
+                      {profile.email}
+                    </Typography>
+                    {!isCurrentUser && (
+                      <Button
+                        variant="contained"
+                        startIcon={<Chat />}
+                        onClick={handleStartChat}
+                        size="medium"
+                        sx={{ mt: 1 }}
+                      >
+                        Nhắn tin
+                      </Button>
+                    )}
+                  </AvatarBox>
+                </ProfileContent>
                 {isCurrentUser && (
-                  <ProfileCreatePost currentUser={profile} onPostCreated={handleCreatePost} sx={{ mb: 3 }} />
+                  <>
+                    <input
+                      ref={avatarInputRef}
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      id="avatar-upload"
+                      type="file"
+                      onChange={(e) => handleImageUpload(e, "avatar")}
+                    />
+                    <input
+                      ref={backgroundInputRef}
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      id="background-upload"
+                      type="file"
+                      onChange={(e) => handleImageUpload(e, "background")}
+                    />
+                  </>
                 )}
-
-                {/* Danh sách bài đăng */}
-                <ProfilePostList
-                  posts={posts}
-                  isLoading={false}
-                  onLikePost={handleLikePost}
-                  onSavePost={handleSavePost}
-                />
-              </Grid>
+              </ProfileHeader>
             </Grid>
-          )}
+            <Grid item xs={12} md={4}>
+              {/* Tiểu sử */}
+              <ProfileBio profile={profile} isCurrentUser={isCurrentUser} />
+
+              {/* Danh sách hình ảnh */}
+              <ProfilePhotos />
+
+              {/* Danh sách bạn bè */}
+              <ProfileFriends />
+            </Grid>
+
+            <Grid item xs={12} md={8}>
+              {/* Khung đăng bài */}
+              {isCurrentUser && (
+                <ProfileCreatePost currentUser={profile} onPostCreated={handleCreatePost} sx={{ mb: 3 }} />
+              )}
+
+              {/* Danh sách bài đăng */}
+              <ProfilePostList
+                posts={posts}
+                isLoading={false}
+                onLikePost={handleLikePost}
+                onSavePost={handleSavePost}
+              />
+            </Grid>
+          </Grid>
           {isUpdating && (
             <Box
               position="absolute"

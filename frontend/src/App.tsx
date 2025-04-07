@@ -9,7 +9,7 @@ import { isAuthenticated } from "./services/authService"
 import NotFound from "./pages/Status/NotFound";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
-
+import RegisterPage from "./pages/Auth/RegisterPage";
 const theme = createTheme({
   breakpoints: {
     values: {
@@ -66,6 +66,7 @@ const AppContent: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/404" element={<NotFound />} />
 
           {/* Các Route cần bảo vệ */}
