@@ -36,7 +36,9 @@ public class SecurityConfig {
                                 "/api/users/register",
                                 "/api/users/refresh",
                                 "/api/users/{email}",
-                                "/uploads/**"
+                                "/uploads/**",
+                                "/api/users/{email}/online",
+                                "/ws/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -49,7 +51,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "ws://localhost:8080"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));

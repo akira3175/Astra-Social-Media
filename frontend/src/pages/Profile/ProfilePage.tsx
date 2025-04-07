@@ -74,6 +74,7 @@ const BackgroundImage = styled("img")(({ theme }) => ({
   width: "100%",
   objectFit: "cover",
   objectPosition: "center",
+  backgroundColor: theme.palette.grey[400],
 }))
 
 const BackgroundImageBox = styled(Box)(({ theme }) => ({
@@ -261,7 +262,9 @@ const ProfilePage: React.FC = () => {
 
       setCurrentUser(updatedUser)
       setProfile(updatedUser)
+      setNotification({ type: "success", message: "Ảnh đã được cập nhật thành công" })
     } catch (error) {
+      setNotification({ type: "error", message: "Không thể cập nhật ảnh hoặc ảnh không hỗ trợ định dạng. Vui lòng thử lại." })
       console.error(`Error updating ${type}:`, error)
     }
   }
@@ -329,7 +332,7 @@ const ProfilePage: React.FC = () => {
     )
   }
 
-  const isCurrentUser = currentUser?.username === profile.username
+  const isCurrentUser = currentUser?.email === profile.email
 
   return (
     <BasePage>
@@ -348,7 +351,7 @@ const ProfilePage: React.FC = () => {
             <Grid item xs={12} md={12}>
               <ProfileHeader elevation={3}>
                 <BackgroundImageBox>
-                  <BackgroundImage src={profile.background || "/placeholder.svg"} alt="Profile background" />
+                  <BackgroundImage src={profile.background || ""} />
                   {isCurrentUser && (
                     <ChangeBackgroundButton
                       onClick={triggerBackgroundUpload}
