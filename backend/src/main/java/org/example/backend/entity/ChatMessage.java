@@ -1,4 +1,4 @@
-package com.astrasocialmedia.websocket;
+package org.example.backend.entity;
 
 import lombok.Data;
 import jakarta.persistence.*;
@@ -12,26 +12,33 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "sender_id")
     private String senderId;
 
-    @Column(nullable = false)
+    @Column(name = "receiver_id")
     private String receiverId;
 
-    @Column(nullable = false, length = 1000)
+    @Column(name = "content")
     private String content;
 
-    @Column(nullable = false)
+    @Column(name = "timestamp")
     private LocalDateTime timestamp;
 
-    @Column
+    @Column(name = "sender_name")
     private String senderName;
 
-    @Column
+    @Column(name = "sender_avatar")
     private String senderAvatar;
 
     @PrePersist
     protected void onCreate() {
         timestamp = LocalDateTime.now();
+    }
+
+    @PostLoad
+    protected void onLoad() {
+        if (senderName == null) {
+            senderName = "Người dùng";
+        }
     }
 }

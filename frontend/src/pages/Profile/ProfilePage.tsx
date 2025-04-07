@@ -24,6 +24,7 @@ import {
 import { styled } from "@mui/material/styles"
 import EditIcon from "@mui/icons-material/Edit"
 import CameraAltIcon from "@mui/icons-material/CameraAlt"
+import { Chat } from "@mui/icons-material"
 import type { User } from "../../types/user"
 import { getUserByEmail } from "../../services/authService"
 import { useCurrentUser } from "../../contexts/currentUserContext"
@@ -37,6 +38,7 @@ import ProfileFriends from "./components/ProfileFriends"
 import ProfileCreatePost from "./components/ProfileCreatePost"
 import ProfilePostList from "./components/ProfilePostList"
 import type { Post } from "../../types/post"
+import ChatBox from "../../components/ChatBox/ChatBox"
 
 const ProfileContainer = styled(Container)(({ theme }) => ({
   display: "flex",
@@ -88,19 +90,27 @@ const ProfileContent = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  height: "165px",
+  height: "250px",
+  paddingTop: theme.spacing(2),
 }))
 
 const AvatarContainer = styled(Box)(({ theme }) => ({
   position: "relative",
   marginBottom: theme.spacing(2),
   width: "120px",
-  left: "25%",
+  display: "flex",
+  justifyContent: "center",
 }))
 
 const AvatarBox = styled(Box)(({ theme }) => ({
   position: "absolute",
   top: "-50px",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  width: "100%",
+  gap: theme.spacing(1),
+  paddingBottom: theme.spacing(2),
 }))
 
 const ProfileAvatar = styled(Avatar)(({ theme }) => ({
@@ -187,6 +197,9 @@ const ProfilePage: React.FC = () => {
       saved: false,
     },
   ])
+
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -311,6 +324,13 @@ const ProfilePage: React.FC = () => {
     )
   }
 
+  const handleStartChat = () => {
+    if (profile) {
+      setSelectedReceiverId(profile.id.toString())
+      setIsChatOpen(true)
+    }
+  }
+
   if (isLoading) {
     return (
       <BasePage>
@@ -329,7 +349,10 @@ const ProfilePage: React.FC = () => {
     )
   }
 
-  const isCurrentUser = currentUser?.username === profile.username
+  const isCurrentUser = currentUser?.id === profile.id
+  console.log("Current user:", currentUser)
+  console.log("Profile:", profile)
+  console.log("Is current user:", isCurrentUser)
 
   return (
     <BasePage>
@@ -365,7 +388,7 @@ const ProfilePage: React.FC = () => {
                   </BackgroundImageBox>
                   <ProfileContent>
                     <AvatarBox>
-                      <AvatarContainer sx={{ left: "17%" }}>
+                      <AvatarContainer>
                         <ProfileAvatar src={profile.avatar || undefined}>{profile.firstName.charAt(0)}</ProfileAvatar>
                         {isCurrentUser && (
                           <ChangeAvatarButton onClick={triggerAvatarUpload} size="small">
@@ -374,19 +397,30 @@ const ProfilePage: React.FC = () => {
                         )}
                       </AvatarContainer>
 
-                      <Box display="flex" alignItems="center" justifyContent="center">
+                      <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
                         <Typography variant="h5" component="h1">
                           {profile.lastName + " " + profile.firstName}
                         </Typography>
-                        {isCurrentUser && (
-                          <IconButton onClick={handleEditProfile} size="small" sx={{ ml: 1 }}>
+                        {isCurrentUser ? (
+                          <IconButton onClick={handleEditProfile} size="small">
                             <EditIcon fontSize="small" />
                           </IconButton>
-                        )}
+                        ) : null}
                       </Box>
                       <Typography variant="subtitle1" color="text.secondary">
                         {profile.email}
                       </Typography>
+                      {!isCurrentUser && (
+                        <Button
+                          variant="contained"
+                          startIcon={<Chat />}
+                          onClick={handleStartChat}
+                          size="medium"
+                          sx={{ mt: 1 }}
+                        >
+                          Nhắn tin
+                        </Button>
+                      )}
                     </AvatarBox>
                   </ProfileContent>
                   {isCurrentUser && (
@@ -494,6 +528,14 @@ const ProfilePage: React.FC = () => {
             </Alert>
           </Snackbar>
         </ProfileScrollContainer>
+
+        {/* ChatBox */}
+        <ChatBox
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          receiverId={selectedReceiverId || ""}
+          currentUserId={currentUser?.id.toString() || ""}
+        />
       </ProfileContainer>
     </BasePage>
   )

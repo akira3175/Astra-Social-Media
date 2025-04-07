@@ -11,6 +11,7 @@ import PostList from "./components/PostList"
 import MobileBottomNav from "./components/MobileBottomNav"
 import type { Post } from "../../types/post"
 import ChatBox from "../../components/ChatBox/ChatBox"
+import { useCurrentUser } from "../../contexts/currentUserContext"
 
 // Giả lập dữ liệu bài đăng
 const DUMMY_POSTS: Post[] = [
@@ -116,9 +117,9 @@ const HomePage: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"))
-  const [currentUserId, setCurrentUserId] = useState("current-user")
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [selectedReceiverId, setSelectedReceiverId] = useState("default-receiver")
+  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
+  const { currentUser } = useCurrentUser()
 
   const [posts, setPosts] = useState<Post[]>(DUMMY_POSTS)
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -193,6 +194,16 @@ const HomePage: React.FC = () => {
 
   return (
     <BasePage>
+      {/* Render ChatBox ở cấp cao nhất */}
+      {isChatOpen && currentUser?.id && selectedReceiverId && (
+        <ChatBox
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          receiverId={selectedReceiverId}
+          currentUserId={currentUser.id.toString()}
+        />
+      )}
+
       <Box
         className="layout-container"
         sx={{
@@ -235,8 +246,8 @@ const HomePage: React.FC = () => {
             }}
           >
             <LeftSidebar
-              currentUserId={currentUserId}
               onToggleChat={toggleChat}
+              setSelectedReceiverId={setSelectedReceiverId}
             />
           </Box>
         )}
@@ -307,14 +318,6 @@ const HomePage: React.FC = () => {
 
       {/* Mobile bottom navigation */}
       {isMobile && <MobileBottomNav />}
-
-      {/* ChatBox */}
-      <ChatBox
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        receiverId={selectedReceiverId}
-        currentUserId={currentUserId}
-      />
     </BasePage>
   )
 }
