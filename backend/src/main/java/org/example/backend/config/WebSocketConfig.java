@@ -1,28 +1,44 @@
 package org.example.backend.config;
 
 import org.example.backend.security.JwtHandshakeInterceptor;
-import org.example.backend.websocket.WebSocketHandler;
+import org.example.backend.security.WebSocketAuthChannelInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
-import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.messaging.simp.config.ChannelRegistration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 @Configuration
-@EnableWebSocket
-public class WebSocketConfig implements WebSocketConfigurer {
+@EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Autowired
-    private WebSocketHandler webSocketHandler;
+    private final WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor;
+    private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
 
-    @Autowired
-    private JwtHandshakeInterceptor jwtHandshakeInterceptor;
+    public WebSocketConfig(JwtHandshakeInterceptor jwtHandshakeInterceptor, WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor) {
+        this.jwtHandshakeInterceptor = jwtHandshakeInterceptor;
+        this.webSocketAuthChannelInterceptor = webSocketAuthChannelInterceptor;
+    }
 
     @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(webSocketHandler, "/ws")
+    public void configureMessageBroker(MessageBrokerRegistry config) {
+        config.enableSimpleBroker("/topic", "/queue"); // Kênh để broadcast tin nhắn
+        config.setApplicationDestinationPrefixes("/app"); // Prefix cho endpoint gửi tin nhắn
+        config.setUserDestinationPrefix("/user"); // Prefix cho tin nhắn cá nhân
+    }
+
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws") // Endpoint kết nối WebSocket
+                .setAllowedOrigins("*") // Frontend origin
                 .addInterceptors(jwtHandshakeInterceptor)
-                .setAllowedOrigins("*");
+                .withSockJS(); // Hỗ trợ SockJS cho các trình duyệt không hỗ trợ WebSocket
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(webSocketAuthChannelInterceptor);
     }
 }
-
