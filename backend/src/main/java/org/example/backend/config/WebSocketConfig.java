@@ -1,8 +1,8 @@
 package org.example.backend.config;
 
+import org.example.backend.security.JwtHandshakeHandler;
 import org.example.backend.security.JwtHandshakeInterceptor;
 import org.example.backend.security.WebSocketAuthChannelInterceptor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -32,8 +32,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws") // Endpoint kết nối WebSocket
-                .setAllowedOrigins("*") // Frontend origin
+                .setAllowedOrigins("http://localhost:5173") // Frontend origin
                 .addInterceptors(jwtHandshakeInterceptor)
+                .setHandshakeHandler(new JwtHandshakeHandler())
                 .withSockJS(); // Hỗ trợ SockJS cho các trình duyệt không hỗ trợ WebSocket
     }
 

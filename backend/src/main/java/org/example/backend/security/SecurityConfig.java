@@ -37,6 +37,7 @@ public class SecurityConfig {
                                                                 "/api/users/register",
                                                                 "/api/users/refresh",
                                                                 "/api/users/{email}",
+                                                                "/api/users/search",
                                                                 "/uploads/**",
                                                                 "/api/users/{email}/online",
                                                                 "/ws/**",
