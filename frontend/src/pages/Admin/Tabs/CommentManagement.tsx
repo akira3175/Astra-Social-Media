@@ -1,4 +1,4 @@
-import { faPenToSquare, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faLockOpen, faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 
@@ -41,7 +41,6 @@ const CommentManagement: React.FC = () => {
         <table className="min-w-full border border-gray-300">
           <thead className="bg-gray-200">
             <tr>
-              <th className="px-4 py-2 border border-gray-300 text-left">ID</th>
               <th className="px-4 py-2 border border-gray-300 text-left">
                 Nội dung
               </th>
@@ -59,9 +58,7 @@ const CommentManagement: React.FC = () => {
           <tbody>
             {comments.map((comment) => (
               <tr key={comment.id} className="hover:bg-gray-100">
-                <td className="px-4 py-2 border border-gray-300">
-                  {comment.id}
-                </td>
+               
                 <td className="px-4 py-2 border border-gray-300">
                   {comment.content}
                 </td>
@@ -74,7 +71,7 @@ const CommentManagement: React.FC = () => {
                 <td className="px-4 py-2 border border-gray-300">
                   <div className="flex gap-4 items-center justify-center">
                     <FontAwesomeIcon
-                      icon={faPenToSquare}
+                      icon={faLockOpen}
                       className="cursor-pointer hover:text-blue-500 duration-300"
                       onClick={() => {
                         handleEdit(comment.id);
@@ -85,7 +82,7 @@ const CommentManagement: React.FC = () => {
                       onClick={() => {
                         handleDelete(comment.id);
                       }}
-                      icon={faTrash}
+                      icon={faLock}
                     />
                   </div>
                 </td>

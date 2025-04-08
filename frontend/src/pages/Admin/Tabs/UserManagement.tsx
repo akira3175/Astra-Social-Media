@@ -1,6 +1,10 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPenToSquare, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faLock,
+  faLockOpen,
+
+} from "@fortawesome/free-solid-svg-icons";
 
 const UserManagement: React.FC = () => {
   // Dữ liệu mẫu
@@ -42,7 +46,6 @@ const UserManagement: React.FC = () => {
         <table className="min-w-full border border-gray-300">
           <thead className="bg-gray-200">
             <tr>
-              <th className="px-4 py-2 border border-gray-300 text-left">ID</th>
               <th className="px-4 py-2 border border-gray-300 text-left">
                 Tên người dùng
               </th>
@@ -60,7 +63,6 @@ const UserManagement: React.FC = () => {
           <tbody>
             {users.map((user) => (
               <tr key={user.id} className="hover:bg-gray-100">
-                <td className="px-4 py-2 border border-gray-300">{user.id}</td>
                 <td className="px-4 py-2 border border-gray-300">
                   {user.name}
                 </td>
@@ -73,7 +75,7 @@ const UserManagement: React.FC = () => {
                 <td className="px-4 py-2 border border-gray-300">
                   <div className="flex gap-4 items-center justify-center">
                     <FontAwesomeIcon
-                      icon={faPenToSquare}
+                      icon={faLockOpen}
                       className="cursor-pointer hover:text-blue-500 duration-300"
                       onClick={() => {
                         handleEdit(user.id);
@@ -84,7 +86,7 @@ const UserManagement: React.FC = () => {
                       onClick={() => {
                         handleDelete(user.id);
                       }}
-                      icon={faTrash}
+                      icon={faLock}
                     />
                   </div>
                 </td>
