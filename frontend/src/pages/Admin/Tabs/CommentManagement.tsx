@@ -1,5 +1,4 @@
 import React from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from "@mui/material";
 
 const CommentManagement: React.FC = () => {
   // Dữ liệu mẫu
@@ -15,40 +14,39 @@ const CommentManagement: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2>Quản lý bình luận</h2>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Nội dung</TableCell>
-              <TableCell>Người dùng</TableCell>
-              <TableCell>Ngày tạo</TableCell>
-              <TableCell>Hành động</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+    <div className="p-5">
+      <h2 className="text-2xl font-bold mb-4">Quản lý bình luận</h2>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-300">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="px-4 py-2 border border-gray-300 text-left">ID</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Nội dung</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Người dùng</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Ngày tạo</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
             {comments.map((comment) => (
-              <TableRow key={comment.id}>
-                <TableCell>{comment.id}</TableCell>
-                <TableCell>{comment.content}</TableCell>
-                <TableCell>{comment.user}</TableCell>
-                <TableCell>{comment.date}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    color="secondary"
+              <tr key={comment.id} className="hover:bg-gray-100">
+                <td className="px-4 py-2 border border-gray-300">{comment.id}</td>
+                <td className="px-4 py-2 border border-gray-300">{comment.content}</td>
+                <td className="px-4 py-2 border border-gray-300">{comment.user}</td>
+                <td className="px-4 py-2 border border-gray-300">{comment.date}</td>
+                <td className="px-4 py-2 border border-gray-300">
+                  <button
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                     onClick={() => handleDelete(comment.id)}
                   >
                     Xóa
-                  </Button>
-                </TableCell>
-              </TableRow>
+                  </button>
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

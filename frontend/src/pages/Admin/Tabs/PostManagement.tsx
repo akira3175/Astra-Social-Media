@@ -1,5 +1,4 @@
 import React from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from "@mui/material";
 
 const PostManagement: React.FC = () => {
   // Dữ liệu mẫu
@@ -20,48 +19,46 @@ const PostManagement: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2>Quản lý bài đăng</h2>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Tiêu đề</TableCell>
-              <TableCell>Tác giả</TableCell>
-              <TableCell>Ngày tạo</TableCell>
-              <TableCell>Hành động</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+    <div className="p-5">
+      <h2 className="text-2xl font-bold mb-4">Quản lý bài đăng</h2>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-300">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="px-4 py-2 border border-gray-300 text-left">ID</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Tiêu đề</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Tác giả</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Ngày tạo</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
             {posts.map((post) => (
-              <TableRow key={post.id}>
-                <TableCell>{post.id}</TableCell>
-                <TableCell>{post.title}</TableCell>
-                <TableCell>{post.author}</TableCell>
-                <TableCell>{post.date}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    color="primary"
+              <tr key={post.id} className="hover:bg-gray-100">
+                <td className="px-4 py-2 border border-gray-300">{post.id}</td>
+                <td className="px-4 py-2 border border-gray-300">{post.title}</td>
+                <td className="px-4 py-2 border border-gray-300">{post.author}</td>
+                <td className="px-4 py-2 border border-gray-300">{post.date}</td>
+                <td className="px-4 py-2 border border-gray-300">
+                  
+                  <button
+                    className="bg-blue-500 text-white px-3 py-1 rounded mr-2 hover:bg-blue-600"
                     onClick={() => handleEdit(post.id)}
-                    style={{ marginRight: "10px" }}
                   >
                     Chỉnh sửa
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="secondary"
+                  </button>
+                  <button
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                     onClick={() => handleDelete(post.id)}
                   >
                     Xóa
-                  </Button>
-                </TableCell>
-              </TableRow>
+                  </button>
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

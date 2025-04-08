@@ -1,5 +1,4 @@
 import React from "react";
-import { List, ListItem, ListItemText, Divider } from "@mui/material";
 import PostManagement from "./Tabs/PostManagement";
 import UserManagement from "./Tabs/UserManagement";
 import CommentManagement from "./Tabs/CommentManagement";
@@ -12,71 +11,41 @@ const AdminPage: React.FC = () => {
     };
 
     return (
-        <div style={{ display: "flex", height: "100vh" }}>
+        <div className="flex h-screen">
             {/* Sidebar */}
-            <div
-                style={{
-                    position: "fixed", // Make the sidebar fixed to the left
-                    top: 0,
-                    left: 0,
-                    width: "250px",
-                    height: "100vh", // Ensure it spans the full height
-                    backgroundColor: "#f4f4f4",
-                    padding: "20px",
-                    boxShadow: "2px 0 5px rgba(0,0,0,0.1)",
-                }}
-            >
-                <h2 style={{ textAlign: "center" }}>Admin Dashboard</h2>
-                <Divider />
-                <List>
-                    <ListItem
-                        sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                                backgroundColor: "#f0f0f0", // Gray background on hover
-                            },
-                            backgroundColor: activeTab === 0 ? "#e0e0e0" : "transparent", // Highlight the active tab
-                        }}
+            <div className="fixed top-0 left-0 w-64 h-full bg-gray-200 p-5 shadow-md">
+                <h2 className="text-center text-xl font-bold mb-4">Admin Dashboard</h2>
+                <hr className="mb-4" />
+                <ul>
+                    <li
+                        className={`cursor-pointer p-3 rounded ${
+                            activeTab === 0 ? "bg-gray-300" : "hover:bg-gray-100"
+                        }`}
                         onClick={() => handleTabChange(0)}
                     >
-                        <ListItemText primary="Quản lý bài đăng" />
-                    </ListItem>
-                    <ListItem
-                        sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                                backgroundColor: "#f0f0f0", // Gray background on hover
-                            },
-                            backgroundColor: activeTab === 1 ? "#e0e0e0" : "transparent", // Highlight the active tab
-                        }}
+                        Quản lý bài đăng
+                    </li>
+                    <li
+                        className={`cursor-pointer p-3 rounded ${
+                            activeTab === 1 ? "bg-gray-300" : "hover:bg-gray-100"
+                        }`}
                         onClick={() => handleTabChange(1)}
                     >
-                        <ListItemText primary="Quản lý người dùng" />
-                    </ListItem>
-                    <ListItem
-                        sx={{
-                            cursor: "pointer",
-                            "&:hover": {
-                                backgroundColor: "#f0f0f0", // Gray background on hover
-                            },
-                            backgroundColor: activeTab === 2 ? "#e0e0e0" : "transparent", // Highlight the active tab
-                        }}
+                        Quản lý người dùng
+                    </li>
+                    <li
+                        className={`cursor-pointer p-3 rounded ${
+                            activeTab === 2 ? "bg-gray-300" : "hover:bg-gray-100"
+                        }`}
                         onClick={() => handleTabChange(2)}
                     >
-                        <ListItemText primary="Quản lý bình luận" />
-                    </ListItem>
-                </List>
+                        Quản lý bình luận
+                    </li>
+                </ul>
             </div>
 
             {/* Main Content */}
-            <div
-                style={{
-                    marginLeft: "250px", // Add margin to account for the fixed sidebar
-                    flex: 1,
-                    padding: "20px",
-                    overflowY: "auto",
-                }}
-            >
+            <div className="ml-64 flex-1 p-5 overflow-y-auto">
                 {activeTab === 0 && <PostManagement />}
                 {activeTab === 1 && <UserManagement />}
                 {activeTab === 2 && <CommentManagement />}

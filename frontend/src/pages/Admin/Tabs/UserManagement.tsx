@@ -1,5 +1,6 @@
 import React from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from "@mui/material";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 const UserManagement: React.FC = () => {
   // Dữ liệu mẫu
@@ -20,48 +21,46 @@ const UserManagement: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2>Quản lý người dùng</h2>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Tên người dùng</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Ngày tham gia</TableCell>
-              <TableCell>Hành động</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+    <div className="p-5">
+      <h2 className="text-2xl font-bold mb-4">Quản lý người dùng</h2>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-300">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="px-4 py-2 border border-gray-300 text-left">ID</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Tên người dùng</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Email</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Ngày tham gia</th>
+              <th className="px-4 py-2 border border-gray-300 text-left">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
             {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.id}</TableCell>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.joinedDate}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    color="primary"
+              <tr key={user.id} className="hover:bg-gray-100">
+                <td className="px-4 py-2 border border-gray-300">{user.id}</td>
+                <td className="px-4 py-2 border border-gray-300">{user.name}</td>
+                <td className="px-4 py-2 border border-gray-300">{user.email}</td>
+                <td className="px-4 py-2 border border-gray-300">{user.joinedDate}</td>
+                <td className="px-4 py-2 border border-gray-300">
+                  <button
+                    className="bg-blue-500 text-white px-3 py-1 rounded mr-2 hover:bg-blue-600"
                     onClick={() => handleEdit(user.id)}
-                    style={{ marginRight: "10px" }}
                   >
-                    Chỉnh sửa
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="secondary"
+                  <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                  <FontAwesomeIcon icon="fa-solid fa-trash" />
+                  {/* <button
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                     onClick={() => handleDelete(user.id)}
                   >
                     Xóa
-                  </Button>
-                </TableCell>
-              </TableRow>
+                  </button> */}
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
