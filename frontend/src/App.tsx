@@ -5,10 +5,13 @@ import { ThemeProvider, createTheme } from "@mui/material/styles"
 import CssBaseline from '@mui/material/CssBaseline';
 import LoginPage from "./pages/Auth/LoginPage"
 import HomePage from "./pages/Home/HomePage";
-import { isAuthenticated } from "./services/authService"
+import { isAuthenticated } from "./services/AuthService"
 import NotFound from "./pages/Status/NotFound";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
+import AdminPage from "./pages/Admin/AdminPage";
+import SearchPage from "./pages/Search/SearchPage";
+import AdminLoginPage from "./pages/Admin/Login/AdminLoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
 import { Provider } from 'react-redux'
 import store from './redux/store'
@@ -55,11 +58,12 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+
   const authenticated = isAuthenticated();
 
-  if (!authenticated) {
-    return <Navigate to="/login" />;
-  }
+  // if (!authenticated) {
+  //   return <Navigate to="/login" />;
+  // }
 
   return <>{children}</>;
 };
@@ -72,7 +76,10 @@ const AppContent: React.FC = () => {
       <CssBaseline />
       <Router>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/search" element={<SearchPage />} />
+
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/404" element={<NotFound />} />
 

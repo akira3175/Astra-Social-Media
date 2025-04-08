@@ -21,7 +21,7 @@ import {
   Login as LoginIcon,
   Google as GoogleIcon,
 } from "@mui/icons-material"
-import { login, getCurrentUser } from "../../services/authService";
+import { login, getCurrentUser } from "../../services/AuthService";
 import { useNavigate } from "react-router-dom"
 import { useCurrentUser } from "../../contexts/currentUserContext"
 import WebSocketClient from "../../redux/WebSocketClient";
