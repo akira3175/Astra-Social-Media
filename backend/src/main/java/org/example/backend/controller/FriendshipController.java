@@ -7,6 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/friends")
@@ -25,13 +28,17 @@ public class FriendshipController {
 
     @PostMapping("/accept/{friendshipId}")
     public ResponseEntity<Friendship> acceptFriendRequest(@PathVariable Long friendshipId) {
+        System.out.println("Received accept friend request for friendshipId: " + friendshipId);
         Friendship friendship = friendshipService.acceptFriendRequest(friendshipId);
+        System.out.println("Updated friendship: " + friendship);
         return ResponseEntity.ok(friendship);
     }
 
     @PostMapping("/reject/{friendshipId}")
     public ResponseEntity<Friendship> rejectFriendRequest(@PathVariable Long friendshipId) {
+        System.out.println("Received reject friend request for friendshipId: " + friendshipId);
         Friendship friendship = friendshipService.rejectFriendRequest(friendshipId);
+        System.out.println("Updated friendship: " + friendship);
         return ResponseEntity.ok(friendship);
     }
 
@@ -41,9 +48,33 @@ public class FriendshipController {
         return ResponseEntity.ok(pendingRequests);
     }
 
+    @GetMapping("/requests/{userId}")
+    public ResponseEntity<List<Map<String, Object>>> getFriendRequests(@PathVariable Long userId) {
+        List<Friendship> pendingRequests = friendshipService.getPendingFriendRequests(userId);
+        List<Map<String, Object>> requests = pendingRequests.stream()
+                .map(friendship -> {
+                    Map<String, Object> request = new HashMap<>();
+                    request.put("id", friendship.getId());
+                    request.put("sender", friendship.getUser1());
+                    request.put("receiver", friendship.getUser2());
+                    request.put("status", friendship.getStatus());
+                    request.put("createdAt", friendship.getCreatedAt());
+                    return request;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(requests);
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<List<Friendship>> getFriends(@PathVariable Long userId) {
         List<Friendship> friends = friendshipService.getFriends(userId);
         return ResponseEntity.ok(friends);
+    }
+
+    @PutMapping("/{friendshipId}/active")
+    public ResponseEntity<Friendship> updateFriendshipActive(@PathVariable Long friendshipId,
+            @RequestParam boolean active) {
+        Friendship friendship = friendshipService.updateFriendshipActive(friendshipId, active);
+        return ResponseEntity.ok(friendship);
     }
 }

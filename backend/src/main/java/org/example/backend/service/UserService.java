@@ -10,6 +10,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
+import org.example.backend.entity.Friendship;
+import org.example.backend.repository.FriendshipRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -27,6 +29,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final FileStorageService fileStorageService;
+    private final FriendshipRepository friendshipRepository;
 
     // Tạo user mới (mã hóa mật khẩu)
     public User createUser(User user) {
@@ -109,8 +112,12 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public List<Map<String, Object>> getSuggestedUsers() {
+    public List<Map<String, Object>> getSuggestedUsers(Long currentUserId) {
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new RuntimeException("Current user not found"));
+
         return userRepository.findTop6ByOrderByMutualFriendsDesc().stream()
+                .filter(user -> !user.getId().equals(currentUserId))
                 .map(user -> {
                     Map<String, Object> userMap = new HashMap<>();
                     userMap.put("id", user.getId());
@@ -118,6 +125,26 @@ public class UserService {
                     userMap.put("avatar", user.getAvatar());
                     userMap.put("mutualFriends", user.getMutualFriends() != null ? user.getMutualFriends() : 0);
                     userMap.put("status", null);
+
+                    // Tìm friendship giữa currentUser và user
+                    Optional<Friendship> friendship = friendshipRepository.findByUser1AndUser2(currentUser, user);
+                    if (!friendship.isPresent()) {
+                        friendship = friendshipRepository.findByUser1AndUser2(user, currentUser);
+                    }
+
+                    if (friendship.isPresent()) {
+                        System.out.println(
+                                "Found friendship for user " + user.getName() + ": " + friendship.get().getId());
+                        userMap.put("friendshipStatus", friendship.get().getStatus().name());
+                        userMap.put("isUser1", friendship.get().getUser1().getId().equals(currentUserId));
+                        userMap.put("friendshipId", friendship.get().getId());
+                    } else {
+                        System.out.println("No friendship found for user " + user.getName());
+                        userMap.put("friendshipStatus", null);
+                        userMap.put("isUser1", null);
+                        userMap.put("friendshipId", null);
+                    }
+
                     return userMap;
                 })
                 .collect(Collectors.toList());

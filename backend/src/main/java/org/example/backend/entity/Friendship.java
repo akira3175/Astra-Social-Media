@@ -32,6 +32,9 @@ public class Friendship {
     @Enumerated(EnumType.STRING)
     private FriendshipStatus status;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @Column(nullable = false, updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;

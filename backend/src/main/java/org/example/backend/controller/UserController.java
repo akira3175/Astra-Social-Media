@@ -173,8 +173,8 @@ public class UserController {
     }
 
     @GetMapping("/suggestions")
-    public ResponseEntity<List<Map<String, Object>>> getSuggestedUsers() {
-        List<Map<String, Object>> suggestedUsers = userService.getSuggestedUsers();
+    public ResponseEntity<List<Map<String, Object>>> getSuggestedUsers(@RequestParam Long currentUserId) {
+        List<Map<String, Object>> suggestedUsers = userService.getSuggestedUsers(currentUserId);
         return ResponseEntity.ok(suggestedUsers);
     }
 

@@ -39,7 +39,10 @@ public class SecurityConfig {
                                 "/api/users/{email}",
                                 "/uploads/**",
                                 "/api/users/{email}/online",
-                                "/ws/**")
+                                "/ws/**",
+                                "/api/friends/request",
+                                "/api/friends/accept/**",
+                                "/api/friends/reject/**")
                         .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -51,7 +54,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:5173", "ws://localhost:8080"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000",
+                "http://127.0.0.1:3000"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));

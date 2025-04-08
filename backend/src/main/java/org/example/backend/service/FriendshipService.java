@@ -51,18 +51,30 @@ public class FriendshipService {
 
     @Transactional
     public Friendship acceptFriendRequest(Long friendshipId) {
+        System.out.println("Finding friendship with ID: " + friendshipId);
         Friendship friendship = friendshipRepository.findById(friendshipId)
                 .orElseThrow(() -> new RuntimeException("Friendship not found"));
+        System.out.println("Found friendship: " + friendship);
+        System.out.println("Current status: " + friendship.getStatus());
         friendship.setStatus(FriendshipStatus.ACCEPTED);
-        return friendshipRepository.save(friendship);
+        friendship.setActive(true);
+        Friendship savedFriendship = friendshipRepository.save(friendship);
+        System.out.println("Saved friendship with new status: " + savedFriendship.getStatus());
+        return savedFriendship;
     }
 
     @Transactional
     public Friendship rejectFriendRequest(Long friendshipId) {
+        System.out.println("Finding friendship with ID: " + friendshipId);
         Friendship friendship = friendshipRepository.findById(friendshipId)
                 .orElseThrow(() -> new RuntimeException("Friendship not found"));
+        System.out.println("Found friendship: " + friendship);
+        System.out.println("Current status: " + friendship.getStatus());
         friendship.setStatus(FriendshipStatus.REJECTED);
-        return friendshipRepository.save(friendship);
+        friendship.setActive(false);
+        Friendship savedFriendship = friendshipRepository.save(friendship);
+        System.out.println("Saved friendship with new status: " + savedFriendship.getStatus());
+        return savedFriendship;
     }
 
     public List<Friendship> getPendingFriendRequests(Long userId) {
@@ -75,5 +87,13 @@ public class FriendshipService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return friendshipRepository.findByUser1OrUser2AndStatus(user, user, FriendshipStatus.ACCEPTED);
+    }
+
+    @Transactional
+    public Friendship updateFriendshipActive(Long friendshipId, boolean active) {
+        Friendship friendship = friendshipRepository.findById(friendshipId)
+                .orElseThrow(() -> new RuntimeException("Friendship not found"));
+        friendship.setActive(active);
+        return friendshipRepository.save(friendship);
     }
 }
