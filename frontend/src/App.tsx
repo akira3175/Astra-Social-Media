@@ -16,6 +16,7 @@ import RegisterPage from "./pages/Auth/RegisterPage";
 import { Provider } from 'react-redux'
 import store from './redux/store'
 import useWebSocket from "./hooks/useWebSocket";
+import MessagesPage from "./pages/Messages/MessagesPage";
 
 const theme = createTheme({
   breakpoints: {
@@ -99,7 +100,14 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             }
           />
-
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
           {/* Các route khác có thể thêm vào đây */}
         </Routes>
       </Router>

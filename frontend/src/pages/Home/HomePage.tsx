@@ -174,6 +174,10 @@ const HomePage: React.FC = () => {
 
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen)
+    console.log(isChatOpen)
+    console.log(currentUser)
+    console.log(selectedReceiverId)
+    setSelectedReceiverId("1")
   }
 
   // Nếu layout chưa sẵn sàng, hiển thị container trống với kích thước cố định

@@ -132,6 +132,12 @@ const ChangeBackgroundButton = styled(IconButton)(({ theme }) => ({
   "&:hover": {
     backgroundColor: theme.palette.background.default,
   },
+  "&:focus": {
+    outline: "none",        
+  },
+  "&:focus-visible": {
+    outline: "none",        
+  },
   zIndex: 2,
 }))
 
@@ -142,6 +148,12 @@ const ChangeAvatarButton = styled(IconButton)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   "&:hover": {
     backgroundColor: theme.palette.background.default,
+  },
+  "&:focus": {
+    outline: "none",        
+  },
+  "&:focus-visible": {
+    outline: "none",        
   },
 }))
 

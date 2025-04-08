@@ -18,7 +18,7 @@ const ProfileBio: React.FC<ProfileBioProps> = ({ profile, isCurrentUser }) => {
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
         <Typography variant="h6">Giới thiệu</Typography>
         {isCurrentUser && (
-          <IconButton size="small">
+          <IconButton size="small" sx={{ outline: "none", "&:focus": { outline: "none" } }}>
             <EditIcon fontSize="small" />
           </IconButton>
         )}
