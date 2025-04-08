@@ -1,4 +1,4 @@
-import { faPenToSquare, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faLockOpen, faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 
@@ -27,7 +27,6 @@ const PostManagement: React.FC = () => {
         <table className="min-w-full border border-gray-300">
           <thead className="bg-gray-200">
             <tr>
-              <th className="px-4 py-2 border border-gray-300 text-left">ID</th>
               <th className="px-4 py-2 border border-gray-300 text-left">Tiêu đề</th>
               <th className="px-4 py-2 border border-gray-300 text-left">Tác giả</th>
               <th className="px-4 py-2 border border-gray-300 text-left">Ngày tạo</th>
@@ -37,7 +36,6 @@ const PostManagement: React.FC = () => {
           <tbody>
             {posts.map((post) => (
               <tr key={post.id} className="hover:bg-gray-100">
-                <td className="px-4 py-2 border border-gray-300">{post.id}</td>
                 <td className="px-4 py-2 border border-gray-300">{post.title}</td>
                 <td className="px-4 py-2 border border-gray-300">{post.author}</td>
                 <td className="px-4 py-2 border border-gray-300">{post.date}</td>
@@ -45,7 +43,7 @@ const PostManagement: React.FC = () => {
                   
                 <div className="flex gap-4 items-center justify-center">
                                    <FontAwesomeIcon
-                                     icon={faPenToSquare}
+                                     icon={faLockOpen}
                                      className="cursor-pointer hover:text-blue-500 duration-300"
                                      onClick={() => {
                                        handleEdit(post.id);
@@ -56,7 +54,7 @@ const PostManagement: React.FC = () => {
                                      onClick={() => {
                                        handleDelete(post.id);
                                      }}
-                                     icon={faTrash}
+                                     icon={faLock}
                                    />
                                  </div>
                 </td>
