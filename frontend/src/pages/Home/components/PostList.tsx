@@ -1,18 +1,39 @@
 import type React from "react"
-import { Box } from "@mui/material"
+import { Box, Paper, Typography } from "@mui/material"
 import Post from "./Post"
 import PostSkeleton from "./PostSkeleton"
 import type { Post as PostType } from "../../../types/post"
+import { usePostStore } from "../../../stores/postStore"
 
 interface PostListProps {
   posts: PostType[]
   isLoading: boolean
-  onLikePost: (id: number) => void
-  onSavePost: (id: number) => void
   className?: string
 }
 
-const PostList: React.FC<PostListProps> = ({ posts, isLoading, onLikePost, onSavePost, className }) => {
+const PostList: React.FC<PostListProps> = ({ 
+  posts, 
+  isLoading,
+  className 
+}) => {
+  const { savePost, repostPost } = usePostStore();
+
+  const handleSave = async (postId: number) => {
+    try {
+      await savePost(postId);
+    } catch (error) {
+      console.error('Error saving post:', error);
+    }
+  };
+
+  const handleRepost = async (originalPostId: number, comment?: string) => {
+    try {
+      await repostPost(originalPostId, comment);
+    } catch (error) {
+      console.error('Error reposting:', error);
+    }
+  };
+
   // Render skeletons when loading
   if (isLoading) {
     return (
@@ -24,24 +45,16 @@ const PostList: React.FC<PostListProps> = ({ posts, isLoading, onLikePost, onSav
       </Box>
     )
   }
-
+  console.log("Posts loaded:", posts)
   // Render actual posts when loaded
   return (
     <Box className={className}>
       {posts.map((post) => (
         <Post
           key={post.id}
-          id={post.id}
-          user={post.user}
-          content={post.content}
-          image={post.image}
-          timestamp={post.timestamp}
-          likes={post.likes}
-          comments={post.comments}
-          liked={post.liked}
-          saved={post.saved}
-          onLike={onLikePost}
-          onSave={onSavePost}
+          post={post}
+          onSave={handleSave}
+          onConfirmRepost={handleRepost}
           sx={{ mb: 3 }}
         />
       ))}
@@ -50,4 +63,3 @@ const PostList: React.FC<PostListProps> = ({ posts, isLoading, onLikePost, onSav
 }
 
 export default PostList
-

@@ -38,6 +38,11 @@ import ProfileFriends from "./components/ProfileFriends"
 import ProfileCreatePost from "./components/ProfileCreatePost"
 import ProfilePostList from "./components/ProfilePostList"
 import type { Post } from "../../types/post"
+import PostList from '../../pages/Home/components/PostList'
+import { getPostsByUserEmail } from '../../services/PostService'
+import { usePostStore } from '../../stores/postStore';
+import CreatePost from '../../pages/Home/components/CreatePost'
+
 import ChatBox from "../../components/ChatBox/ChatBox"
 
 const ProfileContainer = styled(Container)(({ theme }) => ({
@@ -175,41 +180,7 @@ const ProfilePage: React.FC = () => {
   const [editedFirstName, setEditedFirstName] = useState("")
   const [editedLastName, setEditedLastName] = useState("")
 
-  // Dữ liệu mẫu cho bài đăng
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: 1,
-      user: {
-        id: 101,
-        name: "Nguyễn Văn A",
-        avatar: "https://i.pravatar.cc/150?img=1",
-        email: "",
-      },
-      content: "Hôm nay là một ngày tuyệt vời! #sunshine #happy",
-      image: "https://source.unsplash.com/random/600x400?nature",
-      timestamp: "2 giờ trước",
-      likes: 24,
-      comments: 5,
-      liked: false,
-      saved: true,
-    },
-    {
-      id: 2,
-      user: {
-        id: 102,
-        name: "Trần Thị B",
-        avatar: "https://i.pravatar.cc/150?img=5",
-        email: "",
-      },
-      content:
-        "Vừa hoàn thành dự án mới! Rất hào hứng để chia sẻ với mọi người về những gì chúng tôi đã làm được. Đây là kết quả của nhiều tháng làm việc chăm chỉ và sáng tạo. #project #achievement #teamwork",
-      timestamp: "5 giờ trước",
-      likes: 42,
-      comments: 12,
-      liked: true,
-      saved: false,
-    },
-  ])
+  const { userPosts, isLoadingUserPosts, fetchPostsByUserEmail } = usePostStore();
 
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
@@ -237,6 +208,16 @@ const ProfilePage: React.FC = () => {
     }
     loadProfile()
   }, [email, navigate])
+
+  useEffect(() => {
+    const loadPosts = async () => {
+      if (email && currentUser?.email) {
+        await fetchPostsByUserEmail(email);
+      }
+    };
+
+    loadPosts();
+  }, [email, currentUser, fetchPostsByUserEmail]);
 
   const handleEditProfile = () => {
     if (profile) {
@@ -306,37 +287,19 @@ const ProfilePage: React.FC = () => {
     setNotification(null)
   }
 
-  const handleCreatePost = (newPost: Post) => {
-    setPosts([newPost, ...posts])
-  }
+  // const handleCreatePost = (newPost: Post) => {
+  //   // Sử dụng addPost từ PostStore
+  //   usePostStore.getState().addPost(newPost.content, newPost.imageUrls);
+  // }
 
   const handleLikePost = (postId: number) => {
-    setPosts(
-      posts.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            liked: !post.liked,
-            likes: post.liked ? post.likes - 1 : post.likes + 1,
-          }
-        }
-        return post
-      }),
-    )
+    // Sử dụng likePost từ PostStore
+    usePostStore.getState().likePost(postId);
   }
 
   const handleSavePost = (postId: number) => {
-    setPosts(
-      posts.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            saved: !post.saved,
-          }
-        }
-        return post
-      }),
-    )
+    // Sử dụng savePost từ PostStore  
+    usePostStore.getState().savePost(postId);
   }
 
   const handleStartChat = () => {
@@ -370,6 +333,15 @@ const ProfilePage: React.FC = () => {
     <BasePage>
       <ProfileContainer>
         <ProfileScrollContainer>
+        {isLoading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+            <CircularProgress />
+          </Box>
+        ) : !profile ? (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+            <Typography>Profile not found.</Typography>
+          </Box>
+        ) : (
           <Grid container spacing={2}>
             <Grid item xs={12} md={12}>
               <ProfileHeader elevation={3}>
@@ -462,15 +434,15 @@ const ProfilePage: React.FC = () => {
             <Grid item xs={12} md={8}>
               {/* Khung đăng bài */}
               {isCurrentUser && (
-                <ProfileCreatePost currentUser={profile} onPostCreated={handleCreatePost} sx={{ mb: 3 }} />
+                <CreatePost
+                  sx={{ mb: 3 }}
+                />
               )}
 
-              {/* Danh sách bài đăng */}
-              <ProfilePostList
-                posts={posts}
-                isLoading={false}
-                onLikePost={handleLikePost}
-                onSavePost={handleSavePost}
+              <PostList
+                posts={userPosts}
+                isLoading={isLoadingUserPosts}
+                className="profile-posts"
               />
             </Grid>
           </Grid>

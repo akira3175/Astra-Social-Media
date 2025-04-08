@@ -15,7 +15,7 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtUtil {
     private final SecretKey SECRET_KEY = Jwts.SIG.HS256.key().build();
-    private final long ACCESS_EXPIRATION_TIME = 900000; // 15 phút
+    private final long ACCESS_EXPIRATION_TIME = 90000000; // 15 phút
     private final long REFRESH_EXPIRATION_TIME = 604800000; // 7 ngày
     private final RefreshTokenRepository refreshTokenRepository;
 
