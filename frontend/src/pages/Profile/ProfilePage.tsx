@@ -35,8 +35,6 @@ import { updateUserAvatar, updateUserBackground, updateUserName } from "../../se
 import ProfileBio from "./components/ProfileBio"
 import ProfilePhotos from "./components/ProfilePhotos"
 import ProfileFriends from "./components/ProfileFriends"
-import ProfileCreatePost from "./components/ProfileCreatePost"
-import ProfilePostList from "./components/ProfilePostList"
 import type { Post } from "../../types/post"
 import PostList from '../../pages/Home/components/PostList'
 import { getPostsByUserEmail } from '../../services/PostService'
@@ -446,23 +444,25 @@ const ProfilePage: React.FC = () => {
               />
             </Grid>
           </Grid>
-          {isUpdating && (
-            <Box
-              position="absolute"
-              top={0}
-              left={0}
-              right={0}
-              bottom={0}
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              bgcolor="rgba(255, 255, 255, 0.7)"
-              zIndex={9999}
-            >
-              <GradientCircularProgress />
-            </Box>
-          )}
-
+        )}
+            {isUpdating && (
+              // Your code here
+            
+              <Box
+                position="absolute"
+                top={0}
+                left={0}
+                right={0}
+                bottom={0}
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                bgcolor="rgba(255, 255, 255, 0.7)"
+                zIndex={9999}
+              >
+                <GradientCircularProgress />
+              </Box>
+            )}
           <Dialog open={openEditModal} onClose={handleCloseEditModal}>
             <DialogTitle>Chỉnh sửa tên</DialogTitle>
             <DialogContent>

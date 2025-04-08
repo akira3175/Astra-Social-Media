@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useLayoutEffect } from "react"
+import React, { useEffect, useLayoutEffect, useState } from "react"
 import { Box, useMediaQuery, useTheme } from "@mui/material"
 import BasePage from "../Base/BasePage"
 import LeftSidebar from "./components/LeftSidebar"
@@ -10,6 +10,7 @@ import PostList from "./components/PostList"
 import MobileBottomNav from "./components/MobileBottomNav"
 import { usePostStore } from "../../stores/postStore"
 import { useCurrentUser } from "../../contexts/currentUserContext" // Import useCurrentUser
+import ChatBox from "../../components/ChatBox/ChatBox"
 
 const HomePage: React.FC = () => {
   const theme = useTheme()
@@ -20,7 +21,6 @@ const HomePage: React.FC = () => {
   const { currentUser } = useCurrentUser()
 
   const { posts, isLoading, fetchPosts, savePost, setLoading } = usePostStore()
-  const { currentUser } = useCurrentUser() // Get currentUser
   const [isLayoutReady, setIsLayoutReady] = React.useState<boolean>(false)
 
   // Sử dụng useLayoutEffect để đảm bảo layout ổn định trước khi render
