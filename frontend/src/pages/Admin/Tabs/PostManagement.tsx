@@ -1,3 +1,5 @@
+import { faPenToSquare, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 
 const PostManagement: React.FC = () => {
@@ -41,18 +43,22 @@ const PostManagement: React.FC = () => {
                 <td className="px-4 py-2 border border-gray-300">{post.date}</td>
                 <td className="px-4 py-2 border border-gray-300">
                   
-                  <button
-                    className="bg-blue-500 text-white px-3 py-1 rounded mr-2 hover:bg-blue-600"
-                    onClick={() => handleEdit(post.id)}
-                  >
-                    Chỉnh sửa
-                  </button>
-                  <button
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                    onClick={() => handleDelete(post.id)}
-                  >
-                    Xóa
-                  </button>
+                <div className="flex gap-4 items-center justify-center">
+                                   <FontAwesomeIcon
+                                     icon={faPenToSquare}
+                                     className="cursor-pointer hover:text-blue-500 duration-300"
+                                     onClick={() => {
+                                       handleEdit(post.id);
+                                     }}
+                                   />
+                                   <FontAwesomeIcon
+                                     className="cursor-pointer hover:text-red-500 duration-300"
+                                     onClick={() => {
+                                       handleDelete(post.id);
+                                     }}
+                                     icon={faTrash}
+                                   />
+                                 </div>
                 </td>
               </tr>
             ))}
