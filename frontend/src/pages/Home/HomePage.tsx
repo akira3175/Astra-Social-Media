@@ -10,6 +10,8 @@ import CreatePost from "./components/CreatePost"
 import PostList from "./components/PostList"
 import MobileBottomNav from "./components/MobileBottomNav"
 import type { Post } from "../../types/post"
+import ChatBox from "../../components/ChatBox/ChatBox"
+import { useCurrentUser } from "../../contexts/currentUserContext"
 
 // Giả lập dữ liệu bài đăng
 const DUMMY_POSTS: Post[] = [
@@ -115,6 +117,9 @@ const HomePage: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"))
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
+  const { currentUser } = useCurrentUser()
 
   const [posts, setPosts] = useState<Post[]>(DUMMY_POSTS)
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -167,6 +172,10 @@ const HomePage: React.FC = () => {
     )
   }
 
+  const toggleChat = () => {
+    setIsChatOpen(!isChatOpen)
+  }
+
   // Nếu layout chưa sẵn sàng, hiển thị container trống với kích thước cố định
   if (!isLayoutReady) {
     return (
@@ -185,6 +194,16 @@ const HomePage: React.FC = () => {
 
   return (
     <BasePage>
+      {/* Render ChatBox ở cấp cao nhất */}
+      {isChatOpen && currentUser?.id && selectedReceiverId && (
+        <ChatBox
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          receiverId={selectedReceiverId}
+          currentUserId={currentUser.id.toString()}
+        />
+      )}
+
       <Box
         className="layout-container"
         sx={{
@@ -195,7 +214,8 @@ const HomePage: React.FC = () => {
           boxSizing: "border-box",
           display: "flex",
           position: "relative",
-          height: "95vh", // Chiều cao = viewport - navbar
+          height: "95vh",
+          zIndex: 1, // Thêm z-index cho container chính
         }}
       >
         {/* Left sidebar - Navigation */}
@@ -225,7 +245,10 @@ const HomePage: React.FC = () => {
               },
             }}
           >
-            <LeftSidebar />
+            <LeftSidebar
+              onToggleChat={toggleChat}
+              setSelectedReceiverId={setSelectedReceiverId}
+            />
           </Box>
         )}
 
@@ -268,9 +291,10 @@ const HomePage: React.FC = () => {
               position: "sticky",
               top: 0,
               height: "calc(100vh - 140px)",
-              overflowY: "auto", // Thanh cuộn riêng cho sidebar
+              overflowY: "auto",
               pl: 2,
               pr: 1,
+              zIndex: 1, // Thêm z-index thấp hơn ChatBox
               // Tùy chỉnh thanh cuộn
               "&::-webkit-scrollbar": {
                 width: "6px",

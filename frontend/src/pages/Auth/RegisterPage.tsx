@@ -1,63 +1,41 @@
+import React, { useState } from "react"
+import { Box, Typography, TextField, Button, Container, Grid, useTheme, useMediaQuery, Card, CardHeader, CardContent, InputAdornment, IconButton, Divider } from "@mui/material"
+import { Link, useNavigate } from "react-router-dom"
 import logo from "../../assets/logo.jpeg"
-import { useState } from "react"
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Divider,
-  Grid,
-  IconButton,
-  InputAdornment,
-  TextField,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material"
-import {
-  Visibility,
-  VisibilityOff,
-  Login as LoginIcon,
-  Google as GoogleIcon,
-} from "@mui/icons-material"
-import { login, getCurrentUser } from "../../services/AuthService";
-import { useNavigate } from "react-router-dom"
-import { useCurrentUser } from "../../contexts/currentUserContext"
-import WebSocketClient from "../../redux/WebSocketClient";
+    Visibility,
+    VisibilityOff,
+    Login as LoginIcon,
+    Google as GoogleIcon,
+  } from "@mui/icons-material"
 
-
-export default function LoginPage() {
-  const { setCurrentUser } = useCurrentUser();
-  const [showPassword, setShowPassword] = useState(false)
+export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const navigate = useNavigate()
-
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+  const navigate = useNavigate()
 
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword)
-  }
-
+  const handleClickShowPassword = () => setShowPassword((show) => !show)
+  const handleClickShowConfirmPassword = () => setShowConfirmPassword((show) => !show)
   const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
   }
+  
+  const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setIsLoading(true)
+    setError("")
+    
+  }
 
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
 
-    try {
-      await login(email, password)
-      const user = await getCurrentUser()
-      setCurrentUser(user)
-
-      navigate("/");
-    } catch (error) {
-      alert("Đăng nhập thất bại!");
-    }
-  };
 
   return (
     <Box
@@ -132,7 +110,7 @@ export default function LoginPage() {
               }
             />
             <CardContent>
-              <Box component="form" onSubmit={handleLogin} sx={{ mt: 1 }}>
+              <Box component="form" onSubmit={handleRegister} sx={{ mt: 1 }}>
                 <TextField
                   margin="normal"
                   required
@@ -160,7 +138,7 @@ export default function LoginPage() {
                   label="Mật khẩu"
                   type={showPassword ? "text" : "password"}
                   id="password"
-                  autoComplete="current-password"
+                  autoComplete="off"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   InputProps={{
@@ -184,6 +162,39 @@ export default function LoginPage() {
                       WebkitTextFillColor: "black !important",
                     },
                   }}
+                />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="confirmPassword"
+                  label="Nhập lại mật khẩu"
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  autoComplete="off"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  InputProps={{
+                    endAdornment: (
+                        <InputAdornment position="end">
+                            <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={handleClickShowConfirmPassword}
+                                onMouseDown={handleMouseDownPassword}
+                                edge="end"
+                            >
+                                {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                        </InputAdornment>
+                    )
+                }}  
+                sx={{
+                    "& input:-webkit-autofill": {
+                        WebkitBoxShadow: "0 0 0px 1000px white inset",
+                        transition: "background-color 5000s ease-in-out 0s",
+                        
+                    }
+                }}
                 />
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
                   <Typography
@@ -249,4 +260,3 @@ export default function LoginPage() {
     </Box>
   )
 }
-

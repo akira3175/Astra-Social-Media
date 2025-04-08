@@ -24,6 +24,7 @@ import {
 import { styled } from "@mui/material/styles"
 import EditIcon from "@mui/icons-material/Edit"
 import CameraAltIcon from "@mui/icons-material/CameraAlt"
+import { Chat } from "@mui/icons-material"
 import type { User } from "../../types/user"
 import { getUserByEmail } from "../../services/authService"
 import { useCurrentUser } from "../../contexts/currentUserContext"
@@ -37,6 +38,7 @@ import ProfileFriends from "./components/ProfileFriends"
 import ProfileCreatePost from "./components/ProfileCreatePost"
 import ProfilePostList from "./components/ProfilePostList"
 import type { Post } from "../../types/post"
+import ChatBox from "../../components/ChatBox/ChatBox"
 
 const ProfileContainer = styled(Container)(({ theme }) => ({
   display: "flex",
@@ -74,6 +76,7 @@ const BackgroundImage = styled("img")(({ theme }) => ({
   width: "100%",
   objectFit: "cover",
   objectPosition: "center",
+  backgroundColor: theme.palette.grey[400],
 }))
 
 const BackgroundImageBox = styled(Box)(({ theme }) => ({
@@ -88,19 +91,27 @@ const ProfileContent = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  height: "165px",
+  height: "250px",
+  paddingTop: theme.spacing(2),
 }))
 
 const AvatarContainer = styled(Box)(({ theme }) => ({
   position: "relative",
   marginBottom: theme.spacing(2),
   width: "120px",
-  left: "25%",
+  display: "flex",
+  justifyContent: "center",
 }))
 
 const AvatarBox = styled(Box)(({ theme }) => ({
   position: "absolute",
   top: "-50px",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  width: "100%",
+  gap: theme.spacing(1),
+  paddingBottom: theme.spacing(2),
 }))
 
 const ProfileAvatar = styled(Avatar)(({ theme }) => ({
@@ -188,6 +199,9 @@ const ProfilePage: React.FC = () => {
     },
   ])
 
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
+
   useEffect(() => {
     const loadProfile = async () => {
       if (email) {
@@ -261,7 +275,9 @@ const ProfilePage: React.FC = () => {
 
       setCurrentUser(updatedUser)
       setProfile(updatedUser)
+      setNotification({ type: "success", message: "Ảnh đã được cập nhật thành công" })
     } catch (error) {
+      setNotification({ type: "error", message: "Không thể cập nhật ảnh hoặc ảnh không hỗ trợ định dạng. Vui lòng thử lại." })
       console.error(`Error updating ${type}:`, error)
     }
   }
@@ -311,6 +327,13 @@ const ProfilePage: React.FC = () => {
     )
   }
 
+  const handleStartChat = () => {
+    if (profile) {
+      setSelectedReceiverId(profile.id.toString())
+      setIsChatOpen(true)
+    }
+  }
+
   if (isLoading) {
     return (
       <BasePage>
@@ -329,26 +352,17 @@ const ProfilePage: React.FC = () => {
     )
   }
 
-  const isCurrentUser = currentUser?.username === profile.username
+  const isCurrentUser = currentUser?.email === profile.email
 
   return (
     <BasePage>
       <ProfileContainer>
         <ProfileScrollContainer>
-        {isLoading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-            <CircularProgress />
-          </Box>
-        ) : !profile ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-            <Typography>Profile not found.</Typography>
-          </Box>
-        ) : (
           <Grid container spacing={2}>
             <Grid item xs={12} md={12}>
               <ProfileHeader elevation={3}>
                 <BackgroundImageBox>
-                  <BackgroundImage src={profile.background || "/placeholder.svg"} alt="Profile background" />
+                  <BackgroundImage src={profile.background || ""} />
                   {isCurrentUser && (
                     <ChangeBackgroundButton
                       onClick={triggerBackgroundUpload}
@@ -365,28 +379,39 @@ const ProfilePage: React.FC = () => {
                 </BackgroundImageBox>
                 <ProfileContent>
                   <AvatarBox>
-                    <AvatarContainer sx={{ left: "17%" }}>
+                    <AvatarContainer sx={{ marginBottom: "-10px" }}>
                       <ProfileAvatar src={profile.avatar || undefined}>{profile.firstName.charAt(0)}</ProfileAvatar>
                       {isCurrentUser && (
-                        <ChangeAvatarButton onClick={triggerAvatarUpload} size="small">
+                        <ChangeAvatarButton onClick={triggerAvatarUpload} size="small"  sx={{ bottom: "10px" }}>
                           <CameraAltIcon fontSize="small" />
                         </ChangeAvatarButton>
                       )}
                     </AvatarContainer>
 
-                    <Box display="flex" alignItems="center" justifyContent="center">
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
                       <Typography variant="h5" component="h1">
                         {profile.lastName + " " + profile.firstName}
                       </Typography>
-                      {isCurrentUser && (
-                        <IconButton onClick={handleEditProfile} size="small" sx={{ ml: 1 }}>
+                      {isCurrentUser ? (
+                        <IconButton onClick={handleEditProfile} size="small">
                           <EditIcon fontSize="small" />
                         </IconButton>
-                      )}
+                      ) : null}
                     </Box>
                     <Typography variant="subtitle1" color="text.secondary">
                       {profile.email}
                     </Typography>
+                    {!isCurrentUser && (
+                      <Button
+                        variant="contained"
+                        startIcon={<Chat />}
+                        onClick={handleStartChat}
+                        size="medium"
+                        sx={{ mt: 1 }}
+                      >
+                        Nhắn tin
+                      </Button>
+                    )}
                   </AvatarBox>
                 </ProfileContent>
                 {isCurrentUser && (
@@ -437,63 +462,70 @@ const ProfilePage: React.FC = () => {
               />
             </Grid>
           </Grid>
-        )}
-        {isUpdating && (
-          <Box
-            position="absolute"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            bgcolor="rgba(255, 255, 255, 0.7)"
-            zIndex={9999}
+          {isUpdating && (
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              bgcolor="rgba(255, 255, 255, 0.7)"
+              zIndex={9999}
+            >
+              <GradientCircularProgress />
+            </Box>
+          )}
+
+          <Dialog open={openEditModal} onClose={handleCloseEditModal}>
+            <DialogTitle>Chỉnh sửa tên</DialogTitle>
+            <DialogContent>
+              <Stack spacing={2} sx={{ mt: 1, minWidth: 300 }}>
+                <TextField
+                  label="Họ"
+                  fullWidth
+                  value={editedLastName}
+                  onChange={(e) => setEditedLastName(e.target.value)}
+                  variant="outlined"
+                />
+                <TextField
+                  label="Tên"
+                  fullWidth
+                  value={editedFirstName}
+                  onChange={(e) => setEditedFirstName(e.target.value)}
+                  variant="outlined"
+                />
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseEditModal}>Hủy</Button>
+              <Button onClick={handleSaveProfile} variant="contained" color="primary" disabled={isUpdating}>
+                {isUpdating ? "Đang lưu..." : "Lưu"}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Snackbar
+            open={!!notification}
+            autoHideDuration={6000}
+            onClose={handleCloseNotification}
+            anchorOrigin={{ vertical: "top", horizontal: "right" }}
           >
-            <GradientCircularProgress />
-          </Box>
-        )}
-
-        <Dialog open={openEditModal} onClose={handleCloseEditModal}>
-          <DialogTitle>Chỉnh sửa tên</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1, minWidth: 300 }}>
-              <TextField
-                label="Họ"
-                fullWidth
-                value={editedLastName}
-                onChange={(e) => setEditedLastName(e.target.value)}
-                variant="outlined"
-              />
-              <TextField
-                label="Tên"
-                fullWidth
-                value={editedFirstName}
-                onChange={(e) => setEditedFirstName(e.target.value)}
-                variant="outlined"
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseEditModal}>Hủy</Button>
-            <Button onClick={handleSaveProfile} variant="contained" color="primary" disabled={isUpdating}>
-              {isUpdating ? "Đang lưu..." : "Lưu"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={6000}
-          onClose={handleCloseNotification}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert onClose={handleCloseNotification} severity={notification?.type || "info"} sx={{ width: "100%" }}>
-            {notification?.message}
-          </Alert>
-        </Snackbar>
+            <Alert onClose={handleCloseNotification} severity={notification?.type || "info"} sx={{ width: "100%" }}>
+              {notification?.message}
+            </Alert>
+          </Snackbar>
         </ProfileScrollContainer>
+
+        {/* ChatBox */}
+        <ChatBox
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          receiverId={selectedReceiverId || ""}
+          currentUserId={currentUser?.id.toString() || ""}
+        />
       </ProfileContainer>
     </BasePage>
   )
