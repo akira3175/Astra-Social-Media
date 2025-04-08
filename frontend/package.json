@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudinary/react": "^1.14.1",
+    "@cloudinary/url-gen": "^1.21.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
@@ -26,9 +28,14 @@
     "lucide-react": "^0.482.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+<<<<<<< HEAD
+=======
     "tailwindcss": "^4.1.3",
     "react-redux": "^9.2.0",
+>>>>>>> 2edd52fc93b72efbe8dee14bb5e8d8df66fa99c9
     "react-router-dom": "^7.3.0",
+    "zustand": "^5.0.3",
+    "react-redux": "^9.2.0",
     "redux": "^5.0.1",
     "sockjs-client": "^1.6.1"
   },

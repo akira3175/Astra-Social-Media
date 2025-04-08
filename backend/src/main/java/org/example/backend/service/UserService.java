@@ -9,7 +9,6 @@ import org.example.backend.security.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
