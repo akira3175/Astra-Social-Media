@@ -12,5 +12,5 @@ import java.util.List;
 public class CreateCommentRequest {
     private String content;
     private List<String> imageUrls;
-    private Long parentCommentId; // Add parent comment ID field
+    private Long parentCommentId; 
 }

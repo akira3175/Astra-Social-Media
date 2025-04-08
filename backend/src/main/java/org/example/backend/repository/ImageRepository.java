@@ -15,4 +15,5 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
 
     // Find images by a list of URLs
     List<Image> findByUrlIn(List<String> urls);
+    
 }

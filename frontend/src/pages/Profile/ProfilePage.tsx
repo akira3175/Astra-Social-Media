@@ -34,9 +34,13 @@ import { updateUserAvatar, updateUserBackground, updateUserName } from "../../se
 import ProfileBio from "./components/ProfileBio"
 import ProfilePhotos from "./components/ProfilePhotos"
 import ProfileFriends from "./components/ProfileFriends"
-import ProfileCreatePost from "./components/ProfileCreatePost"
 import ProfilePostList from "./components/ProfilePostList"
 import type { Post } from "../../types/post"
+import PostList from '../../pages/Home/components/PostList'
+import { getPostsByUserEmail } from '../../services/PostService'
+import { usePostStore } from '../../stores/postStore';
+import CreatePost from '../../pages/Home/components/CreatePost'
+
 
 const ProfileContainer = styled(Container)(({ theme }) => ({
   display: "flex",
@@ -152,42 +156,7 @@ const ProfilePage: React.FC = () => {
   const [editedFirstName, setEditedFirstName] = useState("")
   const [editedLastName, setEditedLastName] = useState("")
 
-  // Dữ liệu mẫu cho bài đăng
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: 1,
-      user: {
-        id: 101,
-        name: "Nguyễn Văn A",
-        avatar: "https://i.pravatar.cc/150?img=1",
-        email: "",
-      },
-      content: "Hôm nay là một ngày tuyệt vời! #sunshine #happy",
-      images: [{ url: "https://source.unsplash.com/random/600x400?nature", id: 0 }], 
-      timestamp: "2 giờ trước",
-      likes: [], 
-      comments: [], 
-      liked: false,
-      saved: true,
-    },
-    {
-      id: 2,
-      user: {
-        id: 102,
-        name: "Trần Thị B",
-        avatar: "https://i.pravatar.cc/150?img=5",
-        email: "",
-      },
-      content:
-        "Vừa hoàn thành dự án mới! Rất hào hứng để chia sẻ với mọi người về những gì chúng tôi đã làm được. Đây là kết quả của nhiều tháng làm việc chăm chỉ và sáng tạo. #project #achievement #teamwork",
-      images: [], 
-      timestamp: "5 giờ trước",
-      likes: [], 
-      comments: [], 
-      liked: true,
-      saved: false,
-    },
-  ])
+  const { userPosts, isLoadingUserPosts, fetchPostsByUserEmail } = usePostStore();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -212,6 +181,16 @@ const ProfilePage: React.FC = () => {
     }
     loadProfile()
   }, [email, navigate])
+
+  useEffect(() => {
+    const loadPosts = async () => {
+      if (email && currentUser?.email) {
+        await fetchPostsByUserEmail(email);
+      }
+    };
+
+    loadPosts();
+  }, [email, currentUser, fetchPostsByUserEmail]);
 
   const handleEditProfile = () => {
     if (profile) {
@@ -279,25 +258,20 @@ const ProfilePage: React.FC = () => {
     setNotification(null)
   }
 
-  const handleCreatePost = (newPost: Post) => {
-    setPosts([newPost, ...posts])
-  }
+  // const handleCreatePost = (newPost: Post) => {
+  //   // Sử dụng addPost từ PostStore
+  //   usePostStore.getState().addPost(newPost.content, newPost.imageUrls);
+  // }
 
   const handleLikePost = (postId: number) => {
-    setPosts(
-      posts.map((post) =>
-        post.id === postId ? { ...post, liked: !post.liked } : post
-      )
-    );
-  };
+    // Sử dụng likePost từ PostStore
+    usePostStore.getState().likePost(postId);
+  }
 
   const handleSavePost = (postId: number) => {
-    setPosts(
-      posts.map((post) =>
-        post.id === postId ? { ...post, saved: !post.saved } : post
-      )
-    );
-  };
+    // Sử dụng savePost từ PostStore  
+    usePostStore.getState().savePost(postId);
+  }
 
   if (isLoading) {
     return (
@@ -413,15 +387,15 @@ const ProfilePage: React.FC = () => {
             <Grid item xs={12} md={8}>
               {/* Khung đăng bài */}
               {isCurrentUser && (
-                <ProfileCreatePost currentUser={profile} onPostCreated={handleCreatePost} sx={{ mb: 3 }} />
+                <CreatePost 
+                  sx={{ mb: 3 }}
+                />
               )}
 
-              {/* Danh sách bài đăng */}
-              <ProfilePostList
-                posts={posts}
-                isLoading={false}
-                onLikePost={handleLikePost}
-                onSavePost={handleSavePost}
+              <PostList
+                posts={userPosts}
+                isLoading={isLoadingUserPosts}
+                className="profile-posts"
               />
             </Grid>
           </Grid>

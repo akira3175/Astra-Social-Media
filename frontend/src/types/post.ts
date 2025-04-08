@@ -3,7 +3,12 @@ import { Image } from "./image";
 
 export interface PostItem {
   id: number;
-  user: User;
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    avatar?: string;
+  };
   content: string;
   images?: Image[]; 
   timestamp: string; 
@@ -11,16 +16,31 @@ export interface PostItem {
   commentsCount: number; 
   liked: boolean;
   saved: boolean;
+  originalPost: Post | null;
+  originalPostId: number | null;
+  isDeleted?: boolean;
 }
 
 export interface Post {
   id: number;
-  user: User;
   content: string;
-  images?: Image[]; 
-  timestamp: string; 
-  likesCount: number; 
-  commentsCount: number; 
+  images: { 
+    id: number;
+    url: string;
+  }[];
+  createdAt: string;
+  updatedAt: string | null;
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    avatar?: string;
+  };
+  likesCount: number;
   liked: boolean;
-  saved: boolean;
+  commentsCount: number;
+  saved?: boolean;
+  originalPost?: Post;
+  isDeleted?: boolean;
+
 }

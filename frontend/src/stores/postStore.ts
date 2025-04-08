@@ -1,37 +1,105 @@
 import { create } from 'zustand';
 import { PostService } from '../services/PostService';
-import CommentService from '../services/CommentService'; // Import CommentService
+import CommentService from '../services/CommentService';
 import type { Post } from '../types/post';
-import type { Comment } from '../types/comment'; // Import Comment type
+import type { Comment } from '../types/comment';
+
+import type { CommentListResponse } from '../types/commentListResponse';
 
 interface PostState {
   posts: Post[];
   isLoading: boolean;
   error: Error | null;
-  commentsByPostId: { [postId: number]: Comment[] }; // Add comments state
-  isLoadingComments: { [postId: number]: boolean }; // Add comment loading state
+  commentDataByPostId: { [postId: number]: CommentListResponse | undefined };
+  isLoadingComments: { [postId: number]: boolean };
   fetchPosts: () => Promise<void>;
   addPost: (content: string, imageUrls?: string[]) => Promise<void>;
-  likePost: (postId: number, userId: number) => Promise<void>;
+  likePost: (postId: number) => Promise<void>;
+  unlikePost: (postId: number) => Promise<void>;
   savePost: (postId: number) => Promise<void>;
   setLoading: (loading: boolean) => void;
   fetchComments: (postId: number) => Promise<void>;
-  addComment: (postId: number, content: string, imageUrls?: string[], parentCommentId?: number | null) => Promise<void>; // Update addComment signature
+  addComment: (postId: number, content: string, imageUrls?: string[], parentCommentId?: number | null) => Promise<void>;
+  updatePost: (postId: number) => Promise<void>;
+
+  repostsById: Record<number, Post[]>;
+  isReposting: boolean;
+  repostError: string | null;
+  fetchPostsByUserEmail: (email: string) => Promise<void>;
+  repostPost: (postId: number, content?: string) => Promise<void>;
+  getRepostsByPostId: (postId: number) => Promise<void>;
+
+  isDeletingPost: { [key: number]: boolean };
+  deletePost: (postId: number) => Promise<void>;
+
+  userPosts: Post[];
+  isLoadingUserPosts: boolean;
+  userPostsError: string | null;
+
+  likeComment: (postId: number, commentId: number) => Promise<void>;
+  unlikeComment: (postId: number, commentId: number) => Promise<void>;
 }
+
+const addReplyToCommentTree = (comments: Comment[], newReply: Comment, parentId: number): Comment[] => {
+    return comments.map(comment => {
+      if (comment.id === parentId) {
+        return { ...comment, replies: [...(comment.replies || []), newReply] };
+      }
+      if (comment.replies && comment.replies.length > 0) {
+        return { ...comment, replies: addReplyToCommentTree(comment.replies, newReply, parentId) };
+      }
+      return comment;
+    });
+  };
 
 export const usePostStore = create<PostState>((set, get) => ({
   posts: [],
   isLoading: false,
   error: null,
-  commentsByPostId: {}, // Initialize comments state
-  isLoadingComments: {}, // Initialize comment loading state
+  commentDataByPostId: {},
+  isLoadingComments: {},
+  repostsById: {},
+  isReposting: false,
+  repostError: null,
+  isDeletingPost: {},
+  userPosts: [],
+  isLoadingUserPosts: false,
+  userPostsError: null,
 
   fetchPosts: async () => {
     set({ isLoading: true, error: null });
     try {
       const fetchedPosts = await PostService.getAllPosts();
-      set({ posts: fetchedPosts, isLoading: false });
+      
+      // Fetch chi tiết của từng post và comments của chúng
+      await Promise.all(fetchedPosts.map(async (post) => {
+        try {
+          // Fetch chi tiết post để lấy thông tin liked, likesCount mới nhất
+          const detailedPost = await PostService.getPostById(post.id);
+          
+          // Fetch comments của post
+          const commentData = await CommentService.getCommentsByPostId(post.id);
+          
+          // Cập nhật store với thông tin mới
+          set(state => ({
+            posts: state.posts.map(p => p.id === post.id ? detailedPost : p),
+            commentDataByPostId: {
+              ...state.commentDataByPostId,
+              [post.id]: commentData
+            }
+          }));
+        } catch (error) {
+          console.error(`Error fetching details for post ${post.id}:`, error);
+        }
+      }));
+
+      // Set initial posts array
+      set({ 
+        posts: fetchedPosts,
+        isLoading: false 
+      });
     } catch (error: any) {
+      console.error("Error fetching posts:", error);
       set({ isLoading: false, error: error });
     }
   },
@@ -45,34 +113,54 @@ export const usePostStore = create<PostState>((set, get) => ({
         isLoading: false,
       }));
     } catch (error: any) {
+      console.error("Error adding post:", error);
       set({ isLoading: false, error: error });
     }
   },
 
-  likePost: async (postId: number, userId: number) => {
-    const state = get();
-    const postToUpdate = state.posts.find(p => p.id === postId);
-
-    if (!postToUpdate) {
-      console.error("Post not found in store");
-      return;
-    }
-
+  likePost: async (postId: number) => {
     try {
-      let updatedPost: Post;
-      if (postToUpdate.liked) {
-        updatedPost = await PostService.unlikePost(postId, userId);
-      } else {
-        updatedPost = await PostService.likePost(postId);
-      }
-
-      set((currentState) => ({
-        posts: currentState.posts.map((post) =>
-          post.id === postId ? updatedPost : post
+      await PostService.likePost(postId);
+      // Fetch lại post để lấy trạng thái mới nhất
+      const updatedPost = await PostService.getPostById(postId);
+      // console.log('After like - Updated post:', updatedPost);
+      
+      set((state) => ({
+        posts: state.posts.map((post) =>
+          post.id === postId 
+            ? { 
+                ...post, 
+                liked: updatedPost.liked, 
+                likesCount: updatedPost.likesCount 
+              } 
+            : post
         ),
       }));
-    } catch (error: any) {
-      console.error("Error liking/unliking post:", error);
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
+  },
+
+  unlikePost: async (postId: number) => {
+    try {
+      await PostService.unlikePost(postId);
+      // Fetch lại post để lấy trạng thái mới nhất
+      const updatedPost = await PostService.getPostById(postId);
+      // console.log('After unlike - Updated post:', updatedPost);
+      
+      set((state) => ({
+        posts: state.posts.map((post) =>
+          post.id === postId 
+            ? { 
+                ...post, 
+                liked: updatedPost.liked, 
+                likesCount: updatedPost.likesCount 
+              } 
+            : post
+        ),
+      }));
+    } catch (error) {
+      console.error("Error unliking post:", error);
     }
   },
 
@@ -88,37 +176,212 @@ export const usePostStore = create<PostState>((set, get) => ({
     set({ isLoading: loading });
   },
 
-  // --- Comment Actions ---
   fetchComments: async (postId: number) => {
+    if (get().isLoadingComments[postId]) return;
+
     set((state) => ({
       isLoadingComments: { ...state.isLoadingComments, [postId]: true },
     }));
     try {
-      const comments = await CommentService.getCommentsByPostId(postId);
+      const commentDataResult: CommentListResponse = await CommentService.getCommentsByPostId(postId);
+
       set((state) => ({
-        commentsByPostId: { ...state.commentsByPostId, [postId]: comments },
+        commentDataByPostId: { ...state.commentDataByPostId, [postId]: commentDataResult },
         isLoadingComments: { ...state.isLoadingComments, [postId]: false },
       }));
     } catch (error: any) {
       console.error(`Error fetching comments for post ${postId}:`, error);
       set((state) => ({
         isLoadingComments: { ...state.isLoadingComments, [postId]: false },
-        // Optionally set an error state for comments
       }));
     }
   },
 
-  addComment: async (postId: number, content: string, imageUrls?: string[], parentCommentId?: number | null) => { // Update addComment implementation
+  addComment: async (postId: number, content: string, imageUrls?: string[], parentCommentId?: number | null) => {
     try {
-      // Pass parentCommentId to the service
-      await CommentService.createComment(postId, content, imageUrls, parentCommentId);
+      const newComment = await CommentService.createComment(postId, content, imageUrls, parentCommentId);
 
-      // Refetch top-level comments for the post after adding any comment (top-level or reply)
-      // This keeps the main comment list consistent. Displaying replies will be handled separately.
-      await get().fetchComments(postId);
+      set((state) => {
+        const currentPostCommentData = state.commentDataByPostId[postId];
+        const currentComments = currentPostCommentData?.comments || [];
+        const currentTotalCount = currentPostCommentData?.totalCount ?? 0;
+
+        let updatedComments: Comment[];
+        let newTotalCount = currentTotalCount + 1;
+
+        if (!parentCommentId) {
+          updatedComments = [...currentComments, newComment];
+        } else {
+          updatedComments = addReplyToCommentTree(currentComments, newComment, parentCommentId);
+        }
+
+        const newPostCommentData: CommentListResponse = {
+             comments: updatedComments,
+             totalCount: newTotalCount,
+        };
+
+        return {
+          commentDataByPostId: {
+            ...state.commentDataByPostId,
+            [postId]: newPostCommentData, // Assign the correctly typed object
+          },
+        };
+      });
+
     } catch (error: any) {
       console.error(`Error adding comment to post ${postId}:`, error);
-      // Optionally set an error state for adding comments
     }
   },
+
+  updatePost: async (postId: number) => {
+    try {
+      const updatedPost = await PostService.getPostById(postId);
+      set((state) => ({
+        posts: state.posts.map((post) =>
+          post.id === postId ? updatedPost : post
+        ),
+      }));
+    } catch (error) {
+      console.error("Error updating post:", error);
+    }
+  },
+
+  repostPost: async (postId: number, content?: string) => {
+    set({ isReposting: true, repostError: null })
+    try {
+      const repostedPost = await PostService.repostPost(postId, content)
+      
+      // Cập nhật posts array
+      set(state => ({
+        posts: [repostedPost, ...state.posts],
+      }))
+
+      // Cập nhật reposts cho post gốc
+      set(state => ({
+        repostsById: {
+          ...state.repostsById,
+          [postId]: [...(state.repostsById[postId] || []), repostedPost]
+        }
+      }))
+
+    } catch (error) {
+      set({ 
+        repostError: error instanceof Error ? error.message : 'Failed to repost'
+      })
+    } finally {
+      set({ isReposting: false })
+    }
+  },
+
+  getRepostsByPostId: async (postId: number) => {
+    try {
+      const reposts = await PostService.getRepostsByPostId(postId);
+      set(state => ({
+        repostsById: {
+          ...state.repostsById,
+          [postId]: reposts
+        }
+      }));
+    } catch (error) {
+      console.error('Error fetching reposts:', error);
+    }
+  },
+
+  deletePost: async (postId: number) => {
+    try {
+      set(state => ({
+        isDeletingPost: { ...state.isDeletingPost, [postId]: true }
+      }));
+
+      await PostService.deletePost(postId);
+
+      set(state => ({
+        posts: state.posts.filter(post => post.id !== postId),
+        userPosts: state.userPosts.filter(post => post.id !== postId),
+        isDeletingPost: { ...state.isDeletingPost, [postId]: false }
+      }));
+    } catch (error) {
+      set(state => ({
+        isDeletingPost: { ...state.isDeletingPost, [postId]: false }
+      }));
+      throw error;
+    }
+  },
+
+  fetchPostsByUserEmail: async (email: string) => {
+    set({ isLoadingUserPosts: true, userPostsError: null });
+    try {
+      const posts = await PostService.getPostsByUserEmail(email);
+      set({ 
+        userPosts: posts || [],
+        isLoadingUserPosts: false 
+      });
+    } catch (error) {
+      console.error('Error fetching user posts:', error);
+      set({ 
+        userPosts: [],
+        isLoadingUserPosts: false,
+        userPostsError: 'Failed to load user posts'
+      });
+    }
+  },
+
+  likeComment: async (postId: number, commentId: number) => {
+    try {
+      const updatedComment = await CommentService.likeComment(commentId);
+      set((state) => ({
+        commentDataByPostId: {
+          ...state.commentDataByPostId,
+          [postId]: {
+            ...state.commentDataByPostId[postId]!,
+            comments: updateCommentInTree(
+              state.commentDataByPostId[postId]!.comments,
+              updatedComment
+            )
+          }
+        }
+      }));
+    } catch (error) {
+      console.error('Error liking comment:', error);
+    }
+  },
+
+  unlikeComment: async (postId: number, commentId: number) => {
+    try {
+      const updatedComment = await CommentService.unlikeComment(commentId);
+      set((state) => ({
+        commentDataByPostId: {
+          ...state.commentDataByPostId,
+          [postId]: {
+            ...state.commentDataByPostId[postId]!,
+            comments: updateCommentInTree(
+              state.commentDataByPostId[postId]!.comments,
+              updatedComment
+            )
+          }
+        }
+      }));
+    } catch (error) {
+      console.error('Error unliking comment:', error);
+    }
+  }
 }));
+
+// Helper function to update a comment in the nested tree structure
+const updateCommentInTree = (comments: Comment[], updatedComment: Comment): Comment[] => {
+  return comments.map(comment => {
+    if (comment.id === updatedComment.id) {
+      return updatedComment;
+    }
+    if (comment.replies && comment.replies.length > 0) {
+      return {
+        ...comment,
+        replies: updateCommentInTree(comment.replies, updatedComment)
+      };
+    }
+    return {
+      ...comment,
+      replies: [] 
+    };
+  });
+};

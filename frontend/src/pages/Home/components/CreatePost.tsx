@@ -17,7 +17,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, sx }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]); 
   const [isUploading, setIsUploading] = useState<boolean>(false); 
   const { currentUser } = useCurrentUser() ?? {};
-  const { addPost } = usePostStore();
+  const { addPost, fetchPostsByUserEmail } = usePostStore(); // Thêm fetchPostsByUserEmail
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleCreatePost = async () => {
     if (!content.trim()) return;
@@ -53,10 +53,22 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, sx }) => {
       }
     }
 
-    await addPost(content, cloudinaryUrls); 
-    setContent("");
-    setSelectedFiles([]);
-    setIsUploading(false);
+    try {
+      // Thêm post mới
+      await addPost(content, cloudinaryUrls);
+      
+      // Fetch lại posts của user hiện tại
+      if (currentUser?.email) {
+        await fetchPostsByUserEmail(currentUser.email);
+      }
+      
+      setContent("");
+      setSelectedFiles([]);
+    } catch (error) {
+      console.error("Error creating post:", error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleImageClick = () => {

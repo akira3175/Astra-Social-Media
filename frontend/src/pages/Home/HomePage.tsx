@@ -16,7 +16,7 @@ const HomePage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"))
 
-  const { posts, isLoading, fetchPosts, likePost, savePost, setLoading } = usePostStore()
+  const { posts, isLoading, fetchPosts, savePost, setLoading } = usePostStore()
   const { currentUser } = useCurrentUser() // Get currentUser
   const [isLayoutReady, setIsLayoutReady] = React.useState<boolean>(false)
 
@@ -118,14 +118,7 @@ const HomePage: React.FC = () => {
           <CreatePost sx={{ mb: 3 }} />
           <PostList 
             posts={posts} 
-            isLoading={isLoading} 
-            onLikePost={(postId) => { // Create new handler
-              if (currentUser?.id) {
-                likePost(postId, currentUser.id); // Call store action with userId
-              } else {
-                console.error("Cannot like post: User ID not found.");
-              }
-            }} 
+            isLoading={isLoading}
             onSavePost={savePost}
           />
 

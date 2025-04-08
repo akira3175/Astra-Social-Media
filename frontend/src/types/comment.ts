@@ -7,9 +7,11 @@ export interface Comment {
   content: string;
   user: User;
   createdAt: string;
-  updatedAt?: string;
-  images?: Image[];
-  likes?: Like[]; 
-  parentId?: number | null; 
-  replies?: Comment[]; 
+  updatedAt: string;
+  images: Image[];
+  likes: Like[]; 
+  likeCount: number;
+  isLiked: boolean;
+  parentId: number | null; 
+  replies: Comment[]; 
 }

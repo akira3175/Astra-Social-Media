@@ -24,7 +24,7 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = true, columnDefinition = "TEXT")
     private String content;
 
     @JsonManagedReference // Thêm annotation này
@@ -55,4 +55,20 @@ public class Post {
     @JsonManagedReference // Thêm annotation này
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Like> likes;
+
+    @Column(nullable = false)
+    private boolean isDeleted = false;
+
+    @Column
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deletedAt;
+
+    @Transient
+    private boolean likedByCurrentUser;
+
+    @Transient
+    private long likeCount;
+
+    @Transient
+    private long totalCommentCount;
 }

@@ -1,7 +1,5 @@
 package org.example.backend.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.*; // Import EqualsAndHashCode and ToString
 import org.hibernate.annotations.CreationTimestamp;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -65,4 +63,10 @@ public class Comment {
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default // Initialize images list
     private List<Image> images = new ArrayList<>();
+
+    @Transient
+    private boolean likedByCurrentUser;
+
+    @Transient
+    private int likeCount;
 }
