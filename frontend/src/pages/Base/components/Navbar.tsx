@@ -108,14 +108,14 @@ const Navbar: React.FC<NavbarProps> = ({  }) => {
           {/* User menu */}
           <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
             {isMobile && (
-              <IconButton color="inherit">
+              <IconButton color="inherit" sx={{ outline: "none", "&:focus": { outline: "none" } }}>
                 <Search />
               </IconButton>
             )}
-            <IconButton color="inherit">
+            <IconButton color="inherit" sx={{ outline: "none", "&:focus": { outline: "none" } }}>
               <Notifications />
             </IconButton>
-            <IconButton color="inherit">
+            <IconButton color="inherit" sx={{ outline: "none", "&:focus": { outline: "none" } }}>
               <Chat />
             </IconButton>
             <IconButton
@@ -123,6 +123,7 @@ const Navbar: React.FC<NavbarProps> = ({  }) => {
               aria-controls={open ? "profile-menu" : undefined}
               aria-haspopup="true"
               aria-expanded={open ? "true" : undefined}
+              sx={{ outline: "none", "&:focus": { outline: "none" } }}
             >
               <Avatar
                 src={(currentUser)?.avatar || "https://i.pravatar.cc/150?img=3"}
