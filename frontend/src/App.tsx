@@ -9,6 +9,7 @@ import { isAuthenticated } from "./services/AuthService"
 import NotFound from "./pages/Status/NotFound";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminPage from "./pages/Admin/AdminPage";
 import SearchPage from "./pages/Search/SearchPage";
 import AdminLoginPage from "./pages/Admin/Login/AdminLoginPage";
@@ -68,6 +69,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   return <>{children}</>;
 };
 
+// Protected Admin Route component
+interface ProtectedAdminRouteProps {
+  children: ReactNode;
+}
+
+const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) => {
+  const authenticated = isAuthenticated();
+  // TODO: Add admin role check here
+  const isAdmin = true; // This should be replaced with actual admin role check
+
+  if (!authenticated || !isAdmin) {
+    return <Navigate to="/login" />;
+  }
+
+  return <>{children}</>;
+};
+
 const AppContent: React.FC = () => {
   useWebSocket()
   
@@ -79,7 +97,45 @@ const AppContent: React.FC = () => {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/search" element={<SearchPage />} />
+            {/* Protected Routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/:email"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
 
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminDashboard />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminDashboard />
+                </ProtectedAdminRoute>
+              }
+            />
+
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Routes>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/404" element={<NotFound />} />
 
