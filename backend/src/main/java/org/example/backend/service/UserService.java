@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -104,5 +105,29 @@ public class UserService {
     public User getUserInfo(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+
+
+
+    // Provide ADMIN API
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public User unbanUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsActive(true);
+        userRepository.save(user);
+        return user;
+    }
+
+    public User banUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsActive(false);
+        userRepository.save(user);
+        return user;
     }
 }

@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 
 @RestController
@@ -25,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @RequiredArgsConstructor
 public class AdminController {
     private final UserService userService;
-    private final JwtUtil jwtUtil;
     // private final CommentService commentService;
 
     @GetMapping("/posts")
@@ -42,30 +42,30 @@ public class AdminController {
 
     @GetMapping("/users")
     public ResponseEntity<?> getAllUser() {
-        return ResponseEntity.ok("users");
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 
-    // @GetMapping("/users/${userId}/unban")
-    // public ResponseEntity<?> unbanUser(@PathVariable Long userId) {
-    //     // userService.unbanUser(userId);
-    //     return ResponseEntity.ok("Unban user");
-    // }
+    @PostMapping("/users/{userId}/unban")
+    public ResponseEntity<?> unbanUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.unbanUser(userId));
+    }
 
-    // @GetMapping("/users/${userId}/ban")
-    // public ResponseEntity<?> banUser(@PathVariable Long userId) {
-    //     // userService.banUser(userId);
-    //     return ResponseEntity.ok("Ban user");
-    // }
+    @PostMapping("/users/{userId}/ban")
+    public ResponseEntity<?> banUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.banUser(userId));
+    }
 
     @GetMapping("/stats")
     public ResponseEntity<?> getAdminStats() {
-        Map<String, Integer> stats = new HashMap<>();
-        stats.put("totalPosts", 1000);
-        stats.put("lockedPosts", 100);
-        stats.put("totalComments", 1000);
-        stats.put("lockedComments", 100);
-        stats.put("totalUsers", 3);
-        stats.put("bannedUsers", 0);
+        Map<String, Long> stats = new HashMap<>();
+        // fake data
+        stats.put("totalPosts", 1000L);
+        stats.put("lockedPosts", 100L);
+        stats.put("totalComments", 1000L);
+        stats.put("lockedComments", 100L);
+        stats.put("totalUsers", (long)userService.getAllUsers().size());
+        stats.put("bannedUsers", userService.getAllUsers().stream().filter(user -> !user.getIsActive()).count());
         return ResponseEntity.ok(stats);
     }
 }
