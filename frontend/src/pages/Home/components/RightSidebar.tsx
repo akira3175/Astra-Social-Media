@@ -115,21 +115,21 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
             disablePadding
             sx={{ mb: 2 }}
           >
-            <ListItemAvatar sx={{ minWidth: "42px"}}>
+            <ListItemAvatar sx={{ minWidth: "42px" }}>
               <Avatar src={user.avatar} />
             </ListItemAvatar>
-            <ListItemText 
-                primary={user.name} 
-                secondary={`${user.mutualFriends} bạn chung`} 
-                sx={{
-                    "& span": { 
-                        display: "block",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      },
-                      maxWidth: "91px"
-                  }}/>
+            <ListItemText
+              primary={user.name}
+              secondary={`${user.mutualFriends} bạn chung`}
+              sx={{
+                "& span": {
+                  display: "block",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                },
+                maxWidth: "91px"
+              }} />
           </ListItem>
         ))}
       </List>

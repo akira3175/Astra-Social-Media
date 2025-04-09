@@ -90,8 +90,7 @@ public class UserService {
 
                 return Map.of(
                         "accessToken", accessToken,
-                        "refreshToken", refreshToken
-                );
+                        "refreshToken", refreshToken);
             }
         }
         return null;
