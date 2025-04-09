@@ -36,7 +36,8 @@ public class SecurityConfig {
                                 "/api/users/register",
                                 "/api/users/refresh",
                                 "/api/users/{email}",
-                                "/uploads/**"
+                                "/uploads/**",
+                                "/api/admin/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
