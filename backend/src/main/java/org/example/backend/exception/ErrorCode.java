@@ -3,7 +3,8 @@ package org.example.backend.exception;
 public enum ErrorCode {
     UNCATEGORIZED(999, "Uncategorized error"),
     USER_NOT_FOUND(405, "User not found"),
-    INVALID_CREDENTIALS(401, "Invalid credentials"),
+    COMMENT_NOT_FOUND(406, "Comment not found"),
+    INVALID_CREDENTIALS(400, "Invalid credentials"),
     UNAUTHORIZED(401, "Unauthorized"),
     FORBIDDEN(403, "Forbidden"),
     INTERNAL_SERVER_ERROR(500, "Internal server error");

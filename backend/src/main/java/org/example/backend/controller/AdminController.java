@@ -3,12 +3,14 @@ package org.example.backend.controller;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.example.backend.entity.User;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.example.backend.dto.ApiResponse;
+import org.example.backend.entity.Post;
 
 @RestController
 @RequestMapping("/api/admin/")
@@ -33,60 +37,95 @@ public class AdminController {
     private final CommentService commentService;
     private final PostService postService;
 
-
-
     @GetMapping("/stats")
-    public ResponseEntity<?> getAdminStats() {
+    public ResponseEntity<ApiResponse<Object>> getAdminStats() {
         Map<String, Long> stats = new HashMap<>();
         // fake data
         stats.put("totalPosts", 1000L);
         stats.put("lockedPosts", 100L);
         stats.put("totalComments", 1000L);
         stats.put("lockedComments", 100L);
-        stats.put("totalUsers", (long)userService.getAllUsers().size());
+        stats.put("totalUsers", (long) userService.getAllUsers().size());
         stats.put("bannedUsers", userService.getAllUsers().stream().filter(user -> !user.getIsActive()).count());
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(stats)
+                .timestamp(System.currentTimeMillis())
+                .build());
     }
 
-
-
-    @GetMapping("/user/getAllUser")
-    public ResponseEntity<?> getAllUser() {
+    @GetMapping("/users/getAllUser")
+    public ResponseEntity<ApiResponse<Object>> getAllUser() {
         List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(users)
+                .timestamp(System.currentTimeMillis())
+                .build());
     }
 
-    @PostMapping("/user/{userId}/unban")
-    public ResponseEntity<?> unbanUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.unbanUser(userId));
+    @PostMapping("/users/{userId}/unban")
+    public ResponseEntity<ApiResponse<Object>> unbanUser(@PathVariable Long userId) {
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(userService.unbanUser(userId))
+                .timestamp(System.currentTimeMillis())
+                .build());
     }
 
-    @PostMapping("/user/{userId}/ban")
-    public ResponseEntity<?> banUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.banUser(userId));
+    @PostMapping("/users/{userId}/ban")
+    public ResponseEntity<ApiResponse<Object>> banUser(@PathVariable Long userId) {
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(userService.banUser(userId))
+                .timestamp(System.currentTimeMillis())
+                .build());
     }
-
-
-
 
     // Post
-    @GetMapping("/post/getAllPost")
-    public ResponseEntity<?> getPost() {
-        List<PostDTO> posts = postService.getAllPostDtos(null);
-        return ResponseEntity.ok(posts);
+    @GetMapping("/posts/getAllPost")
+    public ResponseEntity<ApiResponse<Object>> getAllPost() {
+        List<User> users = userService.getAllUsers();
+        
+        List<Map<Long, List<Post>>> ListUserPost = new ArrayList<>();
+        
+        for (User user : users) {
+            Map<Long, List<Post>> userPost = new HashMap<>();
+            userPost.put(user.getId(), postService.getPostsByUserId(user.getId()));
+            ListUserPost.add(userPost);
+        }
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(ListUserPost)
+                .timestamp(System.currentTimeMillis())
+                .build());
     }
 
-    @GetMapping("/comment/getAllComment")
-    public ResponseEntity<?> getAllComment() {
+    @GetMapping("/comments/getAllComment")
+    public ResponseEntity<ApiResponse<Object>> getAllComment() {
         List<Comment> comments = commentService.getAllComments();
-        return ResponseEntity.ok(comments);
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(comments)
+                .timestamp(System.currentTimeMillis())
+                .build());
     }
 
-    @PostMapping("/comment/{commentId}/lock")
-    public ResponseEntity<?> lockComment(@PathVariable Long commentId) {
+    @PostMapping("/comments/{commentId}/delete")
+    public ResponseEntity<ApiResponse<Object>> deleteComment(@PathVariable Long commentId) {
         commentService.deleteComment(commentId);
-        return ResponseEntity.ok("Comment deleted");
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data("Comment deleted")
+                .timestamp(System.currentTimeMillis())
+                .build());
     }
 
-    
 }
