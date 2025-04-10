@@ -20,6 +20,7 @@ const AdminPage: React.FC = () => {
           <li
             className={`cursor-pointer p-3 rounded ${
               activeTab === 0 ? "bg-gray-300" : "hover:bg-gray-100"
+
             }`}
             onClick={() => handleTabChange(0)}
           >

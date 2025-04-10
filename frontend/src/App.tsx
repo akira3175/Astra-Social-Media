@@ -67,6 +67,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   return <>{children}</>;
 };
 
+const ProtectedAdminRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  // const authenticated = isAuthenticated(); 
+
+  // if (!authenticated) {
+  // return <Navigate to="/admin/login" />;
+  // }
+
+  return <>{children}</>;
+};
+
 const AppContent: React.FC = () => {
   useWebSocket()
   
@@ -75,7 +85,11 @@ const AppContent: React.FC = () => {
       <CssBaseline />
       <Router>
         <Routes>
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin" element={
+            <ProtectedAdminRoute>
+              <AdminPage />
+            </ProtectedAdminRoute>
+          } />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/search" element={<SearchPage />} />
 
