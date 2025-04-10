@@ -55,7 +55,7 @@ const AdminLoginPage: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "90vh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
