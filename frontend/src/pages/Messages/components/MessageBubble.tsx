@@ -1,5 +1,5 @@
 import type React from "react"
-import { Avatar, Box, Paper, Typography } from "@mui/material"
+import { Avatar, Box, Paper, Typography, alpha } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import DoneAllIcon from "@mui/icons-material/DoneAll"
 import type { Message } from "../../../types/message"
@@ -13,16 +13,18 @@ interface MessageBubbleProps {
 }
 
 const StyledPaper = styled(Paper, {
-  shouldForwardProp: (prop) => prop !== "isCurrentUser",
-})<{ isCurrentUser: boolean }>(({ theme, isCurrentUser }) => ({
+  shouldForwardProp: (prop) => prop !== "isCurrentUser" && prop !== "showAvatar",
+})<{ isCurrentUser: boolean; showAvatar: boolean }>(({ theme, isCurrentUser, showAvatar }) => ({
   padding: theme.spacing(1.5),
   maxWidth: "75%",
   borderRadius: 16,
   wordBreak: "break-word",
-  backgroundColor: isCurrentUser ? theme.palette.primary.main : theme.palette.background.paper,
+  backgroundColor: isCurrentUser ? alpha(theme.palette.primary.main, 0.9) : theme.palette.background.paper,
   color: isCurrentUser ? theme.palette.primary.contrastText : theme.palette.text.primary,
   boxShadow: theme.shadows[1],
   marginBottom: theme.spacing(0.5),
+  borderTopLeftRadius: !isCurrentUser && showAvatar ? 4 : 16,
+  borderTopRightRadius: isCurrentUser ? 4 : 16,
 }))
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isCurrentUser, showAvatar, isLastInGroup, avatar }) => {
@@ -43,6 +45,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isCurrentUser, s
             height: 32,
             mr: 1,
             mb: 1,
+            border: (theme) => `2px solid ${alpha(theme.palette.background.paper, 0.8)}`,
           }}
         />
       ) : (
@@ -56,7 +59,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isCurrentUser, s
           maxWidth: "75%",
         }}
       >
-        <StyledPaper isCurrentUser={isCurrentUser}>
+        <StyledPaper isCurrentUser={isCurrentUser} showAvatar={showAvatar}>
           <Typography variant="body2">{message.text}</Typography>
         </StyledPaper>
         <Box

@@ -1,21 +1,20 @@
-import { User } from "./user"
+import type { User } from "./user"
 
 export interface MessagePreview {
-    id: number
-    text: string
-    timestamp: string
-    isRead: boolean
-    senderId: number
+  id: number
+  text: string
+  timestamp: string
+  isRead: boolean
+  senderId: number
 }
-  
+
 export interface Message extends MessagePreview {
-    attachments?: string[]
+  attachments?: string[]
 }
-  
+
 export interface Conversation {
-    id: number
-    user: User
-    lastMessage: MessagePreview
-    unreadCount: number
+  id: number
+  user: User
+  lastMessage: MessagePreview
+  unreadCount: number
 }
-  

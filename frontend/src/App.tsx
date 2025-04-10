@@ -5,18 +5,22 @@ import { ThemeProvider, createTheme } from "@mui/material/styles"
 import CssBaseline from '@mui/material/CssBaseline';
 import LoginPage from "./pages/Auth/LoginPage"
 import HomePage from "./pages/Home/HomePage";
-import { isAuthenticated } from "./services/AuthService"
+import { isAuthenticated } from "./services/authService"
 import NotFound from "./pages/Status/NotFound";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
 import AdminPage from "./pages/Admin/AdminPage";
 import SearchPage from "./pages/Search/SearchPage";
-import AdminLoginPage from "./pages/Admin/Login/AdminLoginPage";
+import AdminLoginPage from "./pages/Admin/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
 import { Provider } from 'react-redux'
 import store from './redux/store'
 import useWebSocket from "./hooks/useWebSocket";
 import MessagesPage from "./pages/Messages/MessagesPage";
+import CommentManagementPage from "./pages/Admin/CommentManagementPage";
+import PostManagementPage from "./pages/Admin/PostManagementPage";
+import UserManagementPage from "./pages/Admin/UserManagementPage";
+import DashboardPage from "./pages/Admin/DashboardPage";
 
 const theme = createTheme({
   breakpoints: {
@@ -79,9 +83,14 @@ const AppContent: React.FC = () => {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/search" element={<SearchPage />} />
-
+          <Route path="/login" element={<LoginPage />}></Route>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/404" element={<NotFound />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin/dashboard" element={<DashboardPage />} />
+          <Route path="/admin/users" element={<UserManagementPage />} />
+          <Route path="/admin/posts" element={<PostManagementPage />} />
+          <Route path="/admin/comments" element={<CommentManagementPage />} />
 
           {/* Các Route cần bảo vệ */}
           <Route

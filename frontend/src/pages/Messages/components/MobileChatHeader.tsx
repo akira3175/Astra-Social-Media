@@ -1,29 +1,7 @@
 "use client"
-import { Avatar, Box, IconButton, Typography } from "@mui/material"
+import { Avatar, Box, IconButton, Typography, alpha } from "@mui/material"
 import { ArrowBack, MoreVert } from "@mui/icons-material"
-
-// Định nghĩa các interface cần thiết
-interface User {
-  id: number
-  name: string
-  avatar: string
-  isOnline?: boolean
-}
-
-interface MessagePreview {
-  id: number
-  text: string
-  timestamp: string
-  isRead: boolean
-  senderId: number
-}
-
-interface Conversation {
-  id: number
-  user: User
-  lastMessage: MessagePreview
-  unreadCount: number
-}
+import type { Conversation } from "../../../types/message"
 
 // Props cho component
 interface MobileChatHeaderProps {
@@ -40,16 +18,51 @@ function MobileChatHeader(props: MobileChatHeaderProps) {
     return null
   }
 
-  // Phiên bản đơn giản hóa của return statement
   return (
-    <Box sx={{ p: 1.5, display: "flex", alignItems: "center", bgcolor: "background.paper" }}>
-      <IconButton onClick={onBack}>
+    <Box
+      sx={{
+        p: 1.5,
+        display: "flex",
+        alignItems: "center",
+        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03),
+        borderBottom: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      <IconButton onClick={onBack} sx={{ mr: 1 }}>
         <ArrowBack />
       </IconButton>
-      <Avatar src={conversation.user.avatar} />
+      <Avatar
+        src={conversation.user.avatar}
+        alt={conversation.user.name}
+        sx={{
+          width: 36,
+          height: 36,
+          border: (theme) => `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+        }}
+      />
       <Box sx={{ ml: 1.5, flexGrow: 1 }}>
-        <Typography variant="subtitle2">{conversation.user.name}</Typography>
-        <Typography variant="caption">{conversation.user.isOnline ? "Đang hoạt động" : "Không hoạt động"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>
+          {conversation.user.name}
+        </Typography>
+        <Typography
+          variant="caption"
+          color={conversation.user.isOnline ? "success.main" : "text.secondary"}
+          sx={{ display: "flex", alignItems: "center" }}
+        >
+          <Box
+            component="span"
+            sx={{
+              display: "inline-block",
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              bgcolor: conversation.user.isOnline ? "success.main" : "text.disabled",
+              mr: 0.5,
+            }}
+          />
+          {conversation.user.isOnline ? "Đang hoạt động" : "Không hoạt động"}
+        </Typography>
       </Box>
       <IconButton>
         <MoreVert />
