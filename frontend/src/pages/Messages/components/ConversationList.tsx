@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 import { useState } from "react"
 import {
@@ -14,6 +16,7 @@ import {
   ListItemText,
   TextField,
   Typography,
+  alpha,
 } from "@mui/material"
 import { Search, Edit, MoreVert } from "@mui/icons-material"
 import type { Conversation } from "../../../types/message"
@@ -30,7 +33,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
   const filteredConversations = conversations.filter(
     (conversation) =>
       conversation.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      conversation.lastMessage.text.toLowerCase().includes(searchQuery.toLowerCase()),
+      conversation.lastMessage.text.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   return (
@@ -61,7 +64,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
           sx={{
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
-              bgcolor: "action.hover",
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
             },
           }}
         />
@@ -95,9 +98,9 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
                   py: 1,
                   px: 1,
                   "&.Mui-selected": {
-                    bgcolor: "primary.lighter",
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
                     "&:hover": {
-                      bgcolor: "primary.lighter",
+                      bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
                     },
                   },
                 }}
