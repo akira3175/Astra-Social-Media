@@ -8,6 +8,7 @@ import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
+import java.security.Principal;
 
 import java.util.Map;
 
@@ -50,6 +51,12 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                 String email = jwtUtils.extractEmail(token);
                 System.out.println("WebSocket authenticated for user: " + email);
                 attributes.put("email", email); // Gán vào session attributes
+
+                // Tạo Principal để Spring sử dụng trong STOMP
+                Principal userPrincipal = () -> email;
+
+                // Gán Principal vào request để các sự kiện như SessionConnectedEvent lấy được
+                servletRequest.getServletRequest().setAttribute("SPRING.PRINCIPAL", userPrincipal);
                 return true;
             } catch (Exception e) {
                 System.out.println("Invalid JWT: " + e.getMessage());

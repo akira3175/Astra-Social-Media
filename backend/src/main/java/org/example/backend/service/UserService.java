@@ -3,6 +3,8 @@ package org.example.backend.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.entity.User;
+import org.example.backend.exception.AppException;
+import org.example.backend.exception.ErrorCode;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.repository.UserRepository;
 import org.example.backend.security.JwtUtil;
@@ -158,7 +160,7 @@ public class UserService {
     }
 
 
-    
+
 
     // Provide ADMIN API
     public List<User> getAllUsers() {
@@ -167,7 +169,7 @@ public class UserService {
 
     public User unbanUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         user.setIsActive(true);
         userRepository.save(user);
         return user;
@@ -175,7 +177,7 @@ public class UserService {
 
     public User banUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         user.setIsActive(false);
         userRepository.save(user);
         return user;

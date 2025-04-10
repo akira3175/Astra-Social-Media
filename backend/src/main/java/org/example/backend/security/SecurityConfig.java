@@ -12,7 +12,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +37,7 @@ public class SecurityConfig {
                                                                 "/api/users/register",
                                                                 "/api/users/refresh",
                                                                 "/api/users/{email}",
+                                                                "/api/users/search",
                                                                 "/uploads/**",
                                                                 "/api/users/{email}/online",
                                                                 "/ws/**",

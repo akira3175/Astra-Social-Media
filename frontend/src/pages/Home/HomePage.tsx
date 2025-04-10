@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect, useLayoutEffect } from "react"
+import React, { useEffect, useLayoutEffect, useState } from "react"
 import { Box, useMediaQuery, useTheme } from "@mui/material"
 import BasePage from "../Base/BasePage"
 import LeftSidebar from "./components/LeftSidebar"
@@ -9,109 +8,9 @@ import RightSidebar from "./components/RightSidebar"
 import CreatePost from "./components/CreatePost"
 import PostList from "./components/PostList"
 import MobileBottomNav from "./components/MobileBottomNav"
-import type { Post } from "../../types/post"
+import { usePostStore } from "../../stores/postStore"
+import { useCurrentUser } from "../../contexts/currentUserContext" // Import useCurrentUser
 import ChatBox from "../../components/ChatBox/ChatBox"
-import { useCurrentUser } from "../../contexts/currentUserContext"
-
-// Giả lập dữ liệu bài đăng
-const DUMMY_POSTS: Post[] = [
-  {
-    id: 1,
-    user: {
-      id: 101,
-      name: "Nguyễn Văn A",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      email: "",
-    },
-    content: "Hôm nay là một ngày tuyệt vời! #sunshine #happy",
-    image: "https://source.unsplash.com/random/600x400?nature",
-    timestamp: "2 giờ trước",
-    likes: 24,
-    comments: 5,
-    liked: false,
-    saved: true,
-  },
-  {
-    id: 2,
-    user: {
-      id: 102,
-      name: "Trần Thị B",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      email: "",
-    },
-    content:
-      "Vừa hoàn thành dự án mới! Rất hào hứng để chia sẻ với mọi người về những gì chúng tôi đã làm được. Đây là kết quả của nhiều tháng làm việc chăm chỉ và sáng tạo. #project #achievement #teamwork",
-    timestamp: "5 giờ trước",
-    likes: 42,
-    comments: 12,
-    liked: true,
-    saved: false,
-  },
-  {
-    id: 3,
-    user: {
-      id: 103,
-      name: "Lê Văn C",
-      avatar: "https://i.pravatar.cc/150?img=8",
-      email: "",
-    },
-    content: "Đang thưởng thức một tách cà phê buổi sáng và đọc sách. Những khoảnh khắc bình yên.",
-    image: "https://source.unsplash.com/random/600x400?coffee",
-    timestamp: "8 giờ trước",
-    likes: 18,
-    comments: 3,
-    liked: false,
-    saved: false,
-  },
-  // Thêm nhiều bài đăng hơn để test scroll
-  {
-    id: 4,
-    user: {
-      id: 104,
-      name: "Hoàng Văn D",
-      avatar: "https://i.pravatar.cc/150?img=4",
-      email: "",
-    },
-    content: "Vừa hoàn thành một dự án lớn sau nhiều tháng làm việc. Cảm thấy rất hài lòng với kết quả!",
-    image: "https://source.unsplash.com/random/600x400?work",
-    timestamp: "1 ngày trước",
-    likes: 56,
-    comments: 8,
-    liked: false,
-    saved: false,
-  },
-  {
-    id: 5,
-    user: {
-      id: 105,
-      name: "Nguyễn Thị E",
-      avatar: "https://i.pravatar.cc/150?img=9",
-      email: "",
-    },
-    content: "Cuối tuần này có ai muốn đi xem phim không? Có bộ phim mới ra rất hay!",
-    timestamp: "2 ngày trước",
-    likes: 32,
-    comments: 15,
-    liked: true,
-    saved: false,
-  },
-  {
-    id: 6,
-    user: {
-      id: 106,
-      name: "Trần Văn F",
-      avatar: "https://i.pravatar.cc/150?img=12",
-      email: "",
-    },
-    content: "Vừa đọc xong một cuốn sách rất hay về phát triển bản thân. Ai cần tên sách thì comment nhé!",
-    image: "https://source.unsplash.com/random/600x400?book",
-    timestamp: "3 ngày trước",
-    likes: 45,
-    comments: 23,
-    liked: false,
-    saved: true,
-  },
-]
 
 const HomePage: React.FC = () => {
   const theme = useTheme()
@@ -121,9 +20,8 @@ const HomePage: React.FC = () => {
   const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
   const { currentUser } = useCurrentUser()
 
-  const [posts, setPosts] = useState<Post[]>(DUMMY_POSTS)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [isLayoutReady, setIsLayoutReady] = useState<boolean>(false)
+  const { posts, isLoading, fetchPosts, savePost, setLoading } = usePostStore()
+  const [isLayoutReady, setIsLayoutReady] = React.useState<boolean>(false)
 
   // Sử dụng useLayoutEffect để đảm bảo layout ổn định trước khi render
   useLayoutEffect(() => {
@@ -132,45 +30,8 @@ const HomePage: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    // Giả lập việc tải dữ liệu
-    setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
-  }, [])
-
-  const handleCreatePost = (newPost: Post) => {
-    setPosts([newPost, ...posts])
-  }
-
-  const handleLikePost = (postId: number) => {
-    setPosts(
-      posts.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            liked: !post.liked,
-            likes: post.liked ? post.likes - 1 : post.likes + 1,
-          }
-        }
-        return post
-      }),
-    )
-  }
-
-  const handleSavePost = (postId: number) => {
-    setPosts(
-      posts.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            saved: !post.saved,
-          }
-        }
-        return post
-      }),
-    )
-  }
+    fetchPosts()
+  }, [fetchPosts])
 
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen)
@@ -279,8 +140,12 @@ const HomePage: React.FC = () => {
             },
           }}
         >
-          <CreatePost onPostCreated={handleCreatePost} sx={{ mb: 3 }} />
-          <PostList posts={posts} isLoading={isLoading} onLikePost={handleLikePost} onSavePost={handleSavePost} />
+          <CreatePost sx={{ mb: 3 }} />
+          <PostList
+            posts={posts}
+            isLoading={isLoading}
+            onSavePost={savePost}
+          />
 
           {/* Thêm padding dưới cùng để tránh bị che khi scroll đến cuối */}
           <Box sx={{ height: isMobile ? "80px" : "20px" }} />

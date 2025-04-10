@@ -12,8 +12,12 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.example.backend.entity.User;
+import org.example.backend.entity.Comment;
+import org.example.backend.dto.PostDTO;
 import org.example.backend.security.JwtUtil;
 import org.example.backend.service.UserService;
+import org.example.backend.service.CommentService;
+import org.example.backend.service.PostService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,35 +30,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @RequiredArgsConstructor
 public class AdminController {
     private final UserService userService;
-    // private final CommentService commentService;
+    private final CommentService commentService;
+    private final PostService postService;
 
-    @GetMapping("/posts")
-    public ResponseEntity<?> getPost() {
-        return ResponseEntity.ok("List post");
-    }
 
-    @GetMapping("/comments")
-    public ResponseEntity<?> getAllComment() {
-        // List<Comment> comments = commentRepository.findAll();
-        // return ResponseEntity.ok(comments);
-        return ResponseEntity.ok("List comment");
-    }
-
-    @GetMapping("/users")
-    public ResponseEntity<?> getAllUser() {
-        List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
-    }
-
-    @PostMapping("/users/{userId}/unban")
-    public ResponseEntity<?> unbanUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.unbanUser(userId));
-    }
-
-    @PostMapping("/users/{userId}/ban")
-    public ResponseEntity<?> banUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.banUser(userId));
-    }
 
     @GetMapping("/stats")
     public ResponseEntity<?> getAdminStats() {
@@ -68,4 +47,46 @@ public class AdminController {
         stats.put("bannedUsers", userService.getAllUsers().stream().filter(user -> !user.getIsActive()).count());
         return ResponseEntity.ok(stats);
     }
+
+
+
+    @GetMapping("/user/getAllUser")
+    public ResponseEntity<?> getAllUser() {
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
+    @PostMapping("/user/{userId}/unban")
+    public ResponseEntity<?> unbanUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.unbanUser(userId));
+    }
+
+    @PostMapping("/user/{userId}/ban")
+    public ResponseEntity<?> banUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.banUser(userId));
+    }
+
+
+
+
+    // Post
+    @GetMapping("/post/getAllPost")
+    public ResponseEntity<?> getPost() {
+        List<PostDTO> posts = postService.getAllPostDtos(null);
+        return ResponseEntity.ok(posts);
+    }
+
+    @GetMapping("/comment/getAllComment")
+    public ResponseEntity<?> getAllComment() {
+        List<Comment> comments = commentService.getAllComments();
+        return ResponseEntity.ok(comments);
+    }
+
+    @PostMapping("/comment/{commentId}/lock")
+    public ResponseEntity<?> lockComment(@PathVariable Long commentId) {
+        commentService.deleteComment(commentId);
+        return ResponseEntity.ok("Comment deleted");
+    }
+
+    
 }

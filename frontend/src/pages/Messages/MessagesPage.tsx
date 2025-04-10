@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { Box, Grid, useMediaQuery, useTheme } from "@mui/material"
@@ -7,7 +9,6 @@ import ChatArea from "./components/ChatArea"
 import MobileChatHeader from "./components/MobileChatHeader"
 import { useCurrentUser } from "../../contexts/currentUserContext"
 import type { Conversation, Message } from "../../types/message"
-import type { User } from "../../types/user"
 
 // Dữ liệu mẫu cho các cuộc trò chuyện
 const SAMPLE_CONVERSATIONS: Conversation[] = [
@@ -15,10 +16,17 @@ const SAMPLE_CONVERSATIONS: Conversation[] = [
     id: 1,
     user: {
       id: 101,
+      email: "nguyenvana@example.com",
+      firstName: "Văn A",
+      lastName: "Nguyễn",
       name: "Nguyễn Văn A",
+      username: "nguyenvana",
       avatar: "https://i.pravatar.cc/150?img=1",
+      role: "user",
+      status: "active",
+      registeredDate: "01/01/2023",
+      lastActive: "10:30",
       isOnline: true,
-      email: ""
     },
     lastMessage: {
       id: 1001,
@@ -33,10 +41,17 @@ const SAMPLE_CONVERSATIONS: Conversation[] = [
     id: 2,
     user: {
       id: 102,
+      email: "tranthib@example.com",
+      firstName: "Thị B",
+      lastName: "Trần",
       name: "Trần Thị B",
+      username: "tranthib",
       avatar: "https://i.pravatar.cc/150?img=5",
+      role: "user",
+      status: "active",
+      registeredDate: "15/02/2023",
+      lastActive: "Hôm qua",
       isOnline: true,
-      email: ""
     },
     lastMessage: {
       id: 1002,
@@ -51,10 +66,17 @@ const SAMPLE_CONVERSATIONS: Conversation[] = [
     id: 3,
     user: {
       id: 103,
+      email: "levanc@example.com",
+      firstName: "Văn C",
+      lastName: "Lê",
       name: "Lê Văn C",
+      username: "levanc",
       avatar: "https://i.pravatar.cc/150?img=8",
+      role: "user",
+      status: "active",
+      registeredDate: "20/03/2023",
+      lastActive: "2 ngày trước",
       isOnline: false,
-      email: ""
     },
     lastMessage: {
       id: 1003,
@@ -69,10 +91,17 @@ const SAMPLE_CONVERSATIONS: Conversation[] = [
     id: 4,
     user: {
       id: 104,
+      email: "phamthid@example.com",
+      firstName: "Thị D",
+      lastName: "Phạm",
       name: "Phạm Thị D",
+      username: "phamthid",
       avatar: "https://i.pravatar.cc/150?img=10",
+      role: "user",
+      status: "active",
+      registeredDate: "05/04/2023",
+      lastActive: "1 tuần trước",
       isOnline: false,
-      email: ""
     },
     lastMessage: {
       id: 1004,
@@ -87,10 +116,17 @@ const SAMPLE_CONVERSATIONS: Conversation[] = [
     id: 5,
     user: {
       id: 105,
+      email: "hoangvane@example.com",
+      firstName: "Văn E",
+      lastName: "Hoàng",
       name: "Hoàng Văn E",
+      username: "hoangvane",
       avatar: "https://i.pravatar.cc/150?img=11",
+      role: "user",
+      status: "active",
+      registeredDate: "10/04/2023",
+      lastActive: "3 giờ trước",
       isOnline: true,
-      email: ""
     },
     lastMessage: {
       id: 1005,
@@ -198,12 +234,12 @@ const SAMPLE_MESSAGES: Record<number, Message[]> = {
 const MessagesPage: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-  const currentUser = useCurrentUser()
+  const { currentUser } = useCurrentUser()
   const [conversations, setConversations] = useState<Conversation[]>(SAMPLE_CONVERSATIONS)
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [showMobileChat, setShowMobileChat] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null!)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Chọn cuộc trò chuyện đầu tiên khi trang được tải
   useEffect(() => {
@@ -219,19 +255,19 @@ const MessagesPage: React.FC = () => {
 
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation)
-    
+
     // Lấy tin nhắn cho cuộc trò chuyện được chọn
     const conversationMessages = SAMPLE_MESSAGES[conversation.id] || []
     setMessages(conversationMessages)
-    
+
     // Đánh dấu tin nhắn là đã đọc
     if (conversation.unreadCount > 0) {
-      const updatedConversations = conversations.map(conv => 
+      const updatedConversations = conversations.map((conv) =>
         conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
       )
       setConversations(updatedConversations)
     }
-    
+
     // Hiển thị khu vực chat trên mobile
     if (isMobile) {
       setShowMobileChat(true)
@@ -258,18 +294,18 @@ const MessagesPage: React.FC = () => {
     setMessages([...messages, newMessage])
 
     // Cập nhật cuộc trò chuyện với tin nhắn mới nhất
-    const updatedConversations = conversations.map(conv => 
-      conv.id === selectedConversation.id 
-        ? { 
-            ...conv, 
+    const updatedConversations = conversations.map((conv) =>
+      conv.id === selectedConversation.id
+        ? {
+            ...conv,
             lastMessage: {
               id: newMessage.id,
               text: newMessage.text,
               timestamp: newMessage.timestamp,
               isRead: newMessage.isRead,
               senderId: newMessage.senderId,
-            } 
-          } 
+            },
+          }
         : conv
     )
     setConversations(updatedConversations)
@@ -322,12 +358,7 @@ const MessagesPage: React.FC = () => {
                 flexDirection: "column",
               }}
             >
-              {isMobile && (
-                <MobileChatHeader
-                  conversation={selectedConversation}
-                  onBack={handleBackToList}
-                />
-              )}
+              {isMobile && <MobileChatHeader conversation={selectedConversation} onBack={handleBackToList} />}
               <ChatArea
                 conversation={selectedConversation}
                 messages={messages}
