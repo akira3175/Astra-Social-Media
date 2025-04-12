@@ -30,7 +30,7 @@ interface LeftSidebarProps {
 
 const LeftSidebar: React.FC<LeftSidebarProps> = ({ className, onToggleChat, setSelectedReceiverId }) => {
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [chatUsers, setChatUsers] = useState<ChatUser[]>([])
+  const [, setChatUsers] = useState<ChatUser[]>([])
   const { currentUser } = useCurrentUser()
 
   const loadChatUsers = () => {

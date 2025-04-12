@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, List, ListItem, ListItemAvatar, ListItemText, Avatar, Typography, Divider, ListItemButton } from '@mui/material';
+import { Box, List, ListItemAvatar, ListItemText, Avatar, Typography, Divider, ListItemButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 interface ChatUser {

@@ -106,13 +106,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }
 
   // Danh sách menu
-  const menuItems = [
-    { text: "Tổng quan", icon: <Dashboard />, path: "/admin/dashboard" },
-    { text: "Quản lý người dùng", icon: <People />, path: "/admin/users" },
-    { text: "Quản lý bài viết", icon: <Article />, path: "/admin/posts" },
-    { text: "Quản lý bình luận", icon: <Comment />, path: "/admin/comments" },
-    { text: "Cài đặt hệ thống", icon: <Settings />, path: "/admin/settings" },
-  ]
+  // const menuItems = [
+  //   { text: "Tổng quan", icon: <Dashboard />, path: "/admin/dashboard" },
+  //   { text: "Quản lý người dùng", icon: <People />, path: "/admin/users" },
+  //   { text: "Quản lý bài viết", icon: <Article />, path: "/admin/posts" },
+  //   { text: "Quản lý bình luận", icon: <Comment />, path: "/admin/comments" },
+  //   { text: "Cài đặt hệ thống", icon: <Settings />, path: "/admin/settings" },
+  // ]
 
   if (!isAuthenticated) {
     return null // Không hiển thị gì nếu chưa xác thực

@@ -36,7 +36,7 @@ const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState<string>("")
   const [agreeToTerms, setAgreeToTerms] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
+  const [, setError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [emailExists, setEmailExists] = useState<boolean>(false)
   const [emailError, setEmailError] = useState<string | null>(null)

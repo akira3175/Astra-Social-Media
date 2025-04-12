@@ -1,18 +1,7 @@
 import type React from "react"
 import { Box, Typography, CircularProgress } from "@mui/material"
 import UserItem from "./UserItem"
-
-interface User {
-  id: number
-  name: string
-  username: string
-  avatar: string
-  bio?: string
-  followers: number
-  following: number
-  location?: string
-  occupation?: string
-}
+import { User } from "../../../types/user"
 
 interface UserListProps {
   users: User[]

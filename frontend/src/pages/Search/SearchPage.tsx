@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import {
@@ -23,19 +21,7 @@ import { useLocation } from "react-router-dom"
 import BasePage from "../Base/BasePage"
 import UserList from "./components/UserList"
 import PostList from "../Home/components/PostList"
-
-// Định nghĩa các kiểu dữ liệu
-interface User {
-  id: number
-  name: string
-  username: string
-  avatar: string
-  bio?: string
-  followers: number
-  following: number
-  location?: string
-  occupation?: string
-}
+import type { User } from "../../types/user"
 
 interface Post {
   id: number
@@ -43,6 +29,7 @@ interface Post {
   content: string
   image?: string
   author: {
+    email: any
     id: number
     name: string
     avatar: string
@@ -66,6 +53,7 @@ const SAMPLE_USERS: User[] = [
     following: 235,
     location: "Hà Nội",
     occupation: "Software Engineer",
+    email: "nguyenvana@gmail.com",
   },
   {
     id: 2,
@@ -77,6 +65,7 @@ const SAMPLE_USERS: User[] = [
     following: 412,
     location: "TP. Hồ Chí Minh",
     occupation: "Marketing Manager",
+    email: "tranthib@gmail.com",
   },
   {
     id: 3,
@@ -88,6 +77,7 @@ const SAMPLE_USERS: User[] = [
     following: 178,
     location: "Đà Nẵng",
     occupation: "Photographer",
+    email: "levanc@gmail.com",
   },
   {
     id: 4,
@@ -99,6 +89,7 @@ const SAMPLE_USERS: User[] = [
     following: 324,
     location: "Hà Nội",
     occupation: "UI/UX Designer",
+    email: "phamthid@gmail.com",
   },
   {
     id: 5,
@@ -110,6 +101,7 @@ const SAMPLE_USERS: User[] = [
     following: 245,
     location: "TP. Hồ Chí Minh",
     occupation: "Senior Developer",
+    email: "hoangvane@gmail.com",
   },
 ]
 
@@ -124,6 +116,7 @@ const SAMPLE_POSTS: Post[] = [
       id: 1,
       name: "Nguyễn Văn A",
       avatar: "https://i.pravatar.cc/150?img=1",
+      email: "nguyenvana@gmail.com",
     },
     date: "2 giờ trước",
     likes: 45,
@@ -141,6 +134,7 @@ const SAMPLE_POSTS: Post[] = [
       id: 2,
       name: "Trần Thị B",
       avatar: "https://i.pravatar.cc/150?img=5",
+      email: "tranthib@gmail.com",
     },
     date: "5 giờ trước",
     likes: 78,
@@ -158,6 +152,7 @@ const SAMPLE_POSTS: Post[] = [
       id: 1,
       name: "Nguyễn Văn A",
       avatar: "https://i.pravatar.cc/150?img=1",
+      email: "nguyenvana@gmail.com",
     },
     date: "1 ngày trước",
     likes: 32,
@@ -225,7 +220,7 @@ const SearchPage: React.FC = () => {
       const users = SAMPLE_USERS.filter(
         (user) =>
           user.name.toLowerCase().includes(query.toLowerCase()) ||
-          user.username.toLowerCase().includes(query.toLowerCase()) ||
+          user.email.toLowerCase().includes(query.toLowerCase()) ||
           (user.bio && user.bio.toLowerCase().includes(query.toLowerCase())) ||
           (user.location && user.location.toLowerCase().includes(query.toLowerCase())) ||
           (user.occupation && user.occupation.toLowerCase().includes(query.toLowerCase())),
@@ -273,14 +268,14 @@ const SearchPage: React.FC = () => {
   }
 
   // Xử lý lưu bài viết
-  const handleSavePost = (postId: number) => {
-    // Giả lập lưu bài viết
-    setNotification({
-      open: true,
-      message: "Đã lưu bài viết",
-      type: "success",
-    })
-  }
+  // const handleSavePost = (postId: number) => {
+  //   // Giả lập lưu bài viết
+  //   setNotification({
+  //     open: true,
+  //     message: "Đã lưu bài viết",
+  //     type: "success",
+  //   })
+  // }
 
   // Xử lý đóng thông báo
   const handleCloseNotification = () => {
@@ -357,6 +352,7 @@ const SearchPage: React.FC = () => {
                     firstName: post.author.name.split(" ")[0],
                     lastName: post.author.name.split(" ").slice(1).join(" "),
                     avatar: post.author.avatar,
+                    email: post.author.email,
                   },
                   likesCount: post.likes,
                   liked: false,
@@ -393,6 +389,7 @@ const SearchPage: React.FC = () => {
               firstName: post.author.name.split(" ")[0],
               lastName: post.author.name.split(" ").slice(1).join(" "),
               avatar: post.author.avatar,
+              email: post.author.email,
             },
             likesCount: post.likes,
             liked: false,

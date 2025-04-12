@@ -1,21 +1,9 @@
 "use client"
 
 import type React from "react"
-import { Box, Avatar, Typography, Button, Card, CardContent, Chip } from "@mui/material"
-import { Person, LocationOn, Work } from "@mui/icons-material"
+import { Box, Avatar, Typography, Button, Card, CardContent } from "@mui/material"
 import { Link } from "react-router-dom"
-
-interface User {
-  id: number
-  name: string
-  username: string
-  avatar: string
-  bio?: string
-  followers: number
-  following: number
-  location?: string
-  occupation?: string
-}
+import { User } from "../../../types/user"
 
 interface UserItemProps {
   user: User
@@ -45,7 +33,7 @@ const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend, isFriend = false
                 <Typography
                   variant="h6"
                   component={Link}
-                  to={`/profile/${user.username.replace("@", "")}`}
+                  to={`/profile/${user.email.replace("@", "")}`}
                   sx={{
                     fontWeight: 600,
                     color: "text.primary",
@@ -59,7 +47,7 @@ const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend, isFriend = false
                   {user.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {user.username}
+                  {user.email}
                 </Typography>
               </Box>
             </Box>

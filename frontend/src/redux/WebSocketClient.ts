@@ -1,5 +1,5 @@
 import { tokenService } from '../services/tokenService';
-import { Client, Frame } from '@stomp/stompjs';
+import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 // Định nghĩa kiểu cho message
@@ -33,7 +33,7 @@ class WebSocketClient {
       },
       debug: (str) => console.log(str),
       reconnectDelay: 5000, // Thử lại kết nối sau 5 giây nếu bị mất kết nối
-      onConnect: (frame: Frame) => {
+      onConnect: () => {
         console.log('✅ Connected to WebSocket!');
         onConnect();  // Khi kết nối thành công, gọi onConnect
         // Đăng ký lắng nghe tin nhắn từ server
