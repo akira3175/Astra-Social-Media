@@ -9,8 +9,6 @@ import {
     List,
     ListItem,
     Avatar,
-    Divider,
-    Tooltip,
     CircularProgress,
 } from "@mui/material"
 import { Send, Close } from "@mui/icons-material"
@@ -45,7 +43,7 @@ interface ChatBoxProps {
     currentUserId: string
 }
 
-const ChatContainer = styled(Paper)(({ theme }) => ({
+const ChatContainer = styled(Paper)(({ }) => ({
     position: "fixed",
     top: 80,
     right: 20,
@@ -67,7 +65,7 @@ const ChatList = styled(Box)(({ theme }) => ({
     flexDirection: "column",
 }))
 
-const ChatMain = styled(Box)(({ theme }) => ({
+const ChatMain = styled(Box)(({ }) => ({
     flex: 1,
     display: "flex",
     flexDirection: "column",
@@ -100,7 +98,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const reconnectAttempts = useRef(0)
     const maxReconnectAttempts = 5
-    const avatarRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
     const lastMessageSenderRef = useRef<string | null>(null)
     const lastUpdateTimeRef = useRef<Date>(new Date())
 
@@ -413,57 +410,57 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
         }
     }
 
-    const handleUserClick = (user: ChatUser) => {
-        setSelectedUser(user)
-        lastMessageSenderRef.current = user.id
-        lastUpdateTimeRef.current = new Date() // Reset thời gian cập nhật khi chuyển user
-        // Đóng kết nối WebSocket cũ
-        if (ws && ws.connected) {
-            ws.disconnect()
-        }
-        // Kết nối WebSocket mới với người dùng được chọn
-        const socket = new SockJS('http://localhost:8080/ws')
-        const stompClient = Stomp.over(() => socket)
+    // const handleUserClick = (user: ChatUser) => {
+    //     setSelectedUser(user)
+    //     lastMessageSenderRef.current = user.id
+    //     lastUpdateTimeRef.current = new Date() // Reset thời gian cập nhật khi chuyển user
+    //     // Đóng kết nối WebSocket cũ
+    //     if (ws && ws.connected) {
+    //         ws.disconnect()
+    //     }
+    //     // Kết nối WebSocket mới với người dùng được chọn
+    //     const socket = new SockJS('http://localhost:8080/ws')
+    //     const stompClient = Stomp.over(() => socket)
 
-        stompClient.connect({}, () => {
-            console.log("Connected to WebSocket")
-            // Subscribe vào channel riêng cho user
-            stompClient.subscribe(`/user/${currentUserId}/queue/messages`, (message) => {
-                try {
-                    const data = JSON.parse(message.body)
-                    setMessages(prev => {
-                        if (prev.some(m => m.id === data.id)) {
-                            return prev
-                        }
-                        return [data, ...prev]
-                    })
-                } catch (error) {
-                    console.error('Error parsing message:', error)
-                }
-            })
+    //     stompClient.connect({}, () => {
+    //         console.log("Connected to WebSocket")
+    //         // Subscribe vào channel riêng cho user
+    //         stompClient.subscribe(`/user/${currentUserId}/queue/messages`, (message) => {
+    //             try {
+    //                 const data = JSON.parse(message.body)
+    //                 setMessages(prev => {
+    //                     if (prev.some(m => m.id === data.id)) {
+    //                         return prev
+    //                     }
+    //                     return [data, ...prev]
+    //                 })
+    //             } catch (error) {
+    //                 console.error('Error parsing message:', error)
+    //             }
+    //         })
 
-            // Load tin nhắn ban đầu
-            fetch(`http://localhost:8080/api/chat/messages/${currentUserId}/${user.id}?limit=20`)
-                .then(res => {
-                    if (!res.ok) {
-                        throw new Error('Network response was not ok')
-                    }
-                    return res.json()
-                })
-                .then(data => {
-                    const sortedMessages = data.sort((a: Message, b: Message) =>
-                        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-                    )
-                    setMessages(sortedMessages)
-                    lastUpdateTimeRef.current = new Date() // Cập nhật thời gian sau khi load tin nhắn ban đầu
-                })
-                .catch(error => {
-                    console.error('Error fetching messages:', error)
-                })
-        })
+    //         // Load tin nhắn ban đầu
+    //         fetch(`http://localhost:8080/api/chat/messages/${currentUserId}/${user.id}?limit=20`)
+    //             .then(res => {
+    //                 if (!res.ok) {
+    //                     throw new Error('Network response was not ok')
+    //                 }
+    //                 return res.json()
+    //             })
+    //             .then(data => {
+    //                 const sortedMessages = data.sort((a: Message, b: Message) =>
+    //                     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    //                 )
+    //                 setMessages(sortedMessages)
+    //                 lastUpdateTimeRef.current = new Date() // Cập nhật thời gian sau khi load tin nhắn ban đầu
+    //             })
+    //             .catch(error => {
+    //                 console.error('Error fetching messages:', error)
+    //             })
+    //     })
 
-        setWs(stompClient)
-    }
+    //     setWs(stompClient)
+    // }
 
     // Thêm useEffect để scroll xuống cuối khi có tin nhắn mới
     useEffect(() => {

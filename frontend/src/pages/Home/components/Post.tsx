@@ -33,7 +33,6 @@ import {
   Favorite,
   FavoriteBorder,
   Repeat as RepeatIcon, // Import Repeat icon
-  Share,
   MoreVert,
 } from "@mui/icons-material";
 // Removed User and ImageType imports as they come from PostType
@@ -163,8 +162,8 @@ interface PostProps {
 const MAX_GRID_IMAGES = 4;
 
 const Post: React.FC<PostProps> = ({ post, ...props }) => {
-  const { onSave, onConfirmRepost, className, sx } = props;
-  const { id, user, content, images, createdAt, likesCount, commentsCount, liked, saved = false, originalPost } = post;
+  const { onSave, className, sx } = props;
+  const { content, images, originalPost } = post;
 
   // Menu state
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -283,7 +282,7 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
 
   const isLoadingCurrentComments = isLoadingPostComments ?? false;
 
-  const { repostPost, isReposting } = usePostStore();
+  const { repostPost } = usePostStore();
 
   const handleRepost = async (originalPostId: number, comment?: string) => {
     try {

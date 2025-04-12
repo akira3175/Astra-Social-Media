@@ -2,7 +2,7 @@ import axios from "axios";
 import type { Post } from "../types/post";
 import type { ApiResponse } from "../types/apiResponse";
 import { tokenService } from "./tokenService";
-import { api, apiNoAuth } from "../configs/api"
+import { api } from "../configs/api"
 
 // Cấu hình base URL nếu chưa có trong instance axios
 const API_URL =

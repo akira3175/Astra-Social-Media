@@ -20,7 +20,6 @@ import {
 import { Lock, Person, Notifications, Security, Menu as MenuIcon } from "@mui/icons-material"
 import BasePage from "../Base/BasePage"
 import PasswordChangeForm from "./components/PasswordChangeForm"
-import { useCurrentUser } from "../../contexts/currentUserContext"
 
 // Define the settings sections
 type SettingsSection = "password" | "profile" | "notifications" | "privacy"
@@ -30,7 +29,6 @@ const SettingsPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const [activeSection, setActiveSection] = useState<SettingsSection>("password")
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
-  const { currentUser } = useCurrentUser()
 
   const handleSectionChange = (section: SettingsSection) => {
     setActiveSection(section)

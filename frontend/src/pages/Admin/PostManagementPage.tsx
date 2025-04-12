@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import {
@@ -58,6 +56,7 @@ const SAMPLE_POSTS: Post[] = [
       firstName: "Văn",
       lastName: "Nguyễn",
       avatar: "https://i.pravatar.cc/150?img=1",
+      email: "nguyenvana@gmail.com",
     },
     likesCount: 45,
     liked: false,
@@ -77,6 +76,7 @@ const SAMPLE_POSTS: Post[] = [
       firstName: "Thị",
       lastName: "Trần",
       avatar: "https://i.pravatar.cc/150?img=5",
+      email: "tranthib@gmail.com",
     },
     likesCount: 78,
     liked: false,
@@ -96,6 +96,7 @@ const SAMPLE_POSTS: Post[] = [
       firstName: "Văn",
       lastName: "Nguyễn",
       avatar: "https://i.pravatar.cc/150?img=1",
+      email: "nguyenvana@gmail.com",
     },
     likesCount: 32,
     liked: false,
@@ -115,6 +116,7 @@ const SAMPLE_POSTS: Post[] = [
       firstName: "Văn",
       lastName: "Lê",
       avatar: "https://i.pravatar.cc/150?img=8",
+      email: "levanc@gmail.com",
     },
     likesCount: 65,
     liked: false,
@@ -134,6 +136,7 @@ const SAMPLE_POSTS: Post[] = [
       firstName: "Thị",
       lastName: "Trần",
       avatar: "https://i.pravatar.cc/150?img=5",
+      email: "tranthib@gmail.com",
     },
     likesCount: 56,
     liked: false,
@@ -152,6 +155,7 @@ const SAMPLE_POSTS: Post[] = [
       firstName: "Thị",
       lastName: "Phạm",
       avatar: "https://i.pravatar.cc/150?img=10",
+      email: "phamthid@gmail.com",
     },
     likesCount: 12,
     liked: false,
@@ -169,6 +173,7 @@ const SAMPLE_POSTS: Post[] = [
         firstName: "Văn",
         lastName: "Nguyễn",
         avatar: "https://i.pravatar.cc/150?img=1",
+        email: "nguyenvana@gmail.com",
       },
       likesCount: 45,
       liked: false,

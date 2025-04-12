@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState, useRef } from "react"; 
 import { Avatar, Box, Button, Card, CardContent, CircularProgress, Divider, IconButton, type SxProps, TextField, type Theme } from "@mui/material"; // Import CircularProgress and IconButton
-import { Close as CloseIcon, Image, Send, Videocam } from "@mui/icons-material"; // Import CloseIcon
+import { Close as CloseIcon, Image, Send } from "@mui/icons-material"; // Import CloseIcon
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import { usePostStore } from "../../../stores/postStore";
 

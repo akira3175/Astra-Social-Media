@@ -1,6 +1,4 @@
-import axios, { AxiosResponse } from "axios";
-import { api, apiNoAuth } from "../configs/api"
-import { tokenService } from "./tokenService";
+import { api } from "../configs/api"
 
 // Định nghĩa các interface
 export interface Post {

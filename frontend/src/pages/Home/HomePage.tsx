@@ -20,7 +20,7 @@ const HomePage: React.FC = () => {
   const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
   const { currentUser } = useCurrentUser()
 
-  const { posts, isLoading, fetchPosts, savePost, setLoading } = usePostStore()
+  const { posts, isLoading, fetchPosts, } = usePostStore()
   const [isLayoutReady, setIsLayoutReady] = React.useState<boolean>(false)
 
   // Sử dụng useLayoutEffect để đảm bảo layout ổn định trước khi render
@@ -144,7 +144,6 @@ const HomePage: React.FC = () => {
           <PostList
             posts={posts}
             isLoading={isLoading}
-            onSavePost={savePost}
           />
 
           {/* Thêm padding dưới cùng để tránh bị che khi scroll đến cuối */}
