@@ -2,7 +2,7 @@ name: CI/CD Fullstack App
 
 on:
   push:
-    branches: [main] # Thay bằng branch bạn dùng
+    branches: [main]
 
 jobs:
   frontend:
@@ -49,12 +49,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Grant permission to execute Maven wrapper
+      - name: Grant permission to Maven wrapper
         run: chmod +x ./backend/mvnw
 
       - name: Build with Maven (skip tests)
         working-directory: ./backend
         run: ./mvnw clean package -DskipTests
+
+      - name: Rename jar to app.jar
+        working-directory: ./backend
+        run: |
+          mkdir -p deploy
+          cp ./target/*.jar ./deploy/app.jar
 
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.4
@@ -63,8 +69,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
-          source: "./backend/target/*.jar"
-          target: "/home/ubuntu/backend-app/app.jar"
+          source: "./backend/deploy/app.jar"
+          target: "/home/ubuntu/backend-app/"
 
       - name: Restart backend service
         uses: appleboy/ssh-action@v0.1.7
@@ -72,5 +78,6 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
           script: |
             sudo systemctl restart springboot-app
