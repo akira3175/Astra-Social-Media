@@ -25,6 +25,7 @@ import DashboardPage from "./pages/Admin/DashboardPage";
 import ProfileSetupPage from "./pages/Auth/ProfileSetupPage";
 import PrivacyPolicyPage from "./pages/Legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/Legal/TermsOfServicePage";
+import SettingsPage from "./pages/Settings/SettingsPage";
 
 const theme = createTheme({
   breakpoints: {
@@ -115,7 +116,7 @@ const AppContent: React.FC = () => {
           <Route path="/admin/comments" element={<CommentManagementPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-          
+
           {/* Các Route cần bảo vệ */}
           <Route
             path="/"
@@ -138,6 +139,14 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             }
           />

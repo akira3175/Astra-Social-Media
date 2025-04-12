@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse, type AxiosInstance } from "axios";
-import { refreshToken, processQueue, failedQueue, handleAuthError } from "../services/AuthService";
+import { refreshToken, processQueue, failedQueue, handleAuthError } from "../services/authService";
 import { tokenService } from "../services/tokenService";
 
 const API_URL = import.meta.env.VITE_API_URL;
