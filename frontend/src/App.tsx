@@ -22,6 +22,9 @@ import CommentManagementPage from "./pages/Admin/CommentManagementPage";
 import PostManagementPage from "./pages/Admin/PostManagementPage";
 import UserManagementPage from "./pages/Admin/UserManagementPage";
 import DashboardPage from "./pages/Admin/DashboardPage";
+import ProfileSetupPage from "./pages/Auth/ProfileSetupPage";
+import PrivacyPolicyPage from "./pages/Legal/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/Legal/TermsOfServicePage";
 
 const theme = createTheme({
   breakpoints: {
@@ -66,9 +69,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   const authenticated = isAuthenticated();
 
-  // if (!authenticated) {
-  //   return <Navigate to="/login" />;
-  // }
+  if (!authenticated) {
+    return <Navigate to="/login" />;
+  }
 
   return <>{children}</>;
 };
@@ -92,7 +95,7 @@ const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) =
 
 const AppContent: React.FC = () => {
   useWebSocket()
-  
+    
   return (
     <>
       <CssBaseline />
@@ -103,13 +106,16 @@ const AppContent: React.FC = () => {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/login" element={<LoginPage />}></Route>
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/profile-setup" element={<ProfileSetupPage />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/dashboard" element={<DashboardPage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/posts" element={<PostManagementPage />} />
           <Route path="/admin/comments" element={<CommentManagementPage />} />
-
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+          
           {/* Các Route cần bảo vệ */}
           <Route
             path="/"
