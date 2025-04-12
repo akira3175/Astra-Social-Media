@@ -276,6 +276,24 @@ const ProfilePage: React.FC = () => {
     }
   }
 
+  const refreshUserData = async () => {
+    if (email) {
+      try {
+        setIsLoading(true)
+        const data = await getUserByEmail(email)
+        setProfile(data)
+        if (isCurrentUser) {
+          setCurrentUser(data)
+        }
+        setIsLoading(false)
+      } catch (error) {
+        console.error("Failed to refresh profile:", error)
+        setError("Failed to refresh profile. Please try again.")
+        setIsLoading(false)
+      }
+    }
+  }
+
   const triggerAvatarUpload = () => {
     avatarInputRef.current?.click()
   }
@@ -430,7 +448,7 @@ const ProfilePage: React.FC = () => {
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={4}>
                     {/* Tiểu sử */}
-                    <ProfileBio profile={profile} isCurrentUser={isCurrentUser} />
+                    <ProfileBio profile={profile} isCurrentUser={isCurrentUser} refreshUserData={refreshUserData}/>
 
                     {/* Danh sách hình ảnh */}
                     <ProfilePhotos />

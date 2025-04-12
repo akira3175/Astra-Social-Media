@@ -38,7 +38,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User updateUser(String email, String firstName, String lastName, MultipartFile avatar, MultipartFile background) throws IOException {
+    public User updateUser(String email, String firstName, String lastName, MultipartFile avatar, MultipartFile background, String bio) throws IOException {
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
             throw new RuntimeException("User not found");
@@ -52,6 +52,11 @@ public class UserService {
         }
         if (lastName != null && !lastName.isEmpty()) {
             user.setLastName(lastName);
+        }
+
+        System.out.println(bio);
+        if (bio != null && !bio.isEmpty()) {
+            user.setBio(bio);
         }
 
         // Cập nhật avatar nếu có
@@ -155,4 +160,7 @@ public class UserService {
         return true;
     }
 
+    public boolean isEmailExist(String email) {
+        return userRepository.existsByEmail(email);
+    }
 }

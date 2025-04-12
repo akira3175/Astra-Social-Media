@@ -61,7 +61,7 @@ export default function LoginPage() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "80vh",
         width: "100%",
         display: "flex",
         alignItems: "center",
@@ -106,7 +106,7 @@ export default function LoginPage() {
                   />
                 </Box>
                 <Typography variant="body1" align="center" sx={{ mt: 3, color: "text.secondary" }}>
-                  Connect with friends and the world around you on AstraSocial.
+                  Kết nối với bạn bè và thế giới xung quanh trên AstraSocial.
                 </Typography>
               </Box>
             </Box>
@@ -143,13 +143,6 @@ export default function LoginPage() {
                   autoFocus
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  sx={{
-                    "& input:-webkit-autofill": {
-                      WebkitBoxShadow: "0 0 0px 1000px white inset",
-                      transition: "background-color 5000s ease-in-out 0s",
-                      WebkitTextFillColor: "black !important",
-                    },
-                  }}
                 />
                 <TextField
                   margin="normal"
@@ -175,13 +168,6 @@ export default function LoginPage() {
                         </IconButton>
                       </InputAdornment>
                     ),
-                  }}
-                  sx={{
-                    "& input:-webkit-autofill": {
-                      WebkitBoxShadow: "0 0 0px 1000px white inset",
-                      transition: "background-color 5000s ease-in-out 0s",
-                      WebkitTextFillColor: "black !important",
-                    },
                   }}
                 />
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
@@ -221,6 +207,7 @@ export default function LoginPage() {
                         fontWeight: "medium",
                         "&:hover": { textDecoration: "underline" },
                       }}
+                      onClick={() => navigate("/register")}
                     >
                       Đăng ký ngay
                     </Typography>
