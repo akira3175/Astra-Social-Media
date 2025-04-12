@@ -182,6 +182,7 @@ public class UserController {
     @PatchMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String token,
                                             @RequestBody Map<String, String> request) {
+        token = token.replace("Bearer ", "").trim();
         String email = jwtUtil.extractEmail(token);
         String oldPassword = request.get("oldPassword");
         String newPassword = request.get("newPassword");

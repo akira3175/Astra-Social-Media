@@ -28,7 +28,8 @@ const ENDPOINTS = {
   USER_INFO_BY_EMAIL: "/users/",
   UPDATE_USER_INFO: "/users/update",
   REGISTER: "/users/register",
-  CHECK_EMAIL_EXISTS: "/users/check-email"
+  CHECK_EMAIL_EXISTS: "/users/check-email",
+  CHANGE_PASSWORD: "/users/change-password"
 }
 
 // Authentication Functions
@@ -237,4 +238,12 @@ export const checkEmailExists = async (email: string): Promise<boolean> => {
   }
 }
 
-
+export const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+  try {
+    await api.patch(ENDPOINTS.CHANGE_PASSWORD, { oldPassword: currentPassword, newPassword }, {
+      headers: { Authorization: `Bearer ${tokenService.getAccessToken()}` }
+    })
+  } catch (error) {
+    throw new Error("Sai mật khẩu, vui lòng thử lại!")
+  }
+}
