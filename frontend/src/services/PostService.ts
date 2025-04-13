@@ -4,10 +4,6 @@ import type { ApiResponse } from "../types/apiResponse";
 import { tokenService } from "./tokenService";
 import { api } from "../configs/api"
 
-// Cấu hình base URL nếu chưa có trong instance axios
-const API_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
-
 interface CreatePostPayload {
   content: string;
   imageUrls: string[];
@@ -21,7 +17,7 @@ const createPost = async (payload: CreatePostPayload): Promise<Post> => {
 
   try {
     const response = await api.post<ApiResponse<Post>>(
-      `${API_URL}/posts`,
+      `/posts`,
       payload,
       {
         headers: {
@@ -50,7 +46,7 @@ const getAllPosts = async (): Promise<Post[]> => {
 
   try {
     const response = await api.get<ApiResponse<Post[]>>(
-      `${API_URL}/posts`,
+      `/posts`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +74,7 @@ const getPostById = async (postId: number): Promise<Post> => {
 
   try {
     const response = await api.get<ApiResponse<Post>>(
-      `${API_URL}/posts/${postId}`,
+      `/posts/${postId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -107,7 +103,7 @@ const likePost = async (postId: number): Promise<Post> => {
 
   try {
     const response = await api.post<ApiResponse<Post>>(
-      `${API_URL}/likes/post/${postId}`,
+      `/likes/post/${postId}`,
       {},
       {
         headers: {
@@ -139,7 +135,7 @@ const unlikePost = async (postId: number): Promise<Post> => {
 
   try {
     const response = await api.delete<ApiResponse<Post>>(
-      `${API_URL}/likes/post/${postId}`,
+      `/likes/post/${postId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -170,7 +166,7 @@ const repostPost = async (postId: number, content?: string): Promise<Post> => {
 
   try {
     const response = await api.post<ApiResponse<Post>>(
-      `${API_URL}/posts/repost/${postId}`,
+      `/posts/repost/${postId}`,
       {
         content: content || "", 
         imageUrls: []
@@ -205,7 +201,7 @@ const getRepostsByPostId = async (postId: number): Promise<Post[]> => {
 
   try {
     const response = await api.get<ApiResponse<Post[]>>(
-      `${API_URL}/posts/reposts/${postId}`,
+      `/posts/reposts/${postId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -233,7 +229,7 @@ const deletePost = async (postId: number): Promise<void> => {
 
   try {
     const response = await api.delete<ApiResponse<void>>(
-      `${API_URL}/posts/${postId}`,
+      `/posts/${postId}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -262,7 +258,7 @@ export const getPostsByUserEmail = async (email: string): Promise<Post[]> => {
 
   try {
     const response = await api.get<ApiResponse<Post[]>>(
-      `${API_URL}/posts/user/${email}`,
+      `/posts/user/${email}`,
       {
         headers: {
           "Content-Type": "application/json",
