@@ -40,7 +40,6 @@ public class SecurityConfig {
                                                                 "/api/users/search",
                                                                 "/uploads/**",
                                                                 "/api/users/{email}/online",
-                                                                "/api/users/check-email",
                                                                 "/ws/**",
                                                                 "/ws",
                                                                 "/api/chat/**",
