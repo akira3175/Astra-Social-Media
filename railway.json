@@ -1,8 +1,8 @@
 {
     "build": {
       "env": "java",
-      "buildCommand": "cd backend && mvn clean install",
-      "startCommand": "cd backend && java -jar target/*.jar"
+      "buildCommand": "cd backend && chmod +x mvnw && ./mvnw clean install",
+      "startCommand": "cd backend && java -jar target/backend-0.0.1-SNAPSHOT.jar"
     }
   }
   
