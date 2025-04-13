@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider,
   Grid,
   IconButton,
   InputAdornment,
@@ -19,7 +18,6 @@ import {
   Visibility,
   VisibilityOff,
   Login as LoginIcon,
-  Google as GoogleIcon,
 } from "@mui/icons-material"
 import { login, getCurrentUser } from "../../services/authService";
 import { useNavigate } from "react-router-dom"
@@ -213,20 +211,6 @@ export default function LoginPage() {
                     </Typography>
                   </Typography>
                 </Box>
-                <Box sx={{ position: "relative", my: 3 }}>
-                  <Divider>
-                    <Typography variant="caption" sx={{ px: 1, color: "text.secondary", textTransform: "uppercase" }}>
-                      Hoặc đăng nhập với
-                    </Typography>
-                  </Divider>
-                </Box>
-                <Grid container spacing={1}>
-                  <Grid item xs={12}>
-                    <Button fullWidth variant="outlined" startIcon={<GoogleIcon />} sx={{ textTransform: "none" }}>
-                      Google
-                    </Button>
-                  </Grid>
-                </Grid>
               </Box>
             </CardContent>
           </Card>

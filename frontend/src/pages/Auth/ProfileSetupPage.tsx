@@ -105,7 +105,6 @@ const ProfileSetupPage: React.FC = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(to bottom right, #f0f5ff, #e0e7ff)",
         padding: 2,
       }}
     >
