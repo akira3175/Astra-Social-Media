@@ -239,16 +239,15 @@ const RegisterPage: React.FC = () => {
               title={
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <Typography variant="h5" component="div">
-                    Đăng ký tài khoản
+                    Đăng ký
                   </Typography>
                   {isMobile && (
                     <Typography variant="h6" sx={{ color: "#4f46e5", fontWeight: "bold" }}>
-                      SocialConnect
+                      Astra Social
                     </Typography>
                   )}
                 </Box>
               }
-              subheader="Tạo tài khoản mới để bắt đầu"
             />
             <CardContent>
               <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
