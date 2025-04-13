@@ -9,7 +9,6 @@ import {
   CardContent,
   CardHeader,
   Checkbox,
-  Divider,
   FormControlLabel,
   Grid,
   IconButton,
@@ -23,7 +22,6 @@ import {
   Visibility,
   VisibilityOff,
   PersonAdd as RegisterIcon,
-  Google as GoogleIcon,
 } from "@mui/icons-material"
 import { checkEmailExists as checkEmailExistsAPI } from "../../services/authService"
 import useDebounce from "../../hooks/useDebounce"
@@ -401,20 +399,6 @@ const RegisterPage: React.FC = () => {
                     </Typography>
                   </Typography>
                 </Box>
-                <Box sx={{ position: "relative", my: 3 }}>
-                  <Divider>
-                    <Typography variant="caption" sx={{ px: 1, color: "text.secondary", textTransform: "uppercase" }}>
-                      Hoặc đăng ký với
-                    </Typography>
-                  </Divider>
-                </Box>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Button fullWidth variant="outlined" startIcon={<GoogleIcon />} sx={{ textTransform: "none" }}>
-                      Google
-                    </Button>
-                  </Grid>
-                </Grid>
               </Box>
             </CardContent>
           </Card>
