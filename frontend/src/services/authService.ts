@@ -3,10 +3,11 @@ import type { User } from "../types/user"
 import { tokenService } from "./tokenService"
 import { api, apiNoAuth } from "../configs/api"
 import { createApiWithTimeout } from "../utils/apiUtil"
+import type { RegisterData } from "../types/user"
 
 // Types
 interface TokenPair {
-  accessToken: string
+  accessToken: string 
   refreshToken: string
 }
 
@@ -25,7 +26,10 @@ const ENDPOINTS = {
   REFRESH: "/users/refresh",
   USER_INFO: "/users/info",
   USER_INFO_BY_EMAIL: "/users/",
-  UPDATE_USER_INFO: "/users/update"
+  UPDATE_USER_INFO: "/users/update",
+  REGISTER: "/users/register",
+  CHECK_EMAIL_EXISTS: "/users/check-email",
+  CHANGE_PASSWORD: "/users/change-password"
 }
 
 // Authentication Functions
@@ -122,6 +126,20 @@ export const logout = (redirectPath = "/login"): void => {
   window.location.href = redirectPath
 }
 
+export const register = async (registerData: RegisterData): Promise<TokenPair> => {
+  try {
+    const response: AxiosResponse<TokenPair> = await api.post(ENDPOINTS.REGISTER, registerData)
+
+    return response.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data?.message || "Registration failed"
+      throw new Error(errorMessage)
+    }
+    throw new Error("Registration failed. Please try again.")
+  }
+}
+
 export const isAuthenticated = (): boolean => !!tokenService.getAccessToken()
 
 export const getCurrentUser = async (): Promise<User> => {
@@ -166,6 +184,20 @@ export const updateUserName = async (firstName: string, lastName: string): Promi
   }
 };
 
+export const updateUserBio = async (bio: string): Promise<User> => {
+  try {
+    const formData = new FormData();
+    formData.append("bio", bio);
+
+    const response: AxiosResponse<User> = await api.patch(ENDPOINTS.UPDATE_USER_INFO, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data
+  } catch (error) {
+    throw new Error("Error updating user bio")
+  }
+}
+
 export const updateUserAvatar = async (avatarFile: File): Promise<User> => {
   try {
     const formData = new FormData();
@@ -194,4 +226,24 @@ export const updateUserBackground = async (backgroundFile: File): Promise<User> 
   }
 };
 
+export const checkEmailExists = async (email: string): Promise<boolean> => {
+  try {
+    const response: AxiosResponse<{ exists: boolean }> = await apiNoAuth.get(
+      ENDPOINTS.CHECK_EMAIL_EXISTS,
+      { params: { email } }
+    )
+    return response.data.exists
+  } catch (error) {
+    throw new Error("Error checking email exists")
+  }
+}
 
+export const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+  try {
+    await api.patch(ENDPOINTS.CHANGE_PASSWORD, { oldPassword: currentPassword, newPassword }, {
+      headers: { Authorization: `Bearer ${tokenService.getAccessToken()}` }
+    })
+  } catch (error) {
+    throw new Error("Sai mật khẩu, vui lòng thử lại!")
+  }
+}

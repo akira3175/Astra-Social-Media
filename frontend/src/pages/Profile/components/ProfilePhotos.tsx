@@ -16,7 +16,7 @@ const ProfilePhotos: React.FC = () => {
     <Paper sx={{ p: 2, mb: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="h6">Ảnh</Typography>
-        <Button size="small" sx={{ textTransform: "none" }}>
+        <Button size="small" sx={{ textTransform: "none", outline: "none", "&:focus": { outline: "none" } }}>
           Xem tất cả
         </Button>
       </Box>

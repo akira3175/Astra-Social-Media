@@ -20,6 +20,7 @@ let isRefreshing = false;
 // Request Interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    console.log("request", API_URL);
     const token = tokenService.getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

@@ -1,0 +1,210 @@
+package org.example.backend.service;
+
+import org.example.backend.entity.Image;
+import org.example.backend.dto.PostDTO; 
+import org.example.backend.entity.Post;
+import org.example.backend.entity.User;
+import org.example.backend.repository.CommentRepository; 
+import org.example.backend.repository.ImageRepository;
+import org.example.backend.repository.LikeRepository;
+import org.example.backend.repository.PostRepository;
+import org.example.backend.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.Date;
+
+
+@Service
+public class PostService {
+
+
+    @Autowired
+    private PostRepository postRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ImageRepository imageRepository;
+
+    @Autowired
+    private LikeRepository likeRepository; // Inject LikeRepository
+
+    @Autowired
+    private CommentRepository commentRepository; // Inject CommentRepository
+
+    public User getCurrentUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostDTO> getAllPostDtos(String currentUserEmail) {
+        User currentUser = getCurrentUser(currentUserEmail);
+        List<Post> posts = postRepository.findByIsDeletedFalse();
+        return posts.stream()
+                    .map(post -> convertToDto(post, currentUser))
+                    .collect(Collectors.toList());
+    }
+
+    // Helper method to convert Post entity to PostDTO
+    private PostDTO convertToDto(Post post, User currentUser) {
+        if (post == null) {
+            return null;
+        }
+
+        boolean likedByCurrentUser = false;
+        if (currentUser != null) {
+            likedByCurrentUser = likeRepository.findByUserAndPost(currentUser, post).isPresent();
+        }
+        long likesCount = likeRepository.countByPostId(post.getId());
+        long commentsCount = commentRepository.countByPostId(post.getId());
+
+        // Xử lý originalPost bị xóa
+        PostDTO originalPostDto = null;
+        if (post.getOriginalPost() != null) {
+            Post originalPost = post.getOriginalPost();
+            if (originalPost.isDeleted()) {
+                // Nếu bài gốc đã xóa, chỉ giữ lại thông tin cơ bản
+                originalPostDto = PostDTO.builder()
+                    .id(originalPost.getId())
+                    .user(originalPost.getUser())
+                    .isDeleted(true)
+                    .createdAt(originalPost.getCreatedAt())
+                    .build();
+            } else {
+                originalPostDto = convertToDto(originalPost, currentUser);
+            }
+        }
+
+        return PostDTO.builder()
+                .id(post.getId())
+                .content(post.getContent())
+                .user(post.getUser())
+                .images(post.getImages() != null ? post.getImages() : Collections.emptyList())
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
+                .likesCount(likesCount)
+                .liked(likedByCurrentUser)
+                .commentsCount(commentsCount)
+                .originalPost(originalPostDto)
+                .isDeleted(post.isDeleted())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Post> getPostById(Long id) {
+        Optional<Post> postOpt = postRepository.findByIdAndIsDeletedFalse(id);
+        postOpt.ifPresent(post -> {
+            post.setLikeCount(likeRepository.countByPostId(post.getId()));
+            post.setTotalCommentCount(commentRepository.countByPostId(post.getId()));
+        });
+        return postOpt;
+    }
+
+    public Post getPostByIdOrThrow(Long id) {
+        return postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
+    }
+
+    // No changes needed in this file, the method is already there
+
+    @Transactional
+    public Post createPost(String email, String content, List<Image> images) {
+        User user = getCurrentUser(email);
+
+        Post post = Post.builder()
+                .content(content)
+                .user(user)
+                .build();
+
+        if (images != null && !images.isEmpty()) {
+            for (Image image : images) {
+                image.setPost(post); // Set post reference for each image
+            }
+            post.setImages(images); // Set images list for the post
+        }
+
+        return postRepository.save(post);
+    }
+
+    public Post updatePost(Long id, String newContent) {
+        return postRepository.findById(id).map(post -> {
+            post.setContent(newContent);
+            return postRepository.save(post);
+        }).orElseThrow(() -> new RuntimeException("Post not found"));
+    }
+
+    public void deletePost(Long id) {
+        postRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Post> getPostsByUserId(Long userId) {
+        List<Post> posts = postRepository.findByUserIdAndIsDeletedFalse(userId);
+        posts.forEach(post -> {
+            post.setLikeCount(likeRepository.countByPostId(post.getId()));
+            post.setTotalCommentCount(commentRepository.countByPostId(post.getId()));
+        });
+        return posts;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostDTO> getPostsByUserEmail(String userEmail, String currentUserEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        User currentUser = getCurrentUser(currentUserEmail);
+        
+        List<Post> posts = postRepository.findByUserIdAndIsDeletedFalse(user.getId());
+        return posts.stream()
+                .map(post -> convertToDto(post, currentUser))
+                .collect(Collectors.toList());
+    }
+
+    public List<Post> getReposts(Long originalPostId) {
+        return postRepository.findByOriginalPostId(originalPostId);
+    }
+
+    public Post createRepost(Long originalPostId, String email, String content) {
+        User user = getCurrentUser(email);
+        Post originalPost = postRepository.findById(originalPostId)
+                .orElseThrow(() -> new RuntimeException("Original post not found"));
+
+        Post repost = Post.builder()
+                .content(content)
+                .user(user)
+                .originalPost(originalPost)
+                .build();
+
+        return postRepository.save(repost);
+    }
+
+    // Method to get PostDTO by ID, including like status for the current user
+    @Transactional(readOnly = true) // Use readOnly transaction
+    public PostDTO getPostDtoById(Long postId, String currentUserEmail) {
+        Post post = getPostByIdOrThrow(postId);
+        User currentUser = getCurrentUser(currentUserEmail);
+
+        // Check if the current user liked this post
+        // boolean likedByCurrentUser = likeRepository.findByUserAndPost(currentUser, post).isPresent();
+
+        // Get counts
+        // Use the helper method for conversion
+        return convertToDto(post, currentUser);
+    }
+
+    @Transactional
+    public void softDeletePost(Long postId) {
+        Post post = getPostByIdOrThrow(postId);
+        post.setDeleted(true);
+        post.setDeletedAt(new Date());
+        postRepository.save(post);
+    }
+}

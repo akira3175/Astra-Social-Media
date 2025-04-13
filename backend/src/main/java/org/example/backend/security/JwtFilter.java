@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -59,10 +61,13 @@ public class JwtFilter extends OncePerRequestFilter {
                 sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "This is a Refresh Token, rejecting...");
                 return;
             }
-
+            // Thêm vào để hết lỗi author 403
             if (email != null && jwtUtil.isTokenValid(token, email)) {
                 System.out.println("Token is valid");
-                request.setAttribute("email", email);
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email,
+                        null, null); // No credentials needed here, principal (email) is enough
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                // request.setAttribute("email", email);
                 chain.doFilter(request, response);
             } else {
                 System.out.println("Invalid or expired JWT token");

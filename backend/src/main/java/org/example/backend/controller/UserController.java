@@ -5,8 +5,9 @@ import org.example.backend.entity.User;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.security.JwtUtil;
 import org.example.backend.service.UserService;
-import org.example.backend.websocket.WebSocketHandler;
+import org.example.backend.websocket.WebSocketEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,7 +30,7 @@ public class UserController {
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
-    private WebSocketHandler webSocketHandler;
+    private WebSocketEventListener webSocketEventListener;
 
     // API tạo User
     @PostMapping("/register")
@@ -97,9 +99,6 @@ public class UserController {
 
         User user = optionalUser.get();
 
-        // 🔥 Lấy base URL động
-        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-
         // 🔥 Thêm domain vào avatar và background nếu có
         user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
         user.setBackground(
@@ -116,9 +115,6 @@ public class UserController {
     public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String token, HttpServletRequest request) {
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
         User user = userService.getUserInfo(email); // Thay đổi từ findByEmail nếu cần
-
-        // 🔥 Lấy base URL động
-        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
 
         // 🔥 Thêm domain vào avatar và background
         user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
@@ -140,6 +136,7 @@ public class UserController {
             @RequestParam(value = "lastName", required = false) String lastName,
             @RequestParam(value = "avatar", required = false) MultipartFile avatar,
             @RequestParam(value = "background", required = false) MultipartFile background,
+            @RequestParam(value = "bio", required = false) String bio,
             HttpServletRequest request) {
 
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
@@ -161,14 +158,14 @@ public class UserController {
 
     @GetMapping("/{email}/online")
     public Map<String, Object> checkOnline(@PathVariable String email) {
-        boolean isOnline = webSocketHandler.isUserOnline(email);
+        boolean isOnline = webSocketEventListener.isUserOnline(email);
         return Map.of("email", email, "is_online", isOnline);
     }
 
     // API lấy trạng thái online của tất cả người dùng
     @GetMapping("/all-online-status")
     public ResponseEntity<Map<String, Boolean>> getAllOnlineStatus() {
-        Map<String, Boolean> onlineStatus = webSocketHandler.getAllUsersOnlineStatus();
+        Map<String, Boolean> onlineStatus = webSocketEventListener.getAllUsersOnlineStatus();
         return ResponseEntity.ok(onlineStatus);
     }
 
@@ -183,4 +180,50 @@ public class UserController {
         List<User> friends = userService.getFriendsList(userId);
         return ResponseEntity.ok(friends);
     }
+
+    @GetMapping("/search")
+    public Page<User> searchUsers(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "all") String isStaff,
+            @RequestParam(required = false, defaultValue = "true") String isActive,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+        Page<User> users = userService.searchUsers(keyword, isStaff, isActive, page, size);
+
+        return users.map(user -> addDomainToImage(user, request));
+    }
+
+    private User addDomainToImage(User user, HttpServletRequest request) {
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
+        user.setBackground(
+                (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
+                        : null);
+        return user;
+    }
+
+    @PatchMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> request) {
+        token = token.replace("Bearer ", "").trim();
+        String email = jwtUtil.extractEmail(token);
+        String oldPassword = request.get("oldPassword");
+        String newPassword = request.get("newPassword");
+
+        boolean success = userService.changePassword(email, oldPassword, newPassword);
+
+        if (success) {
+            return ResponseEntity.ok("Password changed successfully");
+        } else {
+            return ResponseEntity.status(400).body("Old password is incorrect");
+        }
+    }
+
+    @GetMapping("check-email")
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
+        boolean exists = userService.isEmailExist(email);
+        return ResponseEntity.ok(Collections.singletonMap("exists", exists));
+    }
+
 }
