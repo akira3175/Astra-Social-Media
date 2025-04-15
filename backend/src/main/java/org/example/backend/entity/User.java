@@ -76,4 +76,11 @@ public class User {
     @Column
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastLogin;
+
+    @Column
+    private Integer mutualFriends;
+
+    public String getName() {
+        return firstName + " " + lastName;
+    }
 }
