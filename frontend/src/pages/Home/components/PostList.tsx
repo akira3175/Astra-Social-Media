@@ -45,7 +45,7 @@ const PostList: React.FC<PostListProps> = ({
       </Box>
     )
   }
-  console.log("Posts loaded:", posts)
+  // console.log("Posts loaded:", posts)
   // Render actual posts when loaded
   return (
     <Box className={className}>
