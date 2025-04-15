@@ -111,9 +111,16 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    @Transactional
     public User getUserInfo(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .map(user -> User.builder()
+                        .id(user.getId())
+                        .email(user.getEmail())
+                        .isSuperUser(user.getIsSuperUser())
+                        .isActive(user.getIsActive())
+                        .build())
+                .orElse(null);
     }
 
     

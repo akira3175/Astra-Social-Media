@@ -7,7 +7,8 @@ public enum ErrorCode {
     INVALID_CREDENTIALS(400, "Invalid credentials"),
     UNAUTHORIZED(401, "Unauthorized"),
     FORBIDDEN(403, "Forbidden"),
-    INTERNAL_SERVER_ERROR(500, "Internal server error");
+    INTERNAL_SERVER_ERROR(500, "Internal server error"),
+    NOT_ADMIN(407, "You aren't admin");
 
     private final int code;
     private final String message;

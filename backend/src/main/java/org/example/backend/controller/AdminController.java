@@ -1,7 +1,7 @@
 package org.example.backend.controller;
 
 import org.springframework.web.bind.annotation.RestController;
-
+import org.example.backend.security.RequireAdmin;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +37,7 @@ public class AdminController {
     private final CommentService commentService;
     private final PostService postService;
 
+    @RequireAdmin
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<Object>> getAdminStats() {
         Map<String, Long> stats = new HashMap<>();
@@ -55,6 +56,7 @@ public class AdminController {
                 .build());
     }
 
+    @RequireAdmin
     @GetMapping("/users/getAllUser")
     public ResponseEntity<ApiResponse<Object>> getAllUser() {
         List<User> users = userService.getAllUsers();
@@ -66,6 +68,7 @@ public class AdminController {
                 .build());
     }
 
+    @RequireAdmin
     @PostMapping("/users/{userId}/unban")
     public ResponseEntity<ApiResponse<Object>> unbanUser(@PathVariable Long userId) {
         return ResponseEntity.ok().body(ApiResponse.builder()
@@ -76,6 +79,7 @@ public class AdminController {
                 .build());
     }
 
+    @RequireAdmin
     @PostMapping("/users/{userId}/ban")
     public ResponseEntity<ApiResponse<Object>> banUser(@PathVariable Long userId) {
         return ResponseEntity.ok().body(ApiResponse.builder()
@@ -87,6 +91,7 @@ public class AdminController {
     }
 
     // Post
+    @RequireAdmin
     @GetMapping("/posts/getAllPost")
     public ResponseEntity<ApiResponse<Object>> getAllPost() {
         List<User> users = userService.getAllUsers();
@@ -106,6 +111,7 @@ public class AdminController {
                 .build());
     }
 
+    @RequireAdmin
     @GetMapping("/comments/getAllComment")
     public ResponseEntity<ApiResponse<Object>> getAllComment() {
         List<Comment> comments = commentService.getAllComments();
@@ -117,6 +123,7 @@ public class AdminController {
                 .build());
     }
 
+    @RequireAdmin
     @PostMapping("/comments/{commentId}/delete")
     public ResponseEntity<ApiResponse<Object>> deleteComment(@PathVariable Long commentId) {
         commentService.deleteComment(commentId);
