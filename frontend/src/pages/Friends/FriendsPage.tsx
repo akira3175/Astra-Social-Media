@@ -19,7 +19,7 @@ import BasePage from "../Base/BasePage"
 import FriendRequests from "./components/FriendRequests"
 import FriendSuggestions from "./components/FriendSuggestions"
 import FriendsList from "./components/FriendList"
-import { useCurrentUser } from "../../contexts/currentUserContext"
+// import { useCurrentUser } from "../../contexts/currentUserContext"
 
 // Define the tab values
 type FriendTab = "all" | "requests" | "suggestions" | "sent"
@@ -29,8 +29,8 @@ const FriendsPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const [activeTab, setActiveTab] = useState<FriendTab>("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const { currentUser } = useCurrentUser()
+  const [isLoading, ] = useState(false)
+//   const { currentUser } = useCurrentUser()
 
   // Handle tab change
   const handleTabChange = (_event: React.SyntheticEvent, newValue: FriendTab) => {
