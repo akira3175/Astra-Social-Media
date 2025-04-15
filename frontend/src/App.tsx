@@ -25,6 +25,7 @@ import ProfileSetupPage from "./pages/Auth/ProfileSetupPage";
 import PrivacyPolicyPage from "./pages/Legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/Legal/TermsOfServicePage";
 import SettingsPage from "./pages/Settings/SettingsPage";
+import FriendsPage from "./pages/Friends/FriendsPage"
 
 const theme = createTheme({
   breakpoints: {
@@ -147,6 +148,14 @@ const AppContent: React.FC = () => {
               <ProtectedRoute>
                 <SettingsPage />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/friends"
+            element={
+              // <ProtectedRoute>
+                <FriendsPage />
+              /* </ProtectedRoute> */
             }
           />
           {/* Các route khác có thể thêm vào đây */}
