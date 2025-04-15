@@ -50,7 +50,8 @@ public class SecurityConfig {
                                                                 "/topic/**",
                                                                 "/queue/**",
                                                                 "/app/**",
-                                                                "/user/**")
+                                                                "/user/**",
+                                                                "/api/gemini/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
