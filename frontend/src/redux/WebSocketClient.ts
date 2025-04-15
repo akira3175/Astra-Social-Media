@@ -25,7 +25,9 @@ class WebSocketClient {
     }
 
     // Tạo kết nối với WebSocket qua SockJS
-    const socket = new SockJS(`http://localhost:8080/ws?token=${token}`);
+    const baseSocketUrl = process.env.REACT_APP_WEBSOCKET_URL;
+    const socket = new SockJS(`${baseSocketUrl}?token=${token}`);
+    
     this.client = new Client({
       webSocketFactory: () => socket,
       connectHeaders: {

@@ -2,9 +2,11 @@ package org.example.backend.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.backend.entity.Friendship;
 import org.example.backend.entity.User;
 import org.example.backend.exception.AppException;
 import org.example.backend.exception.ErrorCode;
+import org.example.backend.repository.FriendshipRepository;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.repository.UserRepository;
 import org.example.backend.security.JwtUtil;
@@ -18,15 +20,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final FriendshipRepository friendshipRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final FileStorageService fileStorageService;
@@ -196,5 +201,52 @@ public class UserService {
 
     public boolean isEmailExist(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    public List<Map<String, Object>> getSuggestedUsers(Long currentUserId) {
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new RuntimeException("Current user not found"));
+
+        return userRepository.findTop6ByOrderByMutualFriendsDesc().stream()
+                .filter(user -> !user.getId().equals(currentUserId))
+                .map(user -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("name", user.getLastName() + user.getFirstName());
+                    userMap.put("avatar", user.getAvatar());
+                    userMap.put("mutualFriends", user.getMutualFriends() != null ? user.getMutualFriends() : 0);
+                    userMap.put("status", null);
+
+                    // Tìm friendship giữa currentUser và user
+                    Optional<Friendship> friendship = friendshipRepository.findByUser1AndUser2(currentUser, user);
+                    if (!friendship.isPresent()) {
+                        friendship = friendshipRepository.findByUser1AndUser2(user, currentUser);
+                    }
+
+                    if (friendship.isPresent()) {
+                        System.out.println(
+                                "Found friendship for user " + user.getFirstName() + ": " + friendship.get().getId());
+                        userMap.put("friendshipStatus", friendship.get().getStatus().name());
+                        userMap.put("isUser1", friendship.get().getUser1().getId().equals(currentUserId));
+                        userMap.put("friendshipId", friendship.get().getId());
+                    } else {
+                        System.out.println("No friendship found for user " + user.getFirstName());
+                        userMap.put("friendshipStatus", null);
+                        userMap.put("isUser1", null);
+                        userMap.put("friendshipId", null);
+                    }
+
+                    return userMap;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<User> getFriendsList(String userId) {
+        try {
+            Long id = Long.parseLong(userId);
+            return userRepository.findFriendsById(id);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid user ID format");
+        }
     }
 }

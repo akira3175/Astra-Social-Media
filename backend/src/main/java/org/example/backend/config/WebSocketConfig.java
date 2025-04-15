@@ -32,7 +32,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws") // Endpoint kết nối WebSocket
-                .setAllowedOrigins("http://localhost:5173") // Frontend origin
+                .setAllowedOrigins("http://localhost:5173",
+                        "https://astrasocial.netlify.app") // Frontend origin
                 .addInterceptors(jwtHandshakeInterceptor)
                 .setHandshakeHandler(new JwtHandshakeHandler())
                 .withSockJS(); // Hỗ trợ SockJS cho các trình duyệt không hỗ trợ WebSocket

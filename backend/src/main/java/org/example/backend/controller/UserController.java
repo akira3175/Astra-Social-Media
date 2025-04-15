@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -202,4 +203,15 @@ public class UserController {
         return ResponseEntity.ok(Collections.singletonMap("exists", exists));
     }
 
+    @GetMapping("/suggestions")
+    public ResponseEntity<List<Map<String, Object>>> getSuggestedUsers(@RequestParam Long currentUserId) {
+        List<Map<String, Object>> suggestedUsers = userService.getSuggestedUsers(currentUserId);
+        return ResponseEntity.ok(suggestedUsers);
+    }
+
+    @GetMapping("/{userId}/friends")
+    public ResponseEntity<?> getFriendsList(@PathVariable String userId) {
+        List<User> friends = userService.getFriendsList(userId);
+        return ResponseEntity.ok(friends);
+    }
 }

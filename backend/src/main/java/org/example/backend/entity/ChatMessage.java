@@ -41,4 +41,11 @@ public class ChatMessage {
             senderName = "Người dùng";
         }
     }
+
+    public enum FriendshipStatus {
+        PENDING,
+        ACCEPTED,
+        REJECTED,
+        BLOCKED
+    }
 }
