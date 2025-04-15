@@ -7,7 +7,7 @@ import type { RegisterData } from "../types/user"
 
 // Types
 interface TokenPair {
-  accessToken: string 
+  accessToken: string
   refreshToken: string
 }
 
@@ -17,7 +17,7 @@ interface QueueItem {
 }
 
 interface RefreshResponse {
-  accessToken: string 
+  accessToken: string
 }
 
 // Constants
@@ -75,11 +75,12 @@ export const refreshToken = async (): Promise<string> => {
   try {
     const response: AxiosResponse<RefreshResponse> = await apiNoAuth.post(
       ENDPOINTS.REFRESH,
-      { refreshToken }, 
-      { signal,
+      { refreshToken },
+      {
+        signal,
         withCredentials: true,
         headers: { Authorization: undefined },
-       },
+      },
     )
 
     clearTimeoutFn()
@@ -88,7 +89,7 @@ export const refreshToken = async (): Promise<string> => {
       throw new Error(`Server responded with status ${response.status}`)
     }
 
-    const { accessToken } = response.data 
+    const { accessToken } = response.data
     tokenService.setAccessToken(accessToken)
     setAuthHeader(accessToken)
     return accessToken
@@ -155,9 +156,9 @@ export const getCurrentUser = async (): Promise<User> => {
       throw new Error(`API error: ${error.response?.status} - ${error.response?.statusText}`)
     } else {
       console.error("Unexpected error:", error)
-      throw error 
+      throw error
     }
-  } 
+  }
 }
 
 export const getUserByEmail = async (email: string): Promise<User> => {
