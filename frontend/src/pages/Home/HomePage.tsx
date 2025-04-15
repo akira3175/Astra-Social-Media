@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useLayoutEffect } from "react"
+import React, { useEffect, useLayoutEffect, useState } from "react"
 import { Box, useMediaQuery, useTheme } from "@mui/material"
 import BasePage from "../Base/BasePage"
 import LeftSidebar from "./components/LeftSidebar"
@@ -10,14 +10,17 @@ import PostList from "./components/PostList"
 import MobileBottomNav from "./components/MobileBottomNav"
 import { usePostStore } from "../../stores/postStore"
 import { useCurrentUser } from "../../contexts/currentUserContext" // Import useCurrentUser
+import ChatBox from "../../components/ChatBox/ChatBox"
 
 const HomePage: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"))
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
+  const { currentUser } = useCurrentUser()
 
-  const { posts, isLoading, fetchPosts, savePost, setLoading } = usePostStore()
-  const { currentUser } = useCurrentUser() // Get currentUser
+  const { posts, isLoading, fetchPosts, } = usePostStore()
   const [isLayoutReady, setIsLayoutReady] = React.useState<boolean>(false)
 
   // Sử dụng useLayoutEffect để đảm bảo layout ổn định trước khi render
@@ -29,6 +32,14 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     fetchPosts()
   }, [fetchPosts])
+
+  const toggleChat = () => {
+    setIsChatOpen(!isChatOpen)
+    console.log(isChatOpen)
+    console.log(currentUser)
+    console.log(selectedReceiverId)
+    setSelectedReceiverId("1")
+  }
 
   // Nếu layout chưa sẵn sàng, hiển thị container trống với kích thước cố định
   if (!isLayoutReady) {
@@ -48,6 +59,16 @@ const HomePage: React.FC = () => {
 
   return (
     <BasePage>
+      {/* Render ChatBox ở cấp cao nhất */}
+      {isChatOpen && currentUser?.id && selectedReceiverId && (
+        <ChatBox
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          receiverId={selectedReceiverId}
+          currentUserId={currentUser.id.toString()}
+        />
+      )}
+
       <Box
         className="layout-container"
         sx={{
@@ -58,7 +79,8 @@ const HomePage: React.FC = () => {
           boxSizing: "border-box",
           display: "flex",
           position: "relative",
-          height: "95vh", // Chiều cao = viewport - navbar
+          height: "95vh",
+          zIndex: 1, // Thêm z-index cho container chính
         }}
       >
         {/* Left sidebar - Navigation */}
@@ -88,7 +110,10 @@ const HomePage: React.FC = () => {
               },
             }}
           >
-            <LeftSidebar />
+            <LeftSidebar
+              onToggleChat={toggleChat}
+              setSelectedReceiverId={setSelectedReceiverId}
+            />
           </Box>
         )}
 
@@ -116,10 +141,9 @@ const HomePage: React.FC = () => {
           }}
         >
           <CreatePost sx={{ mb: 3 }} />
-          <PostList 
-            posts={posts} 
+          <PostList
+            posts={posts}
             isLoading={isLoading}
-            onSavePost={savePost}
           />
 
           {/* Thêm padding dưới cùng để tránh bị che khi scroll đến cuối */}
@@ -135,9 +159,10 @@ const HomePage: React.FC = () => {
               position: "sticky",
               top: 0,
               height: "calc(100vh - 140px)",
-              overflowY: "auto", // Thanh cuộn riêng cho sidebar
+              overflowY: "auto",
               pl: 2,
               pr: 1,
+              zIndex: 1, // Thêm z-index thấp hơn ChatBox
               // Tùy chỉnh thanh cuộn
               "&::-webkit-scrollbar": {
                 width: "6px",
@@ -166,3 +191,4 @@ const HomePage: React.FC = () => {
 }
 
 export default HomePage
+

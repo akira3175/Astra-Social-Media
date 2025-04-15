@@ -1,5 +1,5 @@
 import type React from "react"
-import { Box, Paper, Typography } from "@mui/material"
+import { Box } from "@mui/material"
 import Post from "./Post"
 import PostSkeleton from "./PostSkeleton"
 import type { Post as PostType } from "../../../types/post"
@@ -14,7 +14,7 @@ interface PostListProps {
 const PostList: React.FC<PostListProps> = ({ 
   posts, 
   isLoading,
-  className 
+  className,
 }) => {
   const { savePost, repostPost } = usePostStore();
 

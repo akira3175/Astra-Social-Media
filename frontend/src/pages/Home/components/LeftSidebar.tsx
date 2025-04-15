@@ -2,25 +2,103 @@ import type React from "react"
 import { Link } from "react-router-dom"
 import { Button, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper } from "@mui/material"
 import { Chat, Explore, Home as HomeIcon, Notifications, Person, Settings } from "@mui/icons-material"
+import { useState, useEffect } from "react"
+import { useCurrentUser } from "../../../contexts/currentUserContext"
 
 interface MenuItem {
   text: string
   icon: React.ReactNode
   path: string
   active?: boolean
+  onClick?: () => void
+}
+
+interface ChatUser {
+  id: string
+  name: string
+  avatar?: string
+  lastMessage?: string
+  lastMessageTime?: string
+  unreadCount?: number
 }
 
 interface LeftSidebarProps {
   className?: string
+  onToggleChat: () => void
+  setSelectedReceiverId?: (id: string) => void
 }
 
-const LeftSidebar: React.FC<LeftSidebarProps> = ({ className }) => {
+const LeftSidebar: React.FC<LeftSidebarProps> = ({ className, onToggleChat, setSelectedReceiverId }) => {
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [, setChatUsers] = useState<ChatUser[]>([])
+  const { currentUser } = useCurrentUser()
+
+  const loadChatUsers = () => {
+    if (!currentUser?.id) return
+
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      console.log('User not logged in, redirecting to login page')
+      window.location.href = '/login'
+      return
+    }
+
+    fetch(`http://localhost:8080/api/chat/users/${currentUser.id}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    })
+      .then(res => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            localStorage.removeItem('accessToken')
+            window.location.href = '/login'
+          }
+          throw new Error('Network response was not ok')
+        }
+        return res.json()
+      })
+      .then(data => {
+        console.log("Loaded chat users:", data)
+        setChatUsers(data)
+        // Nếu có người dùng và có setSelectedReceiverId, chọn người đầu tiên
+        if (data.length > 0 && setSelectedReceiverId) {
+          setSelectedReceiverId(data[0].id)
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching chat users:', error)
+      })
+  }
+
+  useEffect(() => {
+    if (isChatOpen && currentUser?.id) {
+      loadChatUsers()
+    }
+  }, [isChatOpen, currentUser?.id])
+
+  const toggleChat = () => {
+    setIsChatOpen(!isChatOpen)
+    onToggleChat()
+    if (!isChatOpen) {
+      loadChatUsers()
+    }
+  }
+
   // Danh sách menu chính
   const mainMenuItems: MenuItem[] = [
     { text: "Trang chủ", icon: <HomeIcon />, path: "/", active: true },
     { text: "Khám phá", icon: <Explore />, path: "/explore" },
     { text: "Thông báo", icon: <Notifications />, path: "/notifications" },
-    { text: "Tin nhắn", icon: <Chat />, path: "/messages" },
+    {
+      text: "Tin nhắn",
+      icon: <Chat />,
+      path: "/messages",
+      onClick: toggleChat
+    },
     { text: "Cài đặt", icon: <Settings />, path: "/settings" },
   ]
 
@@ -49,8 +127,9 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className }) => {
         {mainMenuItems.map((item, index) => (
           <ListItem key={index} disablePadding>
             <ListItemButton
-              component={Link}
-              to={item.path}
+              component={item.onClick ? "button" : Link}
+              to={!item.onClick ? item.path : undefined}
+              onClick={item.onClick}
               sx={{
                 borderRadius: 1,
                 mb: 0.5,

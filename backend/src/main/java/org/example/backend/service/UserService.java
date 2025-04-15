@@ -6,6 +6,10 @@ import org.example.backend.entity.User;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.repository.UserRepository;
 import org.example.backend.security.JwtUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,7 +38,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User updateUser(String email, String firstName, String lastName, MultipartFile avatar, MultipartFile background) throws IOException {
+    public User updateUser(String email, String firstName, String lastName, MultipartFile avatar, MultipartFile background, String bio) throws IOException {
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
             throw new RuntimeException("User not found");
@@ -48,6 +52,11 @@ public class UserService {
         }
         if (lastName != null && !lastName.isEmpty()) {
             user.setLastName(lastName);
+        }
+
+        System.out.println(bio);
+        if (bio != null && !bio.isEmpty()) {
+            user.setBio(bio);
         }
 
         // Cập nhật avatar nếu có
@@ -88,8 +97,7 @@ public class UserService {
 
                 return Map.of(
                         "accessToken", accessToken,
-                        "refreshToken", refreshToken
-                );
+                        "refreshToken", refreshToken);
             }
         }
         return null;
@@ -103,5 +111,56 @@ public class UserService {
     public User getUserInfo(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public Page<User> searchUsers(String keyword, String isStaffStr, String isActiveStr, int page, int size) {
+        // Convert string to Boolean (or null if "all")
+        Boolean isStaff = parseToBoolean(isStaffStr);
+        Boolean isActive = parseToBoolean(isActiveStr);
+
+        // Default isActive = true if not provided
+        if (isActiveStr == null) {
+            isActive = true;
+        }
+
+        // Remove empty keyword
+        if (keyword != null && keyword.trim().isEmpty()) {
+            keyword = null;
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "lastLogin"));
+
+        return userRepository.searchUsers(keyword, isStaff, isActive, pageable);
+    }
+
+    private Boolean parseToBoolean(String str) {
+        if (str == null || str.equalsIgnoreCase("all")) return null;
+        if (str.equalsIgnoreCase("true")) return true;
+        if (str.equalsIgnoreCase("false")) return false;
+        return null;
+    }
+
+    public boolean changePassword(String email, String oldPassword, String newPassword) {
+        // Tìm user theo email
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            return false; // Không tìm thấy user
+        }
+
+        User user = optionalUser.get();
+
+        // So sánh mật khẩu cũ
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return false; // Mật khẩu cũ không đúng
+        }
+
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        return true;
+    }
+
+    public boolean isEmailExist(String email) {
+        return userRepository.existsByEmail(email);
     }
 }

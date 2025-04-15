@@ -20,7 +20,7 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        String path = request.getRequestURI();  // Lấy đường dẫn request
+        String path = request.getRequestURI(); // Lấy đường dẫn request
 
         // Bỏ qua JWT filter cho API refresh token
         if (path.equals("/refresh")) {
