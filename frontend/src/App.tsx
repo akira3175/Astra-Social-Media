@@ -9,7 +9,6 @@ import { isAuthenticated } from "./services/authService"
 import NotFound from "./pages/Status/NotFound";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
-import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminPage from "./pages/Admin/AdminPage";
 import SearchPage from "./pages/Search/SearchPage";
 import AdminLoginPage from "./pages/Admin/LoginPage";
@@ -22,6 +21,10 @@ import CommentManagementPage from "./pages/Admin/CommentManagementPage";
 import PostManagementPage from "./pages/Admin/PostManagementPage";
 import UserManagementPage from "./pages/Admin/UserManagementPage";
 import DashboardPage from "./pages/Admin/DashboardPage";
+import ProfileSetupPage from "./pages/Auth/ProfileSetupPage";
+import PrivacyPolicyPage from "./pages/Legal/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/Legal/TermsOfServicePage";
+import SettingsPage from "./pages/Settings/SettingsPage";
 
 const theme = createTheme({
   breakpoints: {
@@ -66,33 +69,33 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   const authenticated = isAuthenticated();
 
-  // if (!authenticated) {
-  //   return <Navigate to="/login" />;
-  // }
-
-  return <>{children}</>;
-};
-
-// Protected Admin Route component
-interface ProtectedAdminRouteProps {
-  children: ReactNode;
-}
-
-const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) => {
-  const authenticated = isAuthenticated();
-  // TODO: Add admin role check here
-  const isAdmin = true; // This should be replaced with actual admin role check
-
-  if (!authenticated || !isAdmin) {
+  if (!authenticated) {
     return <Navigate to="/login" />;
   }
 
   return <>{children}</>;
 };
 
+// Protected Admin Route component
+// interface ProtectedAdminRouteProps {
+//   children: ReactNode;
+// }
+
+// const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) => {
+//   const authenticated = isAuthenticated();
+//   // TODO: Add admin role check here
+//   const isAdmin = true; // This should be replaced with actual admin role check
+
+//   if (!authenticated || !isAdmin) {
+//     return <Navigate to="/login" />;
+//   }
+
+//   return <>{children}</>;
+// };
+
 const AppContent: React.FC = () => {
   useWebSocket()
-  
+    
   return (
     <>
       <CssBaseline />
@@ -103,12 +106,15 @@ const AppContent: React.FC = () => {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/login" element={<LoginPage />}></Route>
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/profile-setup" element={<ProfileSetupPage />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/dashboard" element={<DashboardPage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/posts" element={<PostManagementPage />} />
           <Route path="/admin/comments" element={<CommentManagementPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms-of-service" element={<TermsOfServicePage />} />
 
           {/* Các Route cần bảo vệ */}
           <Route
@@ -132,6 +138,14 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             }
           />

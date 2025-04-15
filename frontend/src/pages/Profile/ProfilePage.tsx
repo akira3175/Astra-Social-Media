@@ -43,7 +43,7 @@ import CameraAltIcon from "@mui/icons-material/CameraAlt"
 import EditIcon from "@mui/icons-material/Edit"
 import { Chat } from "@mui/icons-material"
 
-const ProfileContainer = styled(Container)(({ theme }) => ({
+const ProfileContainer = styled(Container)(({ }) => ({
   display: "flex",
   flexDirection: "column",
   height: "100vh",
@@ -82,7 +82,7 @@ const BackgroundImage = styled("img")(({ theme }) => ({
   backgroundColor: theme.palette.grey[400],
 }))
 
-const BackgroundImageBox = styled(Box)(({ theme }) => ({
+const BackgroundImageBox = styled(Box)(({ }) => ({
   position: "relative",
   width: "100%",
   aspectRatio: "14/3",
@@ -164,10 +164,9 @@ const ProfilePage: React.FC = () => {
   const { email } = useParams<{ email: string }>()
   const { currentUser, setCurrentUser } = useCurrentUser()
   const [profile, setProfile] = useState<User | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedName, setEditedName] = useState("")
+  const [] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [, setError] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
@@ -191,7 +190,6 @@ const ProfilePage: React.FC = () => {
           const data = await getUserByEmail(email)
           setProfile(data)
           console.log(data)
-          setEditedName(data.full_name)
           setIsLoading(false)
         } catch (error) {
           console.error("Failed to load profile:", error)
@@ -276,6 +274,24 @@ const ProfilePage: React.FC = () => {
     }
   }
 
+  const refreshUserData = async () => {
+    if (email) {
+      try {
+        setIsLoading(true)
+        const data = await getUserByEmail(email)
+        setProfile(data)
+        if (isCurrentUser) {
+          setCurrentUser(data)
+        }
+        setIsLoading(false)
+      } catch (error) {
+        console.error("Failed to refresh profile:", error)
+        setError("Failed to refresh profile. Please try again.")
+        setIsLoading(false)
+      }
+    }
+  }
+
   const triggerAvatarUpload = () => {
     avatarInputRef.current?.click()
   }
@@ -293,15 +309,15 @@ const ProfilePage: React.FC = () => {
   //   usePostStore.getState().addPost(newPost.content, newPost.imageUrls);
   // }
 
-  const handleLikePost = (postId: number) => {
-    // Sử dụng likePost từ PostStore
-    usePostStore.getState().likePost(postId)
-  }
+  // const handleLikePost = (postId: number) => {
+  //   // Sử dụng likePost từ PostStore
+  //   usePostStore.getState().likePost(postId)
+  // }
 
-  const handleSavePost = (postId: number) => {
-    // Sử dụng savePost từ PostStore
-    usePostStore.getState().savePost(postId)
-  }
+  // const handleSavePost = (postId: number) => {
+  //   // Sử dụng savePost từ PostStore
+  //   usePostStore.getState().savePost(postId)
+  // }
 
   const handleStartChat = () => {
     if (profile) {
@@ -430,7 +446,7 @@ const ProfilePage: React.FC = () => {
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={4}>
                     {/* Tiểu sử */}
-                    <ProfileBio profile={profile} isCurrentUser={isCurrentUser} />
+                    <ProfileBio profile={profile} isCurrentUser={isCurrentUser} refreshUserData={refreshUserData}/>
 
                     {/* Danh sách hình ảnh */}
                     <ProfilePhotos />

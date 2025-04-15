@@ -150,7 +150,7 @@ const UserManagementPage: React.FC = () => {
   // Xử lý khóa/mở khóa người dùng
   const handleToggleUserStatus = (user: User) => {
     const newStatus = user.status === "active" ? "banned" : "active"
-    const updatedUsers = users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
+    // const updatedUsers = users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
 
     // setUsers(updatedUsers)
     // setFilteredUsers(updatedUsers)

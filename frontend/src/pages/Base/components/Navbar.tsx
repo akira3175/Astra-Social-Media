@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
@@ -189,7 +187,7 @@ const Navbar: React.FC<NavbarProps> = ({}) => {
                 sx={{ outline: "none", "&:focus": { outline: "none" } }}
               >
                 <Avatar
-                  src={currentUser?.avatar || "https://i.pravatar.cc/150?img=3"}
+                  src={currentUser?.avatar || ""}
                   sx={{
                     width: 36,
                     height: 36,

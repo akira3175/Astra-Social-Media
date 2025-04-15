@@ -1,10 +1,8 @@
 package org.example.backend.service;
 
-import org.example.backend.entity.Like;
+import org.example.backend.entity.*;
 import org.example.backend.repository.LikeRepository;
-import org.example.backend.entity.Comment;
-import org.example.backend.entity.Post;
-import org.example.backend.entity.User;
+import org.example.backend.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +17,8 @@ public class LikeService {
     @Autowired
     private LikeRepository likeRepository;
 
+    @Autowired
+    private NotificationRepository notificationRepository;
     @Autowired
     private UserService userService; 
     @Autowired
@@ -46,6 +46,14 @@ public class LikeService {
                 .post(post)
                 .comment(null)
                 .build();
+
+        Notification notification = new Notification();
+        notification.setSenderId(user.getId());
+        notification.setReceiverId(post.getUser().getId());
+        notification.setType(NotificationType.LIKE);
+        notification.setPostId(postId);
+        notificationRepository.save(notification);
+
         return likeRepository.save(like);
     }
 
@@ -64,6 +72,7 @@ public class LikeService {
                 .post(null)
                 .comment(comment)
                 .build();
+
         return likeRepository.save(like);
     }
 

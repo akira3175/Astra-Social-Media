@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse, type AxiosInstance } from "axios";
-import { refreshToken, processQueue, failedQueue, handleAuthError } from "../services/AuthService";
+import { refreshToken, processQueue, failedQueue, handleAuthError } from "../services/authService";
 import { tokenService } from "../services/tokenService";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -20,6 +20,7 @@ let isRefreshing = false;
 // Request Interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    console.log("request", API_URL);
     const token = tokenService.getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

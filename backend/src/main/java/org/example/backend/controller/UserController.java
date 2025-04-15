@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
@@ -128,13 +129,14 @@ public class UserController {
             @RequestParam(value = "lastName", required = false) String lastName,
             @RequestParam(value = "avatar", required = false) MultipartFile avatar,
             @RequestParam(value = "background", required = false) MultipartFile background,
+            @RequestParam(value = "bio", required = false) String bio,
             HttpServletRequest request) {
 
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
 
         try {
-            User updatedUser = userService.updateUser(email, firstName, lastName, avatar, background);
+            User updatedUser = userService.updateUser(email, firstName, lastName, avatar, background, bio);
             updatedUser.setAvatar((updatedUser.getAvatar() != null && !updatedUser.getAvatar().isEmpty()) ? baseUrl + updatedUser.getAvatar() : null);
             updatedUser.setBackground((updatedUser.getBackground() != null && !updatedUser.getBackground().isEmpty()) ? baseUrl + updatedUser.getBackground() : null);
             return ResponseEntity.ok(updatedUser);
@@ -180,6 +182,7 @@ public class UserController {
     @PatchMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String token,
                                             @RequestBody Map<String, String> request) {
+        token = token.replace("Bearer ", "").trim();
         String email = jwtUtil.extractEmail(token);
         String oldPassword = request.get("oldPassword");
         String newPassword = request.get("newPassword");
@@ -191,6 +194,12 @@ public class UserController {
         } else {
             return ResponseEntity.status(400).body("Old password is incorrect");
         }
+    }
+
+    @GetMapping("check-email")
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
+        boolean exists = userService.isEmailExist(email);
+        return ResponseEntity.ok(Collections.singletonMap("exists", exists));
     }
 
 }

@@ -13,3 +13,17 @@ export interface User {
     bio?: string;
     [key: string]: any;
 }
+
+export interface RegisterCredentials {
+    email: string;
+    password: string;
+    confirmPassword: string;
+    agreeToTerms: boolean;
+}
+
+export interface RegisterData {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+}

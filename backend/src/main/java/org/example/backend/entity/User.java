@@ -39,7 +39,7 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String avatar;
 
     @Column()
@@ -50,6 +50,9 @@ public class User {
 
     @Column(nullable = false)
     private Boolean isSuperUser;
+
+    @Column
+    private String bio;
     
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
