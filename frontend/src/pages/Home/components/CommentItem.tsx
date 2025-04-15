@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Avatar, Box, Typography, Button, TextField, Link, IconButton } from '@mui/material';
-import { Favorite, FavoriteBorder, AttachFile } from '@mui/icons-material';
+import React, { useState, useRef } from 'react';
+import { Avatar, Box, Typography, Button, TextField, Link, IconButton, CircularProgress } from '@mui/material';
+import { Favorite, FavoriteBorder, Image, Close as CloseIcon } from '@mui/icons-material';
 import { Comment } from '../../../types/comment';
 import { usePostStore } from '../../../stores/postStore';
+import { uploadToCloudinary } from '../../../utils/uploadUtils';
+import ExpandableText from '../../../components/ExpandableText';
 
 interface CommentItemProps {
   comment: Comment;
@@ -28,18 +30,17 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { likeComment, unlikeComment, addComment } = usePostStore();
 
   const handleAddReply = async () => {
     if (replyContent.trim() || selectedFile) {
+      setIsUploading(true);
       try {
-        // If there's a file, convert it to image URL first
         let imageUrls: string[] | undefined;
         if (selectedFile) {
-          const formData = new FormData();
-          formData.append('file', selectedFile);
-          // const uploadedUrl = await uploadImage(formData); // Implement this function
-          // imageUrls = [uploadedUrl];
+          imageUrls = await uploadToCloudinary([selectedFile]);
         }
 
         await addComment(postId, replyContent.trim(), imageUrls, comment.id);
@@ -48,6 +49,8 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
         setShowReplyInput(false);
       } catch (error) {
         console.error('Error adding reply:', error);
+      } finally {
+        setIsUploading(false);
       }
     }
   };
@@ -85,9 +88,16 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = event.target.files;
+    if (files && files[0]) {
+      setSelectedFile(files[0]);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -116,12 +126,35 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mr: 1, display: 'inline' }}>
               {comment.user.username}
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'inline' }}
-            >
-              {' '}{comment.content}
-            </Typography>
+            <ExpandableText text={comment.content} maxLines={2} />
+
+            {/* Thêm phần hiển thị ảnh của comment */}
+            {comment.images && comment.images.length > 0 && (
+              <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {comment.images.map((image, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      width: 200,
+                      height: 200,
+                      position: 'relative',
+                      borderRadius: 1,
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <img
+                      src={image.url}
+                      alt={`Comment image ${index + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, ml: 0.5 }}>
             <IconButton
@@ -157,55 +190,71 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
           </Box>
 
           {showReplyInput && (
-            <Box sx={{ display: 'flex', gap: 1, mt: 1, ml: 0.5 }}>
-              <TextField
-                fullWidth
-                variant="outlined"
-                size="small"
-                placeholder={`Trả lời ${comment.user.username}...`}
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                autoFocus
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAddReply();
-                  }
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: 'grey.400',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'primary.main',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: 'primary.main',
-                    },
-                  },
-                }}
-              />
-              <input
-                accept="image/*,video/*"
-                style={{ display: 'none' }}
-                id="file-upload"
-                type="file"
-                onChange={handleFileChange}
-              />
-              <label htmlFor="file-upload">
-                <IconButton component="span" size="small">
-                  <AttachFile />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1, ml: 0.5 }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  placeholder={`Trả lời ${comment.user.username}...`}
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  multiline
+                  maxRows={4}
+                  disabled={isUploading}
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+                <IconButton
+                  size="small"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  <Image />
                 </IconButton>
-              </label>
-              <Button
-                variant="contained"
-                size="small"
-                onClick={handleAddReply}
-                disabled={!replyContent.trim() && !selectedFile}
-              >
-                Gửi
-              </Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleAddReply}
+                  disabled={(!replyContent.trim() && !selectedFile) || isUploading}
+                >
+                  {isUploading ? <CircularProgress size={20} /> : 'Gửi'}
+                </Button>
+              </Box>
+
+              {/* Image preview */}
+              {selectedFile && (
+                <Box sx={{ position: 'relative', width: 100, height: 100, mt: 1 }}>
+                  <img
+                    src={URL.createObjectURL(selectedFile)}
+                    alt="Preview"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '4px'
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    sx={{
+                      position: 'absolute',
+                      top: -8,
+                      right: -8,
+                      bgcolor: 'background.paper',
+                      '&:hover': { bgcolor: 'background.paper' }
+                    }}
+                    onClick={handleRemoveFile}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              )}
             </Box>
           )}
         </Box>

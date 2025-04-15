@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Avatar,
   Box,
@@ -35,6 +35,8 @@ import {
   Repeat as RepeatIcon, // Import Repeat icon
   Share,
   MoreVert,
+  Image,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 // Removed User and ImageType imports as they come from PostType
 import type { Post as PostType } from "../../../types/post"; // Import the main Post type
@@ -42,6 +44,8 @@ import { usePostStore } from "../../../stores/postStore";
 import CommentItem from "./CommentItem";
 import RepostModal from "./RepostModal"; // Import RepostModal
 import { useCurrentUser } from '../../../contexts/currentUserContext';
+import { uploadToCloudinary } from '../../../utils/uploadUtils'; // Import the upload function
+import ExpandableText from '../../../components/ExpandableText';
 
 // Define the props for the OriginalPostPreview (can be moved later)
 interface OriginalPostPreviewProps {
@@ -188,6 +192,9 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
   // Comment State & Store Integration
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Optimized state selection from Zustand store - use post.id
   const postCommentData = usePostStore((state) => state.commentDataByPostId[post.id]);
@@ -240,7 +247,7 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
 
   useEffect(() => {
     // Use post.id, post.liked, post.likesCount
-    console.log(`Post ${post.id} like status:`, { liked: post.liked, likesCount: post.likesCount });
+    // console.log(`Post ${post.id} like status:`, { liked: post.liked, likesCount: post.likesCount });
   }, [post.id, post.liked, post.likesCount]);
 
   const handleToggleComments = () => {
@@ -257,9 +264,36 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
   };
 
   const handleAddComment = async () => {
-    if (newComment.trim()) {
-      await addComment(post.id, newComment.trim()); // Use post.id
-      setNewComment("");
+    if (newComment.trim() || selectedFile) {
+      setIsUploading(true);
+      try {
+        let imageUrls: string[] | undefined;
+        if (selectedFile) {
+          imageUrls = await uploadToCloudinary([selectedFile]);
+        }
+
+        await addComment(post.id, newComment.trim(), imageUrls);
+        setNewComment("");
+        setSelectedFile(null);
+      } catch (error) {
+        console.error('Error adding comment:', error);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files[0]) {
+      setSelectedFile(files[0]);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -357,9 +391,7 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
       <CardContent sx={{ textAlign: "left", pt: 0 }}>
         {/* Render post content only if it's not a repost or if repost has content */}
         {(content || !originalPost) && (
-          <Typography variant="body1" sx={{ whiteSpace: "pre-wrap", mb: originalPost ? 1 : 0 }}>
-            {content}
-          </Typography>
+          <ExpandableText text={content} maxLines={3} />
         )}
          {/* Render original post preview if this is a repost */}
          {originalPost && (
@@ -502,29 +534,71 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
           <Divider sx={{ my: 1 }} />
           <Box sx={{ px: 2, pb: 2 }}>
              {/* New Comment Input */}
-             <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-               <TextField
-                 fullWidth
-                 variant="outlined"
-                 size="small"
-                 placeholder="Viết bình luận..."
-                 value={newComment}
-                 onChange={(e) => setNewComment(e.target.value)}
-                 onKeyPress={(e) => {
-                   if (e.key === 'Enter' && !e.shiftKey) {
-                     e.preventDefault();
-                     handleAddComment();
-                   }
-                 }}
-               />
-               <Button
-                 variant="contained"
-                 size="small"
-                 onClick={handleAddComment}
-                 disabled={!newComment.trim()}
-               >
-                 Gửi
-               </Button>
+             <Box sx={{ display: "flex", flexDirection: 'column', gap: 1, mb: 2 }}>
+               <Box sx={{ display: "flex", gap: 1 }}>
+                 <TextField
+                   fullWidth
+                   variant="outlined"
+                   size="small"
+                   placeholder="Viết bình luận..."
+                   value={newComment}
+                   onChange={(e) => setNewComment(e.target.value)}
+                   disabled={isUploading}
+                   multiline
+                   maxRows={4}
+                 />
+                 <input
+                   type="file"
+                   accept="image/*"
+                   style={{ display: 'none' }}
+                   ref={fileInputRef}
+                   onChange={handleFileChange}
+                 />
+                 <IconButton
+                   size="small"
+                   onClick={() => fileInputRef.current?.click()}
+                   disabled={isUploading}
+                 >
+                   <Image />
+                 </IconButton>
+                 <Button
+                   variant="contained"
+                   size="small"
+                   onClick={handleAddComment}
+                   disabled={(!newComment.trim() && !selectedFile) || isUploading}
+                 >
+                   {isUploading ? <CircularProgress size={20} /> : 'Gửi'}
+                 </Button>
+               </Box>
+
+               {/* Image preview */}
+               {selectedFile && (
+                 <Box sx={{ position: 'relative', width: 100, height: 100 }}>
+                   <img
+                     src={URL.createObjectURL(selectedFile)}
+                     alt="Preview"
+                     style={{
+                       width: '100%',
+                       height: '100%',
+                       objectFit: 'cover',
+                       borderRadius: '4px'
+                     }}
+                   />
+                   <IconButton
+                     size="small"
+                     sx={{
+                       position: 'absolute',
+                       top: -8,
+                       right: -8,
+                       bgcolor: 'background.paper',
+                       '&:hover': { bgcolor: 'background.paper' }
+                     }}
+                     onClick={handleRemoveFile}
+                   >
+                     <CloseIcon fontSize="small" />
+                   </IconButton>
+                 </Box>
+               )}
              </Box>
 
              {/* Comment List or Loading Indicator */}

@@ -34,7 +34,6 @@ import { updateUserAvatar, updateUserBackground, updateUserName } from "../../se
 import ProfileBio from "./components/ProfileBio"
 import ProfilePhotos from "./components/ProfilePhotos"
 import ProfileFriends from "./components/ProfileFriends"
-import ProfilePostList from "./components/ProfilePostList"
 import type { Post } from "../../types/post"
 import PostList from '../../pages/Home/components/PostList'
 import { getPostsByUserEmail } from '../../services/PostService'

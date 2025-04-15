@@ -6,6 +6,7 @@ import { Avatar, Box, Button, Card, CardContent, CircularProgress, Divider, Icon
 import { Close as CloseIcon, Image, Send, Videocam } from "@mui/icons-material"; // Import CloseIcon
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import { usePostStore } from "../../../stores/postStore";
+import { uploadToCloudinary } from '../../../utils/uploadUtils';
 
 interface CreatePostProps {
   className?: string;
@@ -23,37 +24,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ className, sx }) => {
     if (!content.trim()) return;
 
     setIsUploading(true);
-    let cloudinaryUrls: string[] = [];
-
-    if (selectedFiles.length > 0) {
-      try {
-        cloudinaryUrls = await Promise.all(
-          selectedFiles.map(async (file) => {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", "astra_cloudinary");
-
-            const response = await fetch("https://api.cloudinary.com/v1_1/dhdq1ntst/image/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!response.ok) {
-              throw new Error(`Image upload failed with status ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data.secure_url;
-          })
-        );
-      } catch (error: any) {
-        console.error("Error uploading images to Cloudinary:", error);
-        setIsUploading(false);
-        return; 
-      }
-    }
-
     try {
+      const cloudinaryUrls = await uploadToCloudinary(selectedFiles);
+      
       // Thêm post mới
       await addPost(content, cloudinaryUrls);
       
