@@ -6,6 +6,8 @@ import org.example.backend.elasticsearch.document.UserDocument;
 import org.example.backend.elasticsearch.repository.UserESRepository;
 import org.example.backend.entity.Friendship;
 import org.example.backend.entity.User;
+import org.example.backend.exception.AppException;
+import org.example.backend.exception.ErrorCode;
 import org.example.backend.repository.FriendshipRepository;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.repository.UserRepository;
@@ -126,9 +128,16 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    @Transactional
     public User getUserInfo(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .map(user -> User.builder()
+                        .id(user.getId())
+                        .email(user.getEmail())
+                        .isSuperUser(user.getIsSuperUser())
+                        .isActive(user.getIsActive())
+                        .build())
+                .orElse(null);
     }
 
     public Page<UserDocument> searchUsers(String keyword, String isStaffStr, String isActiveStr, int page, int size, User user) {
@@ -187,6 +196,29 @@ public class UserService {
         saveUserToES(user);
 
         return true;
+    }
+
+
+
+    // Provide ADMIN API
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public User unbanUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setIsActive(true);
+        userRepository.save(user);
+        return user;
+    }
+
+    public User banUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setIsActive(false);
+        userRepository.save(user);
+        return user;
     }
 
     public boolean isEmailExist(String email) {
