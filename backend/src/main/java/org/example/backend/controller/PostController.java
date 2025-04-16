@@ -3,8 +3,13 @@ package org.example.backend.controller;
 import org.example.backend.dto.ApiResponse;
 import org.example.backend.entity.Image;
 import org.example.backend.entity.Post;
+import org.example.backend.elasticsearch.document.PostDocument;
+import org.example.backend.entity.User;
+import org.example.backend.security.JwtUtil;
 import org.example.backend.service.PostService;
+import org.example.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,7 +22,6 @@ import org.example.backend.dto.PostDTO;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @RestController
@@ -26,6 +30,12 @@ public class PostController {
 
     @Autowired
     private PostService postService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserService userService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PostDTO>>> getAllPosts(Principal principal) {
@@ -181,4 +191,19 @@ public class PostController {
                 .build();
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<PostDocument>> search(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestHeader("Authorization") String token
+    ) {
+        String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+        User user = userService.getUserInfo(email);
+
+        Page<PostDocument> result = postService.searchPosts(keyword, user, page, size);
+        return ResponseEntity.ok(result);
+    }
+
 }
