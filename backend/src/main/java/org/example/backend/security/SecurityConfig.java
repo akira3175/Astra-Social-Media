@@ -46,6 +46,7 @@ public class SecurityConfig {
                                                                 "/api/friends/request",
                                                                 "/api/friends/accept/**",
                                                                 "/api/friends/reject/**",
+                                                                "/api/posts/search",
                                                                 "/api/chat/**",
                                                                 "/topic/**",
                                                                 "/queue/**",
