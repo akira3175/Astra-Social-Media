@@ -175,7 +175,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         client.deactivate()
       }
     }
-  }, [currentUser])
+  }, [currentUser, tokenService.getAccessToken()])
 
   // Load initial notifications
   useEffect(() => {
