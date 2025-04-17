@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import webSocketReducer from './webSocketSlice';
+import webSocketReducer from '../socket/webSocketSlice';
 
 export const store = configureStore({
   reducer: {

@@ -1,7 +1,7 @@
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
-import WebSocketClient from "../redux/WebSocketClient";
-import { setConnectionStatus, setMessages, setError } from "../redux/webSocketSlice";
+import WebSocketClient from "../socket/WebSocketClient";
+import { setConnectionStatus, setMessages, setError } from "../socket/webSocketSlice";
 
 // Định nghĩa kiểu cho message
 interface WebSocketMessage {
