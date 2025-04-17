@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
@@ -42,6 +40,9 @@ import ChatBox from "../../components/ChatBox/ChatBox"
 import CameraAltIcon from "@mui/icons-material/CameraAlt"
 import EditIcon from "@mui/icons-material/Edit"
 import { Chat } from "@mui/icons-material"
+import { useTheme } from "@mui/material/styles"
+import useMediaQuery from "@mui/material/useMediaQuery"
+
 
 const ProfileContainer = styled(Container)(({ }) => ({
   display: "flex",
@@ -170,6 +171,8 @@ const ProfilePage: React.FC = () => {
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const backgroundInputRef = useRef<HTMLInputElement>(null)
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const navigate = useNavigate()
 
   const [openEditModal, setOpenEditModal] = useState(false)
@@ -441,7 +444,14 @@ const ProfilePage: React.FC = () => {
               </Grid>
 
               {/* Content grid with 80% width */}
-              <Box sx={{ width: "80%", maxWidth: "1400px", mx: "auto", mt: 2 }}>
+              <Box
+                sx={{
+                  width: isMobile ? "100%" : "80%",
+                  maxWidth: "1400px",
+                  mx: "auto",
+                  mt: 2,
+                }}
+              >
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={4}>
                     {/* Tiểu sử */}
