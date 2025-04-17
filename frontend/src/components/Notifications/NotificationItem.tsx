@@ -123,10 +123,13 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
   }
 
   const getTimeAgo = () => {
-    if (!notification.createdAt) return "Vừa xong"
-
+    if (!notification.createdAt || !Array.isArray(notification.createdAt)) return "Vừa xong"
+  
     try {
-      return formatDistanceToNow(new Date(notification.createdAt), {
+      const [year, month, day, hour, minute, second] = notification.createdAt
+      const date = new Date(year, month - 1, day, hour, minute, second)
+  
+      return formatDistanceToNow(date, {
         addSuffix: true,
         locale: vi,
       })
@@ -134,7 +137,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
       console.error("Error formatting date:", error)
       return "Vừa xong"
     }
-  }
+  }  
 
   return (
     <ListItem
