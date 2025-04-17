@@ -46,7 +46,6 @@ import { Chat } from "@mui/icons-material"
 const ProfileContainer = styled(Container)(({ }) => ({
   display: "flex",
   flexDirection: "column",
-  height: "100vh",
   overflow: "hidden",
 }))
 

@@ -84,7 +84,6 @@ const getPostById = async (postId: number): Promise<Post> => {
     );
 
     if (response.data && response.data.status === 200 && response.data.data) {
-      console.log("Post data:", response.data.data);
       return response.data.data;
     } else {
       throw new Error(response.data.message || "Failed to get post");

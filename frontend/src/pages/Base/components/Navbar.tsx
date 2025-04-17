@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
@@ -22,20 +24,10 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material"
-import {
-  Chat,
-  Notifications,
-  Search,
-  Settings,
-  Logout,
-  Person,
-  Menu as MenuIcon,
-  Home,
-  Explore,
-  Bookmark,
-} from "@mui/icons-material"
+import { Chat, Search, Settings, Logout, Person, Menu as MenuIcon, Home, Explore, Bookmark } from "@mui/icons-material"
 import { logout } from "../../../services/authService"
 import { useCurrentUser } from "../../../contexts/currentUserContext"
+import NotificationDropdown from "../../../components/Notifications/NotificationDropdown"
 
 interface NavbarProps {
   onMenuToggle?: () => void
@@ -173,9 +165,10 @@ const Navbar: React.FC<NavbarProps> = ({}) => {
                   <Search />
                 </IconButton>
               )}
-              <IconButton color="inherit" sx={{ outline: "none", "&:focus": { outline: "none" } }}>
-                <Notifications />
-              </IconButton>
+
+              {/* Notification Dropdown */}
+              <NotificationDropdown />
+
               <IconButton color="inherit" sx={{ outline: "none", "&:focus": { outline: "none" } }}>
                 <Chat />
               </IconButton>
@@ -323,11 +316,11 @@ const Navbar: React.FC<NavbarProps> = ({}) => {
             </ListItemIcon>
             <ListItemText primary="Khám phá" />
           </ListItem>
-          <ListItem component={Link} to="/saved" onClick={() => setMobileMenuOpen(false)}>
+          <ListItem component={Link} to="/notifications" onClick={() => setMobileMenuOpen(false)}>
             <ListItemIcon>
               <Bookmark />
             </ListItemIcon>
-            <ListItemText primary="Đã lưu" />
+            <ListItemText primary="Thông báo" />
           </ListItem>
         </List>
         <Divider />
