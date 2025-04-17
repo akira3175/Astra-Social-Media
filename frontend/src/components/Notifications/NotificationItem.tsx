@@ -127,9 +127,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
   
     try {
       const [year, month, day, hour, minute, second] = notification.createdAt
-      const date = new Date(year, month - 1, day, hour, minute, second)
+      const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
   
-      return formatDistanceToNow(date, {
+      return formatDistanceToNow(utcDate, {
         addSuffix: true,
         locale: vi,
       })
