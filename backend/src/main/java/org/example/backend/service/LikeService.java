@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,7 +25,8 @@ public class LikeService {
     @Autowired
     private PostService postService; 
     @Autowired
-    private CommentService commentService; 
+    private CommentService commentService;
+    @Autowired NotificationService notificationService;
 
 
     public void deleteLike(Long id) {
@@ -33,12 +35,14 @@ public class LikeService {
 
     @Transactional
     public Like likePost(String userEmail, Long postId) {
-        User user = userService.getUserByEmail(userEmail).orElseThrow(() -> new RuntimeException("User not found")); 
-        Post post = postService.getPostByIdOrThrow(postId); 
+        User user = userService.getUserByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Optional<Like> existingLike = likeRepository.findByUserAndPost(user, post); 
+        Post post = postService.getPostByIdOrThrow(postId);
+
+        Optional<Like> existingLike = likeRepository.findByUserAndPost(user, post);
         if (existingLike.isPresent()) {
-            return existingLike.get(); 
+            return existingLike.get();
         }
 
         Like like = Like.builder()
@@ -47,24 +51,37 @@ public class LikeService {
                 .comment(null)
                 .build();
 
-        Notification notification = new Notification();
-        notification.setSenderId(user.getId());
-        notification.setReceiverId(post.getUser().getId());
-        notification.setType(NotificationType.LIKE);
-        notification.setPostId(postId);
+        like = likeRepository.save(like);
+
+        // ✅ Tạo thông báo
+        Notification notification = Notification.builder()
+                .senderId(user.getId())
+                .receiverId(post.getUser().getId())
+                .type(NotificationType.LIKE)
+                .postId(postId)
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+
         notificationRepository.save(notification);
 
-        return likeRepository.save(like);
+        // ✅ Gửi thông báo qua WebSocket
+        String receiverEmail = post.getUser().getEmail(); // Giả sử User có field email
+        notificationService.sendToUser(receiverEmail, notification);
+
+        return like;
     }
+
 
     @Transactional
     public Like likeComment(String userEmail, Long commentId) {
-        User user = userService.getUserByEmail(userEmail).orElseThrow(() -> new RuntimeException("User not found"));
-        Comment comment = commentService.getCommentByIdOrThrow(commentId); 
+        User user = userService.getUserByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Comment comment = commentService.getCommentByIdOrThrow(commentId);
 
-        Optional<Like> existingLike = likeRepository.findByUserAndComment(user, comment); 
+        Optional<Like> existingLike = likeRepository.findByUserAndComment(user, comment);
         if (existingLike.isPresent()) {
-            return existingLike.get(); 
+            return existingLike.get();
         }
 
         Like like = Like.builder()
@@ -72,6 +89,18 @@ public class LikeService {
                 .post(null)
                 .comment(comment)
                 .build();
+
+        // Tạo thông báo nếu không phải like chính mình
+        if (!user.getId().equals(comment.getUser().getId())) {
+            Notification notification = Notification.builder()
+                    .senderId(user.getId())
+                    .receiverId(comment.getUser().getId())
+                    .type(NotificationType.COMMENT_LIKE)
+                    .postId(comment.getPost().getId())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            notificationRepository.save(notification);
+        }
 
         return likeRepository.save(like);
     }

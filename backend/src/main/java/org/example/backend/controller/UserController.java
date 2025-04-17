@@ -111,13 +111,19 @@ public class UserController {
 
     @GetMapping("/info")
     public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String token, HttpServletRequest request) {
+        // Extract email từ token
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
-        User user = userService.getUserInfo(email); // Thay đổi từ findByEmail nếu cần
 
-        // 🔥 Thêm domain vào avatar và background
+        // Lấy Optional<User> từ userService
+        Optional<User> optionalUser = userService.getUserByEmail(email);
+
+        // Kiểm tra và lấy User từ Optional (hoặc ném lỗi nếu không tìm thấy)
+        User user = optionalUser.orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Thêm domain vào avatar và background
         user = addDomainToImage(user, request);
 
-        // 🔥 Trả về response có đường dẫn đầy đủ
+        // Trả về response có đường dẫn đầy đủ
         User response = user.toBuilder()
                 .build();
 
