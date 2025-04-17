@@ -30,12 +30,13 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
         return (
           <Box
             sx={{
-              bgcolor: "#e41e3f",
+              bgcolor: theme.palette.primary.main,
               borderRadius: "50%",
               p: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              padding: "3px",
             }}
           >
             <Favorite sx={{ color: "white", fontSize: compact ? 16 : 20 }} />
@@ -51,6 +52,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              padding: "3px",
             }}
           >
             <Comment sx={{ color: "white", fontSize: compact ? 16 : 20 }} />
@@ -66,6 +68,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              padding: "3px",
             }}
           >
             <PersonAdd sx={{ color: "white", fontSize: compact ? 16 : 20 }} />
@@ -81,6 +84,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              padding: "3px",
             }}
           >
             <Check sx={{ color: "white", fontSize: compact ? 16 : 20 }} />
@@ -96,6 +100,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              padding: "3px",
             }}
           >
             <MoreHoriz sx={{ color: "white", fontSize: compact ? 16 : 20 }} />
@@ -163,7 +168,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
         />
       )}
 
-      <ListItemAvatar sx={{ mt: 0 }}>
+      <ListItemAvatar sx={{ mt: 0, position: "relative" }}>
         <Avatar
           src={notification.senderAvatarUrl}
           alt={notification.senderName}
@@ -179,11 +184,12 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
           sx={{
             position: "absolute",
             bottom: compact ? -4 : 0,
-            right: compact ? -4 : 0,
+            right: compact ? 10 : 0,
             width: compact ? 20 : 24,
             height: compact ? 20 : 24,
           }}
         >
+          {getNotificationIcon()}
         </Box>
       </ListItemAvatar>
 

@@ -23,6 +23,7 @@ class WebSocketClient {
 
   constructor(dispatch: Function) {
     this.dispatch = dispatch;
+    void this.dispatch;
   }
 
   /**

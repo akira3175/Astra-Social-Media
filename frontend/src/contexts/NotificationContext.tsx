@@ -44,14 +44,31 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
-  const [stompClient, setStompClient] = useState<Client | null>(null)
+  const [_stompClient, setStompClient] = useState<Client | null>(null)
 
   // Group notifications by postId
   const groupNotificationsByPostId = (notifs: Notification[]): Notification[] => {
     const groupedMap = new Map<number, Notification[]>()
-
-    // Group notifications by postId (if it exists)
+  
+    // Lọc các thông báo LIKE trùng người và post
+    const uniqueMap = new Map<string, Notification>()
     notifs.forEach((notif) => {
+      if (notif.postId && notif.type === "LIKE") {
+        const key = `${notif.postId}-${notif.senderId}-${notif.type}`
+        const existing = uniqueMap.get(key)
+        if (!existing || new Date(notif.createdAt!).getTime() > new Date(existing.createdAt!).getTime()) {
+          uniqueMap.set(key, notif)
+        }
+      } else {
+        const key = `${notif.id}`
+        uniqueMap.set(key, notif)
+      }
+    })
+  
+    const deduplicated = Array.from(uniqueMap.values())
+  
+    // Tiếp tục nhóm như cũ sau khi đã lọc
+    deduplicated.forEach((notif) => {
       if (notif.postId) {
         const key = notif.postId
         if (!groupedMap.has(key)) {
@@ -60,65 +77,46 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         groupedMap.get(key)!.push(notif)
       }
     })
-
-    // Create grouped notifications
+  
     const result: Notification[] = []
-
-    // Add grouped notifications
-    groupedMap.forEach((group, postId) => {
-      // Only group if there are multiple notifications for the same post
+  
+    groupedMap.forEach((group, _postId) => {
       if (group.length > 1) {
-        // Sort by creation date (newest first)
-        group.sort((a, b) => {
-          if (!a.createdAt) return 1
-          if (!b.createdAt) return -1
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        })
-
-        // Create a grouped notification
+        group.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+  
         const likesCount = group.filter((n) => n.type === "LIKE").length
         const commentsCount = group.filter((n) => n.type === "COMMENT").length
-
-        // Create a message based on the counts
-        let message = ""
+  
         const senderNames = [...new Set(group.map((n) => n.senderName))].slice(0, 2)
+        let message = ""
+
+        const otherCount = group.length - senderNames.length;
+        const otherText = otherCount > 0 ? ` và ${otherCount} người khác` : "";
 
         if (likesCount > 0 && commentsCount > 0) {
-          message = `${senderNames.join(", ")} và ${group.length - 2} người khác đã thích và bình luận về bài viết của bạn`
+          message = `${senderNames.join(", ")}${otherText} đã thích và bình luận về bài viết của bạn`;
         } else if (likesCount > 0) {
-          message = `${senderNames.join(", ")} và ${likesCount - 2} người khác đã thích bài viết của bạn`
+          message = `${senderNames.join(", ")}${otherText} đã thích bài viết của bạn`;
         } else if (commentsCount > 0) {
-          message = `${senderNames.join(", ")} và ${commentsCount - 2} người khác đã bình luận về bài viết của bạn`
+          message = `${senderNames.join(", ")}${otherText} đã bình luận về bài viết của bạn`;
         }
-
-        // Use the most recent notification as the base
-        const groupedNotification: Notification = {
+  
+        result.push({
           ...group[0],
           message,
           isRead: group.every((n) => n.isRead),
-        }
-
-        result.push(groupedNotification)
+        })
       } else {
-        // Add single notifications as is
         result.push(group[0])
       }
     })
-
-    // Add notifications without postId
-    notifs
+  
+    deduplicated
       .filter((notif) => !notif.postId)
-      .forEach((notif) => {
-        result.push(notif)
-      })
-
-    // Sort all notifications by creation date (newest first)
-    return result.sort((a, b) => {
-      if (!a.createdAt) return 1
-      if (!b.createdAt) return -1
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    })
-  }
+      .forEach((notif) => result.push(notif))
+  
+    return result.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+  }  
 
   // Initialize WebSocket connection
   useEffect(() => {

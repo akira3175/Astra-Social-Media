@@ -19,17 +19,16 @@ import NotificationItem from "./NotificationItem"
 import { useNotifications } from "../../contexts/NotificationContext"
 
 const NotificationDropdown = () => {
-  // State and hooks
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const { notifications, unreadCount, loading, error, hasMore, loadMore, markAsRead, markAllAsRead } =
     useNotifications()
   const listRef = useRef<HTMLUListElement>(null)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
-
-  // Derived state
   const open = Boolean(anchorEl)
   const popoverId = open ? "notifications-popover" : undefined
+
+  console.log("notifications", notifications)
 
   // Event handlers
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
