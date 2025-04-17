@@ -4,5 +4,7 @@ public enum NotificationType {
     POST,
     LIKE,
     COMMENT,
-    SHARE
+    SHARE,
+    COMMENT_LIKE,
+    COMMENT_REPLY
 }
