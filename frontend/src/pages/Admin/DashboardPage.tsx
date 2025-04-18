@@ -16,13 +16,17 @@ import {
 } from "@mui/material"
 import { PeopleAlt, Article, Comment, TrendingUp, Person, Visibility, ThumbUp, AccessTime } from "@mui/icons-material"
 import AdminLayout from "./components/AdminLayout"
-
+import { getComments, getPosts, getReports, getUsers } from "../../services/adminService"
+const users = await getUsers()
+const posts = await getPosts()
+const comments = await getComments()
+const reports  = await getReports()
 // Dữ liệu mẫu
 const STATS = [
-  { title: "Tổng người dùng", value: "1,245", icon: <PeopleAlt />, color: "#4f46e5" },
-  { title: "Tổng bài viết", value: "856", icon: <Article />, color: "#0891b2" },
-  { title: "Tổng bình luận", value: "2,154", icon: <Comment />, color: "#16a34a" },
-  { title: "Lượt truy cập", value: "45,291", icon: <TrendingUp />, color: "#ea580c" },
+  { title: "Tổng người dùng", value: users.length, icon: <PeopleAlt />, color: "#4f46e5" },
+  { title: "Tổng bài viết", value: posts.length, icon: <Article />, color: "#0891b2" },
+  { title: "Tổng bình luận", value: comments.length, icon: <Comment />, color: "#16a34a" },
+  { title: "Lượt truy cập", value: reports.length, icon: <TrendingUp />, color: "#ea580c" },
 ]
 
 const RECENT_USERS = [

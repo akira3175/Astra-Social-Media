@@ -183,8 +183,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 mb: 0.5,
                 bgcolor:
                   location.pathname.includes("/admin/users") ||
-                  location.pathname.includes("/admin/posts") ||
-                  location.pathname.includes("/admin/comments")
+                    location.pathname.includes("/admin/posts") ||
+                    location.pathname.includes("/admin/comments")
                     ? "primary.lighter"
                     : "transparent",
               }}
@@ -327,7 +327,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   )
 
   return (
-    <Box sx={{ display: "flex", height: "90vh" }}>
+    <Box sx={{ display: "flex" }}>
       {/* App Bar */}
       <AppBar
         position="fixed"
@@ -516,8 +516,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
           }),
-          height: "100vh",
-          overflow: "auto",
+          height: "100vh", // Ensure it fills the full viewport height
+          overflow: "hidden", // Prevent unnecessary scrollbars
+          display: "flex", // Ensure content is properly aligned
+          flexDirection: "column", // Stack content vertically
         }}
       >
         <Toolbar />
