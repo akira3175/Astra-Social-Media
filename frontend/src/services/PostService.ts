@@ -9,6 +9,34 @@ interface CreatePostPayload {
   imageUrls: string[];
 }
 
+export const searchPost = async ({keyword,page,size}:{size?:number,keyword:string,page?:string}) =>{
+  const token = tokenService.getAccessToken();
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
+  try {
+    const response = await api.get<ApiResponse<Post>>(
+      `/posts/search?keyword=${keyword}${size??`&size=${size}`}${page??`&page=${page}`}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.data && response.data.status === 200 && response.data.data) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message || "Failed to get post");
+    }
+  } catch (error) {
+    console.error("Error getting post:", error);
+    throw error;
+  }
+}
+
 const createPost = async (payload: CreatePostPayload): Promise<Post> => {
   const token = tokenService.getAccessToken();
   if (!token) {
