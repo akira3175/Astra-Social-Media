@@ -28,6 +28,7 @@ import SettingsPage from "./pages/Settings/SettingsPage";
 import FriendsPage from "./pages/Friends/FriendsPage"
 import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import ChatBubble from "./components/AIChatBox/ChatBubble";
 
 const theme = createTheme({
   breakpoints: {
@@ -170,6 +171,7 @@ const AppContent: React.FC = () => {
             />
           {/* Các route khác có thể thêm vào đây */}
         </Routes>
+        {isAuthenticated() && <ChatBubble />}
       </Router>
     </>
   );
