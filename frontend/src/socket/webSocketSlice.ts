@@ -1,33 +1,37 @@
-// src/redux/webSocketSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+interface WebSocketMessage {
+  type: string;
+  content: string;
+}
+
 interface WebSocketState {
-  messages: string[];
+  messages: WebSocketMessage[];
   connected: boolean;
-  error: string | null; // Thêm field error vào state
+  error: string | null;
 }
 
 const initialState: WebSocketState = {
   messages: [],
   connected: false,
-  error: null, // Giá trị mặc định là null
+  error: null,
 };
 
 const webSocketSlice = createSlice({
   name: 'webSocket',
   initialState,
   reducers: {
-    setMessages: (state, action: PayloadAction<string>) => {
+    setMessages: (state, action: PayloadAction<WebSocketMessage>) => {
       state.messages.push(action.payload);
     },
     setConnectionStatus: (state, action: PayloadAction<boolean>) => {
       state.connected = action.payload;
     },
-    setError: (state, action: PayloadAction<string>) => { // Thêm reducer setError
+    setError: (state, action: PayloadAction<string>) => {
       state.error = action.payload;
     },
   },
 });
 
-export const { setMessages, setConnectionStatus, setError } = webSocketSlice.actions; // Export setError
+export const { setMessages, setConnectionStatus, setError } = webSocketSlice.actions;
 export default webSocketSlice.reducer;

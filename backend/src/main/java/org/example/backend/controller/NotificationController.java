@@ -48,12 +48,25 @@ public class NotificationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        String userEmail = jwtUtil.extractEmail(authHeader);
+        String userEmail = jwtUtil.extractEmail(authHeader.replace("Bearer ", ""));
         User user = userService.getUserInfo(userEmail);
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         return notificationRepository
                 .findByReceiverIdOrderByCreatedAtDesc(user.getId(), pageable)
                 .map(notificationService::toDTO);
+    }
+
+    @PostMapping("/send")
+    public void sendNotification(@RequestBody Notification notification) {
+        // Ví dụ bạn có thể map userId -> email bằng DB ở đây
+        String receiverEmail = getEmailByUserId(notification.getReceiverId());
+
+        notificationService.sendToUser(receiverEmail, notification);
+    }
+
+    private String getEmailByUserId(Long id) {
+        // TODO: lấy email theo userId từ database (userRepo.findById(id).getEmail())
+        return "akira31758421@gmail.com";
     }
 }

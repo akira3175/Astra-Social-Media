@@ -2,8 +2,12 @@ package org.example.backend.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.backend.elasticsearch.document.UserDocument;
+import org.example.backend.elasticsearch.repository.UserESRepository;
 import org.example.backend.entity.Friendship;
 import org.example.backend.entity.User;
+import org.example.backend.exception.AppException;
+import org.example.backend.exception.ErrorCode;
 import org.example.backend.repository.FriendshipRepository;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.repository.UserRepository;
@@ -18,6 +22,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +39,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final FileStorageService fileStorageService;
+    private final UserESRepository userESRepository;
 
     // Tạo user mới (mã hóa mật khẩu)
     public User createUser(User user) {
@@ -41,7 +48,11 @@ public class UserService {
         user.setIsStaff(false);
         user.setIsActive(true);
         user.setPassword(passwordEncoder.encode(user.getPassword())); // Hash password
-        return userRepository.save(user);
+
+        user = userRepository.save(user);
+        saveUserToES(user);
+
+        return user;
     }
 
     public User updateUser(String email, String firstName, String lastName, MultipartFile avatar, MultipartFile background, String bio) throws IOException {
@@ -77,7 +88,9 @@ public class UserService {
             user.setBackground(backgroundUrl);
         }
 
-        userRepository.save(user);
+        user = userRepository.save(user);
+        saveUserToES(user);
+
         return user;
     }
 
@@ -99,7 +112,8 @@ public class UserService {
 
                 // Cập nhật lastLogin
                 user.setLastLogin(LocalDateTime.now());
-                userRepository.save(user);
+                user = userRepository.save(user);
+                saveUserToES(user);
 
                 return Map.of(
                         "accessToken", accessToken,
@@ -114,29 +128,44 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    @Transactional
     public User getUserInfo(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .map(user -> User.builder()
+                        .id(user.getId())
+                        .email(user.getEmail())
+                        .isSuperUser(user.getIsSuperUser())
+                        .isActive(user.getIsActive())
+                        .build())
+                .orElse(null);
     }
 
-    public Page<User> searchUsers(String keyword, String isStaffStr, String isActiveStr, int page, int size) {
+    public Page<UserDocument> searchUsers(String keyword, String isStaffStr, String isActiveStr, int page, int size, User user) {
         // Convert string to Boolean (or null if "all")
         Boolean isStaff = parseToBoolean(isStaffStr);
         Boolean isActive = parseToBoolean(isActiveStr);
 
-        // Default isActive = true if not provided
-        if (isActiveStr == null) {
-            isActive = true;
-        }
 
         // Remove empty keyword
         if (keyword != null && keyword.trim().isEmpty()) {
             keyword = null;
         }
 
+        // Default isActive = true if not provided
+        if (isActiveStr == null) {
+            isActive = true;
+        }
+
+        Page<UserDocument> userDocuments;
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "lastLogin"));
 
-        return userRepository.searchUsers(keyword, isStaff, isActive, pageable);
+        if (user.getIsStaff()) {
+            userDocuments = userESRepository.findByFullNameContainingIgnoreCaseAndIsStaffAndIsActive(keyword, isStaff, isActive, pageable);
+        } else {
+            userDocuments = userESRepository.findByFullNameContainingIgnoreCaseAndIsStaffAndIsActive(keyword, isStaff, false, pageable);
+        }
+
+        return userDocuments;
     }
 
     private Boolean parseToBoolean(String str) {
@@ -162,8 +191,34 @@ public class UserService {
 
         // Cập nhật mật khẩu mới
         user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
+
+        user = userRepository.save(user);
+        saveUserToES(user);
+
         return true;
+    }
+
+
+
+    // Provide ADMIN API
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public User unbanUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setIsActive(true);
+        userRepository.save(user);
+        return user;
+    }
+
+    public User banUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setIsActive(false);
+        userRepository.save(user);
+        return user;
     }
 
     public boolean isEmailExist(String email) {
@@ -215,5 +270,48 @@ public class UserService {
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid user ID format");
         }
+    }
+
+    private UserDocument convertToUserDocument(User user) {
+        UserDocument userDocument = new UserDocument();
+        userDocument.setId(user.getId().toString());
+        userDocument.setEmail(user.getEmail());
+        userDocument.setFirstName(user.getFirstName());
+        userDocument.setLastName(user.getLastName());
+        userDocument.setAvatar(user.getAvatar());
+        userDocument.setBio(user.getBio());
+        userDocument.setIsStaff(user.getIsStaff());
+        userDocument.setIsSuperUser(user.getIsSuperUser());
+        userDocument.setIsActive(user.getIsActive());
+        userDocument.setBackground(user.getBackground());
+        userDocument.setMutualFriends(user.getMutualFriends());
+        userDocument.setFullName(userDocument.getLastName() + " " + userDocument.getFirstName());
+
+        ZonedDateTime zonedDateTime;
+        if (user.getLastLogin() == null) {
+            zonedDateTime = null;
+        } else {
+            zonedDateTime = user.getLastLogin().atZone(ZoneId.of("UTC"));
+        }
+        userDocument.setLastLogin(zonedDateTime);
+
+        zonedDateTime = user.getDateJoined().atZone(ZoneId.of("UTC"));
+        userDocument.setDateJoined(zonedDateTime);
+
+        return userDocument;
+    }
+
+    public void saveUserToES(User user) {
+        UserDocument userDocument = convertToUserDocument(user);
+        userESRepository.save(userDocument);
+    }
+
+    public void saveAllUsersToES() {
+        List<User> users = userRepository.findAll();
+        List<UserDocument> userDocuments = users.stream()
+                .map(this::convertToUserDocument)
+                .toList();
+
+        userESRepository.saveAll(userDocuments);
     }
 }

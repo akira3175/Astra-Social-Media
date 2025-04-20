@@ -49,7 +49,6 @@ const HomePage: React.FC = () => {
           className="layout-container"
           sx={{
             width: "100%",
-            height: "100vh",
             visibility: "hidden",
           }}
         />
@@ -79,7 +78,6 @@ const HomePage: React.FC = () => {
           boxSizing: "border-box",
           display: "flex",
           position: "relative",
-          height: "95vh",
           zIndex: 1, // Thêm z-index cho container chính
         }}
       >

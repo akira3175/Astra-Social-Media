@@ -26,6 +26,8 @@ import PrivacyPolicyPage from "./pages/Legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/Legal/TermsOfServicePage";
 import SettingsPage from "./pages/Settings/SettingsPage";
 import FriendsPage from "./pages/Friends/FriendsPage"
+import NotificationsPage from "./pages/Notifications/NotificationsPage";
+import { NotificationProvider } from "./contexts/NotificationContext";
 
 const theme = createTheme({
   breakpoints: {
@@ -158,6 +160,14 @@ const AppContent: React.FC = () => {
               /* </ProtectedRoute> */
             }
           />
+          <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
           {/* Các route khác có thể thêm vào đây */}
         </Routes>
       </Router>
@@ -170,7 +180,9 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <Provider store={store}>
         <CurrentUserProvider>
-          <AppContent />
+          <NotificationProvider>
+            <AppContent />
+          </NotificationProvider>
         </CurrentUserProvider>
       </Provider>
     </ThemeProvider>

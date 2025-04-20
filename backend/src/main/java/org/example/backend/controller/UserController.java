@@ -1,6 +1,7 @@
 package org.example.backend.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.elasticsearch.document.UserDocument;
 import org.example.backend.entity.User;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.security.JwtUtil;
@@ -110,13 +111,19 @@ public class UserController {
 
     @GetMapping("/info")
     public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String token, HttpServletRequest request) {
+        // Extract email từ token
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
-        User user = userService.getUserInfo(email); // Thay đổi từ findByEmail nếu cần
 
-        // 🔥 Thêm domain vào avatar và background
+        // Lấy Optional<User> từ userService
+        Optional<User> optionalUser = userService.getUserByEmail(email);
+
+        // Kiểm tra và lấy User từ Optional (hoặc ném lỗi nếu không tìm thấy)
+        User user = optionalUser.orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Thêm domain vào avatar và background
         user = addDomainToImage(user, request);
 
-        // 🔥 Trả về response có đường dẫn đầy đủ
+        // Trả về response có đường dẫn đầy đủ
         User response = user.toBuilder()
                 .build();
 
@@ -160,20 +167,31 @@ public class UserController {
     }
 
     @GetMapping("/search")
-    public Page<User> searchUsers(
+    public Page<UserDocument> searchUsers(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "all") String isStaff,
             @RequestParam(required = false, defaultValue = "true") String isActive,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestHeader("Authorization") String token,
             HttpServletRequest request
     ) {
-        Page<User> users = userService.searchUsers(keyword, isStaff, isActive, page, size);
+        token = token.replace("Bearer ", "").trim();
+        String email = jwtUtil.extractEmail(token);
+        User userCurrent = userService.getUserInfo(email);
 
+        Page<UserDocument> users = userService.searchUsers(keyword, isStaff, isActive, page, size, userCurrent);
         return users.map(user -> addDomainToImage(user, request));
     }
 
     private User addDomainToImage(User user, HttpServletRequest request) {
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
+        user.setBackground((user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground() : null);
+        return user;
+    }
+
+    private UserDocument addDomainToImage(UserDocument user, HttpServletRequest request) {
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
         user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
         user.setBackground((user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground() : null);

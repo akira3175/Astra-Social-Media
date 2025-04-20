@@ -3,6 +3,8 @@ package org.example.backend.service;
 import org.example.backend.entity.Image;
 import org.example.backend.dto.PostDTO; 
 import org.example.backend.entity.Post;
+import org.example.backend.elasticsearch.document.PostDocument;
+import org.example.backend.elasticsearch.repository.PostESRepository;
 import org.example.backend.entity.User;
 import org.example.backend.repository.CommentRepository; 
 import org.example.backend.repository.ImageRepository;
@@ -10,6 +12,10 @@ import org.example.backend.repository.LikeRepository;
 import org.example.backend.repository.PostRepository;
 import org.example.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +32,9 @@ public class PostService {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private PostESRepository postESRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -132,13 +141,18 @@ public class PostService {
             post.setImages(images); // Set images list for the post
         }
 
-        return postRepository.save(post);
+        post = postRepository.save(post);
+        savePostToES(post.getId());
+
+        return post;
     }
 
     public Post updatePost(Long id, String newContent) {
         return postRepository.findById(id).map(post -> {
             post.setContent(newContent);
-            return postRepository.save(post);
+            post = postRepository.save(post);
+            savePostToES(post.getId());
+            return post;
         }).orElseThrow(() -> new RuntimeException("Post not found"));
     }
 
@@ -183,7 +197,10 @@ public class PostService {
                 .originalPost(originalPost)
                 .build();
 
-        return postRepository.save(repost);
+        repost = postRepository.save(repost);
+        savePostToES(repost.getId());
+
+        return repost;
     }
 
     // Method to get PostDTO by ID, including like status for the current user
@@ -206,5 +223,47 @@ public class PostService {
         post.setDeleted(true);
         post.setDeletedAt(new Date());
         postRepository.save(post);
+        savePostToES(postId);
+    }
+
+    public Page<PostDocument> searchPosts(String keyword, User user, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        if (user.getIsStaff()) {
+            return postESRepository.findByContentContaining(keyword, pageable);
+        }
+        return postESRepository.findByContentContainingAndIsDeletedFalse(keyword, pageable);
+    }
+
+
+    private PostDocument convertToPostDocument(Post post) {
+        PostDocument postDocument = new PostDocument();
+        postDocument.setId(post.getId().toString());
+        postDocument.setContent(post.getContent());
+        postDocument.setUserId(post.getUser().getId().toString());
+        postDocument.setCreatedAt(post.getCreatedAt());
+        postDocument.setUpdatedAt(post.getUpdatedAt() != null ? post.getUpdatedAt().toString() : null);
+        postDocument.setOriginalPostId(post.getOriginalPost() != null ? post.getOriginalPost().getId().toString() : null);
+        postDocument.setIsDeleted(post.isDeleted());
+        postDocument.setLikedByCurrentUser(post.isLikedByCurrentUser());
+        postDocument.setLikeCount(post.getLikeCount());
+        postDocument.setTotalCommentCount(post.getTotalCommentCount());
+        return postDocument;
+    }
+
+    public void savePostToES(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        PostDocument postDocument = convertToPostDocument(post);
+        postESRepository.save(postDocument);
+    }
+
+    public void syncAllPostsToES() {
+        List<Post> posts = postRepository.findAll();
+        List<PostDocument> documents = posts.stream()
+                .map(this::convertToPostDocument)
+                .toList();
+        postESRepository.saveAll(documents);
     }
 }

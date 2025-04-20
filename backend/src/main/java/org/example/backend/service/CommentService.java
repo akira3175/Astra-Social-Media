@@ -2,20 +2,14 @@ package org.example.backend.service;
 
 import org.example.backend.dto.CommentDTO;
 import org.example.backend.dto.CommentListResponse;
-import org.example.backend.entity.Comment;
-import org.example.backend.entity.Image;
-import org.example.backend.entity.Post;
-import org.example.backend.entity.User;
-import org.example.backend.repository.CommentRepository;
-import org.example.backend.repository.ImageRepository;
-import org.example.backend.repository.LikeRepository;
-import org.example.backend.repository.PostRepository;
-import org.example.backend.repository.UserRepository;
+import org.example.backend.entity.*;
+import org.example.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,6 +31,9 @@ public class CommentService {
 
     @Autowired
     private ImageRepository imageRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     public List<Comment> getAllComments() {
         return commentRepository.findAll();
@@ -70,27 +67,48 @@ public class CommentService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-    
+
         Comment comment = Comment.builder()
                 .content(content)
                 .post(post)
                 .user(user)
                 .build();
-    
-        // Gán comment cha nếu có
+
         if (parentCommentId != null) {
             Comment parent = getCommentByIdOrThrow(parentCommentId);
             comment.setParentComment(parent);
+
+            // Gửi thông báo nếu người bình luận không phải chính chủ
+            if (!parent.getUser().getId().equals(user.getId())) {
+                Notification notification = Notification.builder()
+                        .senderId(user.getId())
+                        .receiverId(parent.getUser().getId())
+                        .type(NotificationType.COMMENT_REPLY)
+                        .postId(postId)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                notificationRepository.save(notification);
+            }
+        } else {
+            // Comment gốc → gửi cho chủ bài viết
+            if (!post.getUser().getId().equals(user.getId())) {
+                Notification notification = Notification.builder()
+                        .senderId(user.getId())
+                        .receiverId(post.getUser().getId())
+                        .type(NotificationType.COMMENT)
+                        .postId(postId)
+                        .build();
+                notificationRepository.save(notification);
+            }
         }
-    
-        // Gán ảnh nếu có
+
         if (images != null && !images.isEmpty()) {
             for (Image image : images) {
                 image.setComment(comment);
             }
             comment.setImages(images);
         }
-    
+
         return commentRepository.save(comment);
     }
 
