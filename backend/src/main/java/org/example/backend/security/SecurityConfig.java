@@ -51,7 +51,8 @@ public class SecurityConfig {
                                                                 "/topic/**",
                                                                 "/queue/**",
                                                                 "/app/**",
-                                                                "/user/**")
+                                                                "/user/**",
+                                                                "/api/admin/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

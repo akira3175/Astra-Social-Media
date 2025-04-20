@@ -15,6 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import type { Post as PostType } from '../../../types/post'; 
+import { getImageUrl } from '../../../utils/imageUtils';
 interface RepostModalProps {
   open: boolean;
   onClose: () => void;
@@ -53,7 +54,7 @@ const RepostModal: React.FC<RepostModalProps> = ({ open, onClose, post, onConfir
     return (
       <Card variant="outlined" sx={{ mt: 1, mb: 2, bgcolor: 'action.hover' }}>
         <CardHeader
-          avatar={<Avatar src={post.user?.avatar} alt={post.user?.name} sx={{ width: 32, height: 32 }} />}
+          avatar={<Avatar src={getImageUrl(post.user?.avatar)} alt={post.user?.name} sx={{ width: 32, height: 32 }} />}
           title={post.user?.name || 'Unknown User'}
           subheader={post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}
           titleTypographyProps={{ variant: 'body2' }}
