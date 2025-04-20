@@ -45,23 +45,42 @@ import RepostModal from "./RepostModal"; // Import RepostModal
 import { useCurrentUser } from '../../../contexts/currentUserContext';
 import { uploadToCloudinary } from '../../../utils/uploadUtils'; // Import the upload function
 import ExpandableText from '../../../components/ExpandableText';
-
+import EditPostModal from './EditPostModal';
+import { useNavigate } from 'react-router-dom';
+import { getImageUrl } from '../../../utils/imageUtils';
 // Define the props for the OriginalPostPreview (can be moved later)
 interface OriginalPostPreviewProps {
   post: PostType;
   sx?: SxProps<Theme>;
+  onOriginalClick?: (postId: number) => void;
 }
 
 // Sửa lại OriginalPostPreview component
-const OriginalPostPreview: React.FC<OriginalPostPreviewProps> = ({ post, sx }) => {
+const OriginalPostPreview: React.FC<OriginalPostPreviewProps> = ({ post, sx, onOriginalClick }) => {
   const displayImages = post.images && post.images.length > 0;
   const isGridDisplay = displayImages && post.images.length > 1;
   const numColumns = post.images ? Math.min(post.images.length, 3) : 1;
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Ngăn chặn sự kiện bubble lên
+    if (onOriginalClick) {
+      onOriginalClick(post.id);
+    }
+  };
+
   return (
-    <MuiCard variant="outlined" sx={{ m: 2, bgcolor: 'action.hover', ...sx }}>
+    <MuiCard 
+      variant="outlined" 
+      sx={{ 
+        m: 2, 
+        bgcolor: 'action.hover', 
+        ...sx,
+        cursor: 'pointer'
+      }}
+      onClick={handleClick}
+    >
       <CardHeader
-        avatar={<Avatar src={post.user?.avatar} alt={post.user?.firstName + ' ' + post.user?.lastName} />}
+        avatar={<Avatar src={getImageUrl(post.user?.avatar)} alt={post.user?.firstName + ' ' + post.user?.lastName} />}
         title={post.user?.firstName + ' ' + post.user?.lastName || 'Unknown User'}
         subheader={
           post.createdAt 
@@ -156,18 +175,29 @@ const OriginalPostPreview: React.FC<OriginalPostPreviewProps> = ({ post, sx }) =
 
 
 interface PostProps {
-  post: PostType
-  onSave: (id: number) => void
-  onConfirmRepost: (originalPostId: number, comment?: string) => Promise<void>
-  className?: string
-  sx?: SxProps
+  post: PostType;
+  onSave: (id: number) => void;
+  onConfirmRepost: (originalPostId: number, comment?: string) => Promise<void>;
+  className?: string;
+  sx?: SxProps;
+  defaultShowComments?: boolean; // Thêm prop mới
 }
 
 const MAX_GRID_IMAGES = 4;
 
-const Post: React.FC<PostProps> = ({ post, ...props }) => {
+const Post: React.FC<PostProps> = ({ post, defaultShowComments = false, ...props }) => {
   const { onSave, className, sx } = props;
   const { content, images, originalPost } = post;
+  const navigate = useNavigate();
+
+  const handleContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/post/${post.id}`);
+  };
+
+  const handleOriginalPostClick = (originalPostId: number) => {
+    navigate(`/post/${originalPostId}`);
+  };
 
   // Menu state
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -189,7 +219,7 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
 
   // Comment State & Store Integration
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(defaultShowComments);
   const [newComment, setNewComment] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -203,13 +233,55 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
   const addComment = usePostStore((state) => state.addComment);
 
   // Like/Unlike actions - use post.id
-  const likePost = usePostStore((state) => state.likePost);
-  const unlikePost = usePostStore((state) => state.unlikePost);
+  const { likePost, unlikePost } = usePostStore();
 
   // Repost state from store (isReposting might be useful for disabling button globally, but modal handles its own loading)
   // const isReposting = usePostStore(state => state.isReposting); // We might not need this here if modal handles loading state
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const isUpdating = usePostStore((state) => state.isUpdating[post.id] || false);
+  const updatePost = usePostStore((state) => state.updatePost);
+
+  // Thêm state để theo dõi optimistic update
+  const [optimisticUpdate, setOptimisticUpdate] = useState<{
+    liked?: boolean;
+    likesCount?: number;
+  } | null>(null);
+
+  // Tính toán giá trị hiển thị dựa trên optimistic hoặc giá trị thật
+  const displayLiked = optimisticUpdate?.liked ?? post.liked;
+  const displayLikesCount = optimisticUpdate?.likesCount ?? post.likesCount;
+
+  // Sửa lại hàm xử lý like
+  const handleLike = async () => {
+    try {
+      // Cập nhật UI ngay lập tức (optimistic update)
+      const newLiked = !displayLiked;
+      const newCount = displayLikesCount + (newLiked ? 1 : -1);
+      
+      setOptimisticUpdate({
+        liked: newLiked,
+        likesCount: newCount
+      });
+
+      // Gọi action từ store
+      if (newLiked) {
+        await likePost(post.id);
+      } else {
+        await unlikePost(post.id);
+      }
+    } catch (error) {
+      // Nếu có lỗi, reset về trạng thái ban đầu
+      setOptimisticUpdate(null);
+      console.error('Error handling like:', error);
+    }
+  };
+
+  // Thêm useEffect để reset optimistic update khi post thay đổi
+  useEffect(() => {
+    setOptimisticUpdate(null);
+  }, [post.id, post.liked, post.likesCount]);
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -237,6 +309,18 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
     setDeleteConfirmOpen(false);
   };
 
+  const handleEdit = () => {
+    handleCloseMenu();
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdate = async (content: string) => {
+    try {
+      await updatePost(post.id, content);
+    } catch (error) {
+      console.error('Error updating post:', error);
+    }
+  };
   // useEffect(() => {
   //   console.log('Post ID:', post.id);
   //   console.log('Comments from props:', post.commentsCount);
@@ -248,6 +332,12 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
     // Use post.id, post.liked, post.likesCount
     // console.log(`Post ${post.id} like status:`, { liked: post.liked, likesCount: post.likesCount });
   }, [post.id, post.liked, post.likesCount]);
+
+  useEffect(() => {
+    if (defaultShowComments && !postCommentData && !isLoadingPostComments) {
+      fetchComments(post.id);
+    }
+  }, [defaultShowComments, post.id, postCommentData, isLoadingPostComments, fetchComments]);
 
   const handleToggleComments = () => {
     const nextShowComments = !showComments;
@@ -296,19 +386,6 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
     }
   };
 
-  // Like/Unlike handler - use post.id and post.liked
-  const handleLike = async () => {
-    try {
-      if (post.liked) {
-        await unlikePost(post.id);
-      } else {
-        await likePost(post.id);
-      }
-    } catch (error) {
-      console.error('Error handling like:', error);
-    }
-  };
-
   const handleOpenRepostModal = () => {
     setIsRepostModalOpen(true);
   };
@@ -342,7 +419,7 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
       <CardHeader
         avatar={
           <Avatar 
-            src={post.user.avatar} 
+            src={getImageUrl(post.user.avatar)} 
             alt={`${post.user.firstName} ${post.user.lastName}`} 
           />
         }
@@ -379,6 +456,9 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
+        <MenuItem onClick={handleEdit} disabled={isUpdating}>
+          Chỉnh sửa
+        </MenuItem>
         <MenuItem 
           onClick={handleOpenDeleteConfirm}
           disabled={isDeleting}
@@ -387,7 +467,11 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
           {isDeleting ? 'Đang xóa...' : 'Xóa bài viết'}
         </MenuItem>
       </Menu>
-      <CardContent sx={{ textAlign: "left", pt: 0 }}>
+      {/* Sửa lại phần CardContent */}
+      <CardContent 
+        sx={{ textAlign: "left", pt: 0, cursor: 'pointer' }}
+        onClick={handleContentClick}
+      >
         {/* Render post content only if it's not a repost or if repost has content */}
         {(content || !originalPost) && (
           <ExpandableText text={content} maxLines={3} />
@@ -407,22 +491,35 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
                </Typography>
              </Box>
            ) : (
-             <OriginalPostPreview post={originalPost} />
+             <OriginalPostPreview 
+               post={originalPost}
+               onOriginalClick={handleOriginalPostClick}
+             />
            )
          )}
       </CardContent>
 
       {/* Render images only if it's NOT a repost (images belong to original) */}
       { displayImages && (
-        <Box sx={{ overflow: "hidden", position: "relative" }}>
+        <Box 
+          sx={{ overflow: "hidden", position: "relative" }}
+          onClick={handleContentClick}
+        >
           {isGridDisplay ? (
             <ImageList
               cols={numColumns}
               gap={8}
-              sx={{ width: "100%", height: "auto" }}
+              sx={{ 
+                width: "100%", 
+                height: "auto",
+                cursor: 'pointer' // Thêm cursor pointer
+              }}
             >
               {images.slice(0, MAX_GRID_IMAGES).map((image, index) => (
-                <ImageListItem key={index}>
+                <ImageListItem 
+                  key={index}
+                  onClick={handleContentClick} // Thêm onClick handler
+                >
                   <img
                     src={image.url}
                     alt={`Post image ${index + 1}`} // Use post.images
@@ -463,7 +560,12 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
               component="img"
               image={images[0].url} // Use post.images
               alt="Post image"
-              sx={{ maxHeight: 500, objectFit: "contain", cursor: "pointer" }}
+              sx={{ 
+                maxHeight: 500, 
+                objectFit: "contain", 
+                cursor: "pointer" 
+              }}
+              onClick={handleContentClick} // Thêm onClick handler
             />
           )}
         </Box>
@@ -482,13 +584,13 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
             {/* Like Button */}
             <IconButton
               onClick={handleLike}
-              color={post.liked ? "primary" : "default"} // Use post.liked
+              color={displayLiked ? "primary" : "default"}
               aria-label="add to favorites"
             >
-              {post.liked ? <Favorite /> : <FavoriteBorder />}
+              {displayLiked ? <Favorite /> : <FavoriteBorder />}
             </IconButton>
             <Typography sx={{ alignSelf: "center", mr: 2 }}>
-              {post.likesCount} {/* Use post.likesCount */}
+              {displayLikesCount}
             </Typography>
             {/* Comment Button */}
             <IconButton
@@ -606,7 +708,24 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
                  <CircularProgress size={24} />
                </Box>
              ) : (
-               <Box sx={{ maxHeight: 300, overflowY: 'auto' }}> {/* Scrollable comment list */}
+               <Box sx={{ 
+                 maxHeight: 300, 
+                 overflowY: 'auto',
+                 // Custom scrollbar styles
+                 "&::-webkit-scrollbar": {
+                   width: "6px",
+                 },
+                 "&::-webkit-scrollbar-track": {
+                   background: "transparent",
+                 },
+                 "&::-webkit-scrollbar-thumb": {
+                   background: "rgba(0,0,0,0.1)",
+                   borderRadius: "10px",
+                 },
+                 "&::-webkit-scrollbar-thumb:hover": {
+                   background: "rgba(0,0,0,0.2)",
+                 },
+               }}> {/* Scrollable comment list */}
                  {comments.length > 0 ? (
                    comments.map((comment) => (
                      <CommentItem key={comment.id} comment={comment} postId={post.id} /> // Use post.id
@@ -656,6 +775,15 @@ const Post: React.FC<PostProps> = ({ post, ...props }) => {
            </Button>
          </DialogActions>
        </Dialog>
+
+       {/* Add EditPostModal */}
+       <EditPostModal
+         post={post}
+         open={isEditModalOpen}
+         onClose={() => setIsEditModalOpen(false)}
+         onUpdate={handleUpdate}
+         isUpdating={isUpdating}
+       />
      </Card>
    );
  };

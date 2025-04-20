@@ -28,7 +28,7 @@ const NotificationDropdown = () => {
   const open = Boolean(anchorEl)
   const popoverId = open ? "notifications-popover" : undefined
 
-  console.log("notifications", notifications)
+  // console.log("notifications", notifications)
 
   // Event handlers
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {

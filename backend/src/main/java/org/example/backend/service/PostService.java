@@ -28,7 +28,7 @@ import java.util.Date;
 
 @Service
 public class PostService {
-
+    private static final long EDIT_TIME_LIMIT_MINUTES = 30; // 30 phút
 
     @Autowired
     private PostRepository postRepository;
@@ -147,13 +147,50 @@ public class PostService {
         return post;
     }
 
-    public Post updatePost(Long id, String newContent) {
-        return postRepository.findById(id).map(post -> {
-            post.setContent(newContent);
-            post = postRepository.save(post);
-            savePostToES(post.getId());
-            return post;
-        }).orElseThrow(() -> new RuntimeException("Post not found"));
+    @Transactional
+    public Post updatePost(Long id, String email, String newContent) {
+        if (id == null) {
+            throw new IllegalArgumentException("Post id cannot be null");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
+        if (newContent == null || newContent.trim().isEmpty()) {
+            throw new IllegalArgumentException("Content cannot be null or empty");
+        }
+
+        final Post existingPost = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+            
+        User currentUser = getCurrentUser(email);
+        if (!existingPost.getUser().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("You don't have permission to update this post");
+        }
+
+        // Kiểm tra thời gian dựa trên lần sửa cuối hoặc thời gian tạo nếu chưa từng sửa
+        long currentTime = System.currentTimeMillis();
+        long lastEditTime = existingPost.getUpdatedAt() != null 
+            ? existingPost.getUpdatedAt().getTime() 
+            : existingPost.getCreatedAt().getTime();
+        long timeDifferenceMinutes = (currentTime - lastEditTime) / (60 * 1000);
+
+        if (timeDifferenceMinutes < EDIT_TIME_LIMIT_MINUTES) {
+            throw new RuntimeException(
+                String.format("Phải đợi %d phút sau lần sửa trước mới có thể sửa lại", 
+                EDIT_TIME_LIMIT_MINUTES)
+            );
+        }
+
+        existingPost.setContent(newContent.trim());
+        existingPost.setUpdatedAt(new Date());
+        
+        try {
+            final Post updatedPost = postRepository.save(existingPost);
+            savePostToES(updatedPost.getId());
+            return updatedPost;
+        } catch (Exception e) {
+            throw new RuntimeException("Error saving updated post: " + e.getMessage());
+        }
     }
 
     public void deletePost(Long id) {
@@ -235,6 +272,13 @@ public class PostService {
         return postESRepository.findByContentContainingAndIsDeletedFalse(keyword, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<PostDTO> getPageOfPostDtos(String currentUserEmail, Pageable pageable) {
+        User currentUser = getCurrentUser(currentUserEmail);
+        Page<Post> postPage = postRepository.findByIsDeletedFalseOrderByCreatedAtDesc(pageable);
+        
+        return postPage.map(post -> convertToDto(post, currentUser));
+    }
 
     private PostDocument convertToPostDocument(Post post) {
         PostDocument postDocument = new PostDocument();

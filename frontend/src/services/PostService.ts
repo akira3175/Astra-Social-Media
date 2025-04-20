@@ -8,6 +8,25 @@ interface CreatePostPayload {
   content: string;
   imageUrls: string[];
 }
+interface UpdatePostRequest {
+  content: string;
+}
+
+interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  last: boolean;
+}
+
+export interface PostPageParams {
+  page: number;
+  size: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}
 
 const createPost = async (payload: CreatePostPayload): Promise<Post> => {
   const token = tokenService.getAccessToken();
@@ -279,14 +298,84 @@ export const getPostsByUserEmail = async (email: string): Promise<Post[]> => {
     throw error;
   }
 };
+
+const updatePost = async (id: number, content: string): Promise<Post> => {
+  const token = tokenService.getAccessToken();
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
+  try {
+    const response = await api.put<ApiResponse<Post>>(
+      `/posts/${id}`,
+      { content },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.data && response.data.status === 200 && response.data.data) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message || "Failed to update post");
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new Error("Unauthorized: please login");
+      }
+      throw new Error(error.response?.data?.message || "Failed to update post");
+    }
+    throw error;
+  }
+};
+
+const getPosts = async (params: PostPageParams): Promise<PageResponse<Post>> => {
+  const token = tokenService.getAccessToken();
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
+  const queryParams = new URLSearchParams({
+    page: params.page.toString(),
+    size: params.size.toString(),
+    ...(params.sortBy && { sortBy: params.sortBy }),
+    ...(params.sortDirection && { sortDirection: params.sortDirection })
+  });
+
+  try {
+    const response = await api.get<ApiResponse<PageResponse<Post>>>(
+      `/posts?${queryParams}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (response.data?.status === 200 && response.data.data) {
+      return response.data.data;
+    }
+    throw new Error(response.data?.message || "Failed to fetch posts");
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    throw error;
+  }
+};
+
 export const PostService = {
   createPost,
   getAllPosts,
   getPostById,
+  updatePost,
   likePost,
   unlikePost,
   repostPost,
   getRepostsByPostId,
   deletePost,
-  getPostsByUserEmail
+  getPostsByUserEmail,
+  getPosts
 };

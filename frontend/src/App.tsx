@@ -28,6 +28,8 @@ import SettingsPage from "./pages/Settings/SettingsPage";
 import FriendsPage from "./pages/Friends/FriendsPage"
 import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import PostDetailModal from './pages/Home/components/PostDetailModal';
+import CreatePostModal from './pages/Home/components/CreatePostModal';
 
 const theme = createTheme({
   breakpoints: {
@@ -127,7 +129,18 @@ const AppContent: React.FC = () => {
                 <HomePage />
               </ProtectedRoute>
             }
-          />
+          >
+            {/* Route con cho post detail */}
+            <Route 
+              path="post/:id" 
+              element={<PostDetailModal />} 
+            />
+            <Route 
+              path="create-post" 
+              element={<CreatePostModal />} 
+            />
+          </Route>
+          
           <Route
             path="/profile/:email"
             element={
