@@ -46,32 +46,36 @@ export const searchUsers = async ({
   isActive?: boolean;
   page?: number;
   size?: number;
-}) => {
+}):Promise<User[]> => {
   const token = tokenService.getAccessToken();
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-  
-    try {
-      const response = await api.get<AxiosResponse<User>>(
-        `/posts/search?keyword=${key}${size??`&size=${size}`}${page??`&page=${page}`}${isActive??`&isActive=${isActive}`}${isStaff??`&isStaff=${isStaff}`}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
-      if (response.data && response.data.status === 200 && response.data.data) {
-        return response.data.data;
-      } else {
-        throw new Error("Failed to get post");
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
+  try {
+    const response = await api.get<AxiosResponse<User[]>>(
+      `/posts/search?keyword=${key}${size ?? `&size=${size}`}${
+        page ?? `&page=${page}`
+      }${isActive ?? `&isActive=${isActive}`}${
+        isStaff ?? `&isStaff=${isStaff}`
+      }`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (error) {
-      console.error("Error getting post:", error);
-      throw error;
+    );
+
+    if (response.data && response.data.status === 200 && response.data.data) {
+      return response.data.data as User[];
+    } else {
+      throw new Error("Failed to get post");
     }
+  } catch (error) {
+    console.error("Error getting post:", error);
+    throw error;
+  }
 };
 
 // Authentication Functions

@@ -9,14 +9,14 @@ interface CreatePostPayload {
   imageUrls: string[];
 }
 
-export const searchPost = async ({keyword,page,size}:{size?:number,keyword:string,page?:string}) =>{
+export const searchPost = async ({keyword,page,size}:{size?:number,keyword:string,page?:string}):Promise<Post[]> =>{
   const token = tokenService.getAccessToken();
   if (!token) {
     throw new Error("No authentication token found");
   }
 
   try {
-    const response = await api.get<ApiResponse<Post>>(
+    const response = await api.get<ApiResponse<Post[]>>(
       `/posts/search?keyword=${keyword}${size??`&size=${size}`}${page??`&page=${page}`}`,
       {
         headers: {
@@ -27,7 +27,7 @@ export const searchPost = async ({keyword,page,size}:{size?:number,keyword:strin
     );
 
     if (response.data && response.data.status === 200 && response.data.data) {
-      return response.data.data;
+      return response.data.data as Post[];
     } else {
       throw new Error(response.data.message || "Failed to get post");
     }
