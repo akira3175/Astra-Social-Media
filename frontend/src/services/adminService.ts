@@ -5,7 +5,10 @@ export interface Post {
   id: number;
   title: string;
   author: string;
+  createdAt: string;
+
   date: string;
+  likesCount: number;
   status: 'active' | 'locked';
 }
 
