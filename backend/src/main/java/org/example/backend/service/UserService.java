@@ -241,7 +241,7 @@ public class UserService {
 
                     // Tìm friendship giữa currentUser và user
                     Optional<Friendship> friendship = friendshipRepository.findByUser1AndUser2(currentUser, user);
-                    if (!friendship.isPresent()) {
+                    if (friendship.isEmpty()) {
                         friendship = friendshipRepository.findByUser1AndUser2(user, currentUser);
                     }
 

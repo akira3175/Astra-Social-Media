@@ -7,14 +7,12 @@ import {
   IconButton,
   CircularProgress,
   Typography,
-  Divider,
   Fade, // Thêm Fade component
   Skeleton // Thêm Skeleton component
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { PostService } from '../../../services/PostService';
 import Post from './Post';
-import CommentItem from './CommentItem';
 import type { Post as PostType } from '../../../types/post';
 import { usePostStore } from '../../../stores/postStore';
 
@@ -43,8 +41,9 @@ const PostDetailModal = () => {
   const [post, setPost] = useState<PostType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { savePost, repostPost, commentDataByPostId, isLoadingComments } = usePostStore();
-  const comments = commentDataByPostId[Number(id)]?.comments || [];
+  const { savePost, repostPost } = usePostStore();
+  // const { savePost, repostPost, commentDataByPostId, isLoadingComments } = usePostStore();
+  // const comments = commentDataByPostId[Number(id)]?.comments || [];
 
   // Kiểm tra xem modal có nên mở hay không dựa vào URL
   const isOpen = location.pathname.includes('/post/');

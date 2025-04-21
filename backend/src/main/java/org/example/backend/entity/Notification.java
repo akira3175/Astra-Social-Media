@@ -22,6 +22,7 @@ public class Notification {
     private Long senderId;
     private Long receiverId;
 
+    @Column(length = 30)
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
