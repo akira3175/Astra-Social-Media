@@ -70,31 +70,31 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
-  // const authenticated = isAuthenticated();
+  const authenticated = isAuthenticated();
 
-  // if (!authenticated) {
-  //   return <Navigate to="/login" />;
-  // }
+  if (!authenticated) {
+    return <Navigate to="/login" />;
+  }
 
   return <>{children}</>;
 };
 
 // Protected Admin Route component
-// interface ProtectedAdminRouteProps {
-//   children: ReactNode;
-// }
+interface ProtectedAdminRouteProps {
+  children: ReactNode;
+}
 
-// const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) => {
-//   const authenticated = isAuthenticated();
-//   // TODO: Add admin role check here
-//   const isAdmin = true; // This should be replaced with actual admin role check
+const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) => {
+  const authenticated = isAuthenticated();
+  // TODO: Add admin role check here
+  const isAdmin = true; // This should be replaced with actual admin role check
 
-//   if (!authenticated || !isAdmin) {
-//     return <Navigate to="/login" />;
-//   }
+  if (!authenticated || !isAdmin) {
+    return <Navigate to="/login" />;
+  }
 
-//   return <>{children}</>;
-// };
+  return <>{children}</>;
+};
 
 const AppContent: React.FC = () => {
   useWebSocket()
