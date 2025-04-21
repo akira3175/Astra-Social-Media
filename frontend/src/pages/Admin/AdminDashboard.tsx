@@ -72,6 +72,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -153,7 +154,7 @@ const AdminDashboard = () => {
 
   const fetchLockedComments = async () => {
     try {
-      setLoading(true);
+      setLoading(true); 
       const data = await getLockedComments();
       setLockedComments(data);
     } catch (err) {
