@@ -8,9 +8,10 @@ interface CreatePostPayload {
   content: string;
   imageUrls: string[];
 }
-interface UpdatePostRequest {
-  content: string;
-}
+
+// interface UpdatePostRequest {
+//   content: string;
+// }
 
 interface PageResponse<T> {
   content: T[];

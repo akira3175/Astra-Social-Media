@@ -286,7 +286,7 @@ public class PostService {
         postDocument.setContent(post.getContent());
         postDocument.setUserId(post.getUser().getId().toString());
         postDocument.setCreatedAt(post.getCreatedAt());
-        postDocument.setUpdatedAt(post.getUpdatedAt() != null ? post.getUpdatedAt().toString() : null);
+        postDocument.setUpdatedAt(post.getUpdatedAt() != null ? post.getUpdatedAt() : null);
         postDocument.setOriginalPostId(post.getOriginalPost() != null ? post.getOriginalPost().getId().toString() : null);
         postDocument.setIsDeleted(post.isDeleted());
         postDocument.setLikedByCurrentUser(post.isLikedByCurrentUser());
