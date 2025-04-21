@@ -115,8 +115,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ post, open, onClose, onUp
         <Button
           onClick={handleUpdate}
           variant="contained"
-          disabled={!content.trim() || remainingMinutes > 0 || isUpdating}
-        >
+          disabled={!content?.trim() || remainingMinutes > 0 || isUpdating}>
           {isUpdating ? <CircularProgress size={24} /> : 'Cập nhật'}
         </Button>
       </DialogActions>
