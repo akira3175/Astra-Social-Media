@@ -29,7 +29,7 @@ interface Post {
   content: string
   image?: string
   author: {
-    email: any
+    email: string
     id: number
     name: string
     avatar: string
