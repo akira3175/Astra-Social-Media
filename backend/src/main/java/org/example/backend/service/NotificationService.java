@@ -35,7 +35,7 @@ public class NotificationService {
 
     public NotificationDTO toDTO(Notification noti) {
         User sender = userRepository.findById(noti.getSenderId()).orElseThrow();
-        String message = generateMessage(noti.getType(), sender.getLastName() + sender.getFirstName());
+        String message = generateMessage(noti.getType(), sender.getLastName() + " " + sender.getFirstName());
         String avatarUrl = null;
         if (sender.getAvatar() != null) {
             avatarUrl = ServletUriComponentsBuilder
