@@ -9,7 +9,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,7 +32,7 @@ public class CommentService {
     private ImageRepository imageRepository;
 
     @Autowired
-    private NotificationRepository notificationRepository;
+    private NotificationService notificationService;
 
     public List<Comment> getAllComments() {
         return commentRepository.findAll();
@@ -77,29 +76,6 @@ public class CommentService {
         if (parentCommentId != null) {
             Comment parent = getCommentByIdOrThrow(parentCommentId);
             comment.setParentComment(parent);
-
-            // Gửi thông báo nếu người bình luận không phải chính chủ
-            if (!parent.getUser().getId().equals(user.getId())) {
-                Notification notification = Notification.builder()
-                        .senderId(user.getId())
-                        .receiverId(parent.getUser().getId())
-                        .type(NotificationType.COMMENT_REPLY)
-                        .postId(postId)
-                        .createdAt(LocalDateTime.now())
-                        .build();
-                notificationRepository.save(notification);
-            }
-        } else {
-            // Comment gốc → gửi cho chủ bài viết
-            if (!post.getUser().getId().equals(user.getId())) {
-                Notification notification = Notification.builder()
-                        .senderId(user.getId())
-                        .receiverId(post.getUser().getId())
-                        .type(NotificationType.COMMENT)
-                        .postId(postId)
-                        .build();
-                notificationRepository.save(notification);
-            }
         }
 
         if (images != null && !images.isEmpty()) {
@@ -109,7 +85,12 @@ public class CommentService {
             comment.setImages(images);
         }
 
-        return commentRepository.save(comment);
+        comment = commentRepository.save(comment);
+
+        // ✳️ Gửi thông báo sau khi lưu
+        notificationService.notifyComment(comment);
+
+        return comment;
     }
 
     public Comment updateComment(Long id, String newContent) {
@@ -140,7 +121,7 @@ public class CommentService {
         boolean likedByCurrentUser = likeRepository.findByUserAndComment(currentUser, comment).isPresent();
         long likesCount = likeRepository.countByCommentId(comment.getId());
         List<User> likedUsers = comment.getLikes().stream()
-                .map(like -> like.getUser())
+                .map(Like::getUser)
                 .collect(Collectors.toList());
 
         // Đệ quy chuyển đổi replies thành DTOs

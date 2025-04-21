@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -53,21 +52,9 @@ public class LikeService {
 
         like = likeRepository.save(like);
 
-        // ✅ Tạo thông báo
-        Notification notification = Notification.builder()
-                .senderId(user.getId())
-                .receiverId(post.getUser().getId())
-                .type(NotificationType.LIKE)
-                .postId(postId)
-                .isRead(false)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        notificationRepository.save(notification);
-
-        // ✅ Gửi thông báo qua WebSocket
-        String receiverEmail = post.getUser().getEmail(); // Giả sử User có field email
-        notificationService.sendToUser(receiverEmail, notification);
+        if (!post.getUser().getId().equals(like.getUser().getId())) {
+            notificationService.notifyLike(user, post);
+        }
 
         return like;
     }
@@ -77,6 +64,7 @@ public class LikeService {
     public Like likeComment(String userEmail, Long commentId) {
         User user = userService.getUserByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
         Comment comment = commentService.getCommentByIdOrThrow(commentId);
 
         Optional<Like> existingLike = likeRepository.findByUserAndComment(user, comment);
@@ -86,23 +74,17 @@ public class LikeService {
 
         Like like = Like.builder()
                 .user(user)
-                .post(null)
                 .comment(comment)
+                .post(null)
                 .build();
 
-        // Tạo thông báo nếu không phải like chính mình
+        like = likeRepository.save(like);
+
         if (!user.getId().equals(comment.getUser().getId())) {
-            Notification notification = Notification.builder()
-                    .senderId(user.getId())
-                    .receiverId(comment.getUser().getId())
-                    .type(NotificationType.COMMENT_LIKE)
-                    .postId(comment.getPost().getId())
-                    .createdAt(LocalDateTime.now())
-                    .build();
-            notificationRepository.save(notification);
+            notificationService.notifyCommentLike(user, comment);
         }
 
-        return likeRepository.save(like);
+        return like;
     }
 
     @Transactional // Add Transactional for delete operation
@@ -148,20 +130,17 @@ public class LikeService {
 
         List<Like> likes = likeRepository.findByCommentId(commentId);
 
-        List<User> users = likes.stream()         
-                            .map(Like::getUser) 
-                            .distinct()        
+        return likes.stream()
+                            .map(Like::getUser)
+                            .distinct()
                             .collect(Collectors.toList());
-
-        return users;
     }
     @Transactional(readOnly = true)
     public List<User> getUsersWhoLikedPost(Long postId) {
         List<Like> likes = likeRepository.findByPostId(postId);
-        List<User> users = likes.stream()
+        return likes.stream()
                             .map(Like::getUser)
                             .distinct()
                             .collect(Collectors.toList());
-        return users;
     }
 }

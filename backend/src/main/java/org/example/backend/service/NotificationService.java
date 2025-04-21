@@ -4,17 +4,23 @@ import lombok.RequiredArgsConstructor;
 import org.example.backend.dto.NotificationDTO;
 import org.example.backend.entity.Notification;
 import org.example.backend.entity.NotificationType;
+import org.example.backend.entity.Post;
 import org.example.backend.entity.User;
+import org.example.backend.repository.NotificationRepository;
 import org.example.backend.repository.UserRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.example.backend.entity.Comment;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationRepository notificationRepository;
 
     private String generateMessage(NotificationType type, String senderName) {
         return switch (type) {
@@ -59,5 +65,69 @@ public class NotificationService {
                 "/queue/notifications",
                 dto
         );
+    }
+
+    public void notifyLike(User sender, Post post) {
+        Notification notification = Notification.builder()
+                .senderId(sender.getId())
+                .receiverId(post.getUser().getId())
+                .type(NotificationType.LIKE)
+                .postId(post.getId())
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        notificationRepository.save(notification);
+
+        sendToUser(post.getUser().getEmail(), notification);
+    }
+
+    public void notifyCommentLike(User sender, Comment comment) {
+        Notification notification = Notification.builder()
+                .senderId(sender.getId())
+                .receiverId(comment.getUser().getId())
+                .type(NotificationType.COMMENT_LIKE)
+                .postId(comment.getPost().getId())
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        notificationRepository.save(notification);
+
+        sendToUser(comment.getUser().getEmail(), notification);
+    }
+
+    public void notifyComment(Comment comment) {
+        User sender = comment.getUser();
+        Post post = comment.getPost();
+
+        // Nếu là trả lời comment
+        if (comment.getParentComment() != null) {
+            User parentUser = comment.getParentComment().getUser();
+            if (!parentUser.getId().equals(sender.getId())) {
+                Notification noti = Notification.builder()
+                        .senderId(sender.getId())
+                        .receiverId(parentUser.getId())
+                        .type(NotificationType.COMMENT_REPLY)
+                        .postId(post.getId())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                notificationRepository.save(noti);
+                sendToUser(parentUser.getEmail(), noti);
+            }
+        } else {
+            // Nếu là comment gốc
+            if (!post.getUser().getId().equals(sender.getId())) {
+                Notification noti = Notification.builder()
+                        .senderId(sender.getId())
+                        .receiverId(post.getUser().getId())
+                        .type(NotificationType.COMMENT)
+                        .postId(post.getId())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                notificationRepository.save(noti);
+                sendToUser(post.getUser().getEmail(), noti);
+            }
+        }
     }
 }
