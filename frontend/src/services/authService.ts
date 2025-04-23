@@ -32,6 +32,10 @@ const ENDPOINTS = {
   REGISTER: "/users/register",
   CHECK_EMAIL_EXISTS: "/users/check-email",
   CHANGE_PASSWORD: "/users/change-password",
+  REQUEST_OTP: "/otp/register",
+  SEND_FORGOT_PASSWORD_EMAIL: "/password/forgot",
+  VERIFY_RESET_TOKEN: "/password/verify",
+  RESET_PASSWORD: "/password/reset",
 };
 
 export const searchUsers = async ({
@@ -338,3 +342,69 @@ export const changePassword = async (
     throw new Error("Sai mật khẩu, vui lòng thử lại!");
   }
 };
+
+export const requestOtp = async (email: string): Promise<string> => {
+  try {
+    const response: AxiosResponse<string> = await api.post(
+      ENDPOINTS.REQUEST_OTP,
+      null,
+      {
+        params: { email },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to send OTP";
+      throw new Error(errorMessage);
+    }
+    throw new Error("Failed to send OTP. Please try again.");
+  }
+};
+
+export const sendForgotPasswordEmail = async (email: string): Promise<string> => {
+  try {
+    const response: AxiosResponse<string> = await api.post(
+      ENDPOINTS.SEND_FORGOT_PASSWORD_EMAIL,
+      { email }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to send forgot password email";
+      throw new Error(errorMessage);
+    }
+    throw new Error("Failed to send forgot password email. Please try again.");
+  }
+};
+
+export const verifyResetToken = async (token: string): Promise<void> => {
+  try {
+    const response: AxiosResponse<void> = await api.get(
+      ENDPOINTS.VERIFY_RESET_TOKEN,
+      { params: { token } }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to verify reset token";
+      throw new Error(errorMessage);
+    }
+    throw new Error("Failed to verify reset token. Please try again.");
+  }
+};  
+
+export const resetPassword = async (
+  token: string,
+  newPassword: string
+): Promise<void> => {
+  try {
+    await api.post(ENDPOINTS.RESET_PASSWORD, { token, newPassword });
+  } catch {
+    throw new Error("Failed to reset password. Please try again.");
+  }
+};  
+
