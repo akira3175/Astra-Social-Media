@@ -135,6 +135,7 @@ public class UserService {
                         .id(user.getId())
                         .email(user.getEmail())
                         .isSuperUser(user.getIsSuperUser())
+                        .isStaff(user.getIsStaff())
                         .isActive(user.getIsActive())
                         .build())
                 .orElse(null);

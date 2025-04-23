@@ -1,22 +1,21 @@
 package org.example.backend.controller;
 
 import org.springframework.web.bind.annotation.RestController;
+import org.example.backend.security.JwtUtil;
 import org.example.backend.security.RequireAdmin;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 import java.util.Map;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.example.backend.entity.User;
+import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.entity.Comment;
-import org.example.backend.dto.PostDTO;
-import org.example.backend.security.JwtUtil;
 import org.example.backend.service.UserService;
 import org.example.backend.service.CommentService;
 import org.example.backend.service.PostService;
@@ -25,6 +24,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.example.backend.dto.ApiResponse;
 import org.example.backend.entity.Post;
@@ -36,6 +36,67 @@ public class AdminController {
     private final UserService userService;
     private final CommentService commentService;
     private final PostService postService;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtUtil jwtUtil;
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<Object>> login(@RequestBody Map<String, String> loginRequest) {
+        String email = loginRequest.get("email");
+        String password = loginRequest.get("password");
+
+        Map<String, String> tokens = userService.login(email, password);
+        User user = userService.getUserInfo(email);
+        if (!user.getIsSuperUser()) {
+            return ResponseEntity.status(401).body(ApiResponse.builder()
+                .status(401)
+                .message("You are not Admin")
+                .data(null)
+                .timestamp(System.currentTimeMillis())
+                .build());
+        }
+
+        if (tokens != null) {
+            return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(tokens)
+                .timestamp(System.currentTimeMillis())
+                .build());
+        }
+
+        return ResponseEntity.status(401).body(ApiResponse.builder()
+            .status(402)
+            .message("Invalid email or password")
+            .data(null)
+            .timestamp(System.currentTimeMillis())
+            .build());
+    }
+
+    @PostMapping("/login/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return ResponseEntity.badRequest().body("Refresh token is required");
+        }
+
+        return refreshTokenRepository.findByToken(refreshToken)
+                .map(token -> {
+                    if (token.getExpiryDate().isBefore(Instant.now())) {
+                        refreshTokenRepository.delete(token); // Xóa token hết hạn
+                        return ResponseEntity.status(401).body("Refresh token expired");
+                    }
+
+                    String email = jwtUtil.extractEmail(refreshToken);
+                    if (jwtUtil.isTokenValid(refreshToken, email)) {
+                        String newAccessToken = jwtUtil.generateAccessToken(email);
+                        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+                    } else {
+                        return ResponseEntity.status(401).body("Invalid refresh token");
+                    }
+                })
+                .orElse(ResponseEntity.status(401).body("Refresh token not found"));
+    }
 
     @RequireAdmin
     @GetMapping("/stats")
