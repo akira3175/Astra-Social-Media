@@ -5,7 +5,10 @@ export interface Post {
   id: number;
   title: string;
   author: string;
+  createdAt: string;
+
   date: string;
+  likesCount: number;
   status: 'active' | 'locked';
 }
 
@@ -22,6 +25,9 @@ export interface User {
   id: number;
   email: string;
   firstName: string;
+  background:string;
+  bio:string;
+  name:string;
   lastName: string;
   avatar: string;
   isStaff: boolean;
@@ -145,23 +151,6 @@ export const getUsers = async (): Promise<User[]> => {
     throw error;
   }
 };
-// export const getUsers = async (): Promise<User[]> => {
-//   try {
-//     const token = tokenService.getAccessToken()
-//     if (!token) throw new Error("Not authenticated")
-
-//     const response: AxiosResponse<User[]> = await api.get(`/admin/users`)
-//     return response.data
-//   } catch (error) {
-//     if (axios.isAxiosError(error)) {
-//       console.error("API error:", error.response?.data || error.message)
-//       throw new Error(`API error: ${error.response?.status} - ${error.response?.statusText}`)
-//     } else {
-//       console.error("Unexpected error:", error)
-//       throw error 
-//     }
-//   } 
-// }
 
 export const getBannedUsers = async (): Promise<User[]> => {
   try {

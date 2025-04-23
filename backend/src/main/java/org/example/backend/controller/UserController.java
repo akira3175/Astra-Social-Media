@@ -1,14 +1,17 @@
 package org.example.backend.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.dto.RegisterWithOtpRequest;
 import org.example.backend.elasticsearch.document.UserDocument;
 import org.example.backend.entity.User;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.security.JwtUtil;
+import org.example.backend.service.OtpService;
 import org.example.backend.service.UserService;
 import org.example.backend.websocket.WebSocketEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,16 +32,28 @@ public class UserController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final OtpService otpService;
 
     @Autowired
     private WebSocketEventListener webSocketEventListener;
 
-    // API tạo User
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
+    public ResponseEntity<?> registerUser(@RequestBody RegisterWithOtpRequest request) {
+        boolean valid = otpService.verifyOtp(request.email, request.otp);
+        if (!valid) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mã OTP không hợp lệ hoặc đã hết hạn.");
+        }
+
+        User user = new User();
+        user.setEmail(request.email);
+        user.setPassword(request.password);
+        user.setFirstName(request.firstName);
+        user.setLastName(request.lastName);
+
         User newUser = userService.createUser(user);
         return ResponseEntity.ok(newUser);
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {

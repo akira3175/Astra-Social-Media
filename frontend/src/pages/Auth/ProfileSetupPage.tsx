@@ -19,16 +19,14 @@ import {
   StepLabel,
 } from "@mui/material"
 import { PersonOutline, ArrowForward } from "@mui/icons-material"
-import { register, login, getCurrentUser } from "../../services/authService"
-import { useCurrentUser } from "../../contexts/currentUserContext"
+import type { RegisterCredentials } from "../../types/user"
 
 const ProfileSetupPage: React.FC = () => {
-  const { setCurrentUser } = useCurrentUser()
   const [firstName, setFirstName] = useState<string>("")
   const [lastName, setLastName] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
-  const [registrationData, setRegistrationData] = useState<{ email: string; password: string } | null>(null)
+  const [registrationData, setRegistrationData] = useState<RegisterCredentials | null>(null)
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
@@ -69,30 +67,19 @@ const ProfileSetupPage: React.FC = () => {
     setIsLoading(true)
 
     try {
-      // Complete registration with all data
-      const registerData = {
-        email: registrationData.email,
-        password: registrationData.password,
+      // Save profile data to session storage
+      const profileData = {
         firstName: firstName,
         lastName: lastName,
       }
 
-      // Call register API
-      await register(registerData)
+      sessionStorage.setItem("profileData", JSON.stringify(profileData))
 
-      // After successful registration, log the user in
-      await login(registrationData.email, registrationData.password)
-      const user = await getCurrentUser()
-      setCurrentUser(user)
-
-      // Clear session storage
-      sessionStorage.removeItem("registrationData")
-
-      // Navigate to home page
-      navigate("/")
+      // Navigate to OTP verification page
+      navigate("/otp-verification")
     } catch (err) {
-      setError("Đăng ký không thành công. Vui lòng kiểm tra lại thông tin.")
-      console.error("Registration error:", err)
+      setError("Có lỗi xảy ra. Vui lòng thử lại.")
+      console.error("Error:", err)
     } finally {
       setIsLoading(false)
     }
@@ -116,7 +103,7 @@ const ProfileSetupPage: React.FC = () => {
                 Thiết lập hồ sơ
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Chỉ còn một bước nữa để hoàn tất đăng ký
+                Nhập thông tin cá nhân của bạn
               </Typography>
             </Box>
           }
@@ -129,6 +116,9 @@ const ProfileSetupPage: React.FC = () => {
               </Step>
               <Step active>
                 <StepLabel>Thiết lập hồ sơ</StepLabel>
+              </Step>
+              <Step>
+                <StepLabel>Xác thực OTP</StepLabel>
               </Step>
               <Step>
                 <StepLabel>Hoàn tất</StepLabel>
@@ -207,7 +197,7 @@ const ProfileSetupPage: React.FC = () => {
               }}
               endIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <ArrowForward />}
             >
-              {isLoading ? "Đang xử lý..." : "Hoàn tất đăng ký"}
+              {isLoading ? "Đang xử lý..." : "Tiếp tục"}
             </Button>
           </Box>
         </CardContent>

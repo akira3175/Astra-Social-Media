@@ -31,6 +31,9 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import PostDetailModal from './pages/Home/components/PostDetailModal';
 import CreatePostModal from './pages/Home/components/CreatePostModal';
 import ChatBubble from "./components/AIChatBox/ChatBubble";
+import OTPVerificationPage from "./pages/Auth/OTPVerificationPage";
+import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/Auth/ResetPasswordPage";
 
 const theme = createTheme({
   breakpoints: {
@@ -113,6 +116,9 @@ const AppContent: React.FC = () => {
           <Route path="/login" element={<LoginPage />}></Route>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile-setup" element={<ProfileSetupPage />} />
+          <Route path="/otp-verification" element={<OTPVerificationPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/dashboard" element={<DashboardPage />} />

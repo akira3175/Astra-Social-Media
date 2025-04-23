@@ -172,7 +172,7 @@ export default function LoginPage() {
                   <Typography
                     variant="body2"
                     component="a"
-                    href="#"
+                    href="/forgot-password"
                     sx={{ color: "#4f46e5", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
                   >
                     Quên mật khẩu?

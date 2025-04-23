@@ -8,28 +8,19 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table
 @Data
+@Table
+@Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Notification {
+public class PasswordResetToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long senderId;
-    private Long receiverId;
-
-    @Column(length = 30)
-    @Enumerated(EnumType.STRING)
-    private NotificationType type;
-
-    private Long postId;
-
-    private Boolean isRead = false;
-
-    private LocalDateTime createdAt = LocalDateTime.now();
-
+    private String email;
+    private String token;
+    private LocalDateTime expiration;
+    private boolean used;
 }
