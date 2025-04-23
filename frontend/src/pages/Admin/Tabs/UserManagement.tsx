@@ -1,42 +1,37 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faLock, faLockOpen } from "@fortawesome/free-solid-svg-icons";
 import {
-  faLock,
-  faLockOpen,
-
-} from "@fortawesome/free-solid-svg-icons";
+  banUser,
+  getUsers,
+  unbanUser,
+  User,
+} from "../../../services/adminService";
 
 const UserManagement: React.FC = () => {
-  // Dữ liệu mẫu
-  const users = [
-    {
-      id: 1,
-      name: "Nguyen Van A",
-      email: "nguyenvana@example.com",
-      joinedDate: "2025-01-01",
-    },
-    {
-      id: 2,
-      name: "Tran Thi B",
-      email: "tranthib@example.com",
-      joinedDate: "2025-02-15",
-    },
-    {
-      id: 3,
-      name: "Le Van C",
-      email: "levanc@example.com",
-      joinedDate: "2025-03-10",
-    },
-  ];
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const usersData = await getUsers();
+        setUsers(usersData);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleDelete = (id: number) => {
-    console.log(`Xóa người dùng với ID: ${id}`);
-    // Thêm logic xóa người dùng ở đây
+    fetchData();
+  }, []);
+
+  const handleLockUser = async (id: number) => {
+    await banUser(id);
   };
 
-  const handleEdit = (id: number) => {
-    console.log(`Chỉnh sửa người dùng với ID: ${id}`);
-    // Thêm logic chỉnh sửa người dùng ở đây
+  const handleUnlockUser = async (id: number) => {
+    await unbanUser(id);
   };
 
   return (
@@ -61,37 +56,53 @@ const UserManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-100">
-                <td className="px-4 py-2 border border-gray-300">
-                  {user.name}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {user.email}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {user.joinedDate}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  <div className="flex gap-4 items-center justify-center">
-                    <FontAwesomeIcon
-                      icon={faLockOpen}
-                      className="cursor-pointer hover:text-blue-500 duration-300"
-                      onClick={() => {
-                        handleEdit(user.id);
-                      }}
-                    />
-                    <FontAwesomeIcon
-                      className="cursor-pointer hover:text-red-500 duration-300"
-                      onClick={() => {
-                        handleDelete(user.id);
-                      }}
-                      icon={faLock}
-                    />
-                  </div>
+            {isLoading && (
+              <tr>
+                <td colSpan={4} className="text-center py-4">
+                  Đang tải dữ liệu...
                 </td>
               </tr>
-            ))}
+            )}
+            {!isLoading && users.length === 0 && (
+              <tr>
+                <td colSpan={4} className="text-center py-4">
+                  Không có người dùng nào
+                </td>
+              </tr>
+            )}
+            {!isLoading &&
+              users.length > 0 &&
+              users.map((user) => (
+                <tr key={user.id} className="hover:bg-gray-100">
+                  <td className="px-4 py-2 border border-gray-300">
+                    {user.name}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {user.email}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {user.dateJoined}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    <div className="flex gap-4 items-center justify-center">
+                      <FontAwesomeIcon
+                        icon={faLockOpen}
+                        className="cursor-pointer hover:text-blue-500 duration-300"
+                        onClick={async () => {
+                          await handleUnlockUser(user.id);
+                        }}
+                      />
+                      <FontAwesomeIcon
+                        className="cursor-pointer hover:text-red-500 duration-300"
+                        onClick={async () => {
+                          await handleLockUser(user.id);
+                        }}
+                        icon={faLock}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>

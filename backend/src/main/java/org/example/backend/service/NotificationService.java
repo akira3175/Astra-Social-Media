@@ -14,6 +14,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.example.backend.entity.Comment;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +36,7 @@ public class NotificationService {
 
     public NotificationDTO toDTO(Notification noti) {
         User sender = userRepository.findById(noti.getSenderId()).orElseThrow();
-        String message = generateMessage(noti.getType(), sender.getLastName() + sender.getFirstName());
+        String message = generateMessage(noti.getType(), sender.getLastName() + " " + sender.getFirstName());
         String avatarUrl = null;
         if (sender.getAvatar() != null) {
             avatarUrl = ServletUriComponentsBuilder
@@ -129,5 +130,36 @@ public class NotificationService {
                 sendToUser(post.getUser().getEmail(), noti);
             }
         }
+    }
+
+    public void markAsRead(Long notificationId, User currentUser) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+
+        if (!notification.getReceiverId().equals(currentUser.getId())) {
+            throw new SecurityException("Bạn không có quyền đánh dấu thông báo này");
+        }
+
+        notification.setIsRead(true);
+        notificationRepository.save(notification);
+    }
+
+    public void markAllAsRead(User user) {
+        List<Notification> notifications = notificationRepository.findByReceiverIdOrderByCreatedAtDesc(user.getId());
+        for (Notification n : notifications) {
+            n.setIsRead(true);
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    public void deleteNotification(Long notificationId, User currentUser) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+
+        if (!notification.getReceiverId().equals(currentUser.getId())) {
+            throw new SecurityException("Bạn không có quyền xoá thông báo này");
+        }
+
+        notificationRepository.deleteById(notificationId);
     }
 }

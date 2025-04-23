@@ -35,11 +35,20 @@ public class NotificationController {
     }
 
     @PutMapping("/mark-as-read/{id}")
-    public ResponseEntity<?> markAsRead(@PathVariable Long id) {
-        Notification notification = notificationRepository.findById(id).orElseThrow();
-        notification.setIsRead(true);
-        notificationRepository.save(notification);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> markAsRead(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        try {
+            String email = jwtUtil.extractEmail(authHeader.replace("Bearer ", ""));
+            User user = userService.getUserInfo(email);
+            notificationService.markAsRead(id, user);
+            return ResponseEntity.ok().build();
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping
@@ -68,5 +77,30 @@ public class NotificationController {
     private String getEmailByUserId(Long id) {
         // TODO: lấy email theo userId từ database (userRepo.findById(id).getEmail())
         return "akira31758421@gmail.com";
+    }
+
+    @PutMapping("/read-all")
+    public ResponseEntity<?> markAllAsRead(@RequestHeader("Authorization") String authHeader) {
+        String email = jwtUtil.extractEmail(authHeader.replace("Bearer ", ""));
+        User user = userService.getUserInfo(email);
+        notificationService.markAllAsRead(user);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{notificationId}")
+    public ResponseEntity<?> deleteNotification(
+            @PathVariable Long notificationId,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        try {
+            String email = jwtUtil.extractEmail(authHeader.replace("Bearer ", ""));
+            User user = userService.getUserInfo(email);
+            notificationService.deleteNotification(notificationId, user);
+            return ResponseEntity.ok().build();
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

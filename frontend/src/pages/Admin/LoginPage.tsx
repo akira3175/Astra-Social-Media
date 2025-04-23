@@ -39,11 +39,6 @@ const AdminLoginPage: React.FC = () => {
     setTimeout(() => {
       // Kiểm tra thông tin đăng nhập (demo)
       if (username === "admin" && password === "admin123") {
-        // Lưu thông tin đăng nhập vào localStorage
-        localStorage.setItem("adminToken", "demo-admin-token")
-        localStorage.setItem("adminUser", JSON.stringify({ username: "admin", role: "administrator" }))
-
-        // Chuyển hướng đến trang quản trị
         navigate("/admin/dashboard")
       } else {
         setError("Tên đăng nhập hoặc mật khẩu không đúng")
