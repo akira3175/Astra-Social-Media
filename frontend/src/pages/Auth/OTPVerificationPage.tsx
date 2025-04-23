@@ -9,8 +9,6 @@ import {
   CardHeader,
   TextField,
   Typography,
-  useMediaQuery,
-  useTheme,
   Alert,
   CircularProgress,
   Stepper,
@@ -19,11 +17,9 @@ import {
 } from "@mui/material"
 import { VerifiedUser, ArrowForward } from "@mui/icons-material"
 import { register, requestOtp } from "../../services/authService"
-import { useCurrentUser } from "../../contexts/currentUserContext"
 import type { RegisterData } from "../../types/user"
 
 const OTPVerificationPage: React.FC = () => {
-  const { setCurrentUser } = useCurrentUser()
   const [otp, setOtp] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isSending, setIsSending] = useState<boolean>(false)
@@ -37,8 +33,6 @@ const OTPVerificationPage: React.FC = () => {
   } | null>(null)
   const [countdown, setCountdown] = useState<number>(0)
 
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -133,7 +127,7 @@ const OTPVerificationPage: React.FC = () => {
       }
 
       // Call register API
-      const tokens = await register(registerData)
+      await register(registerData)
 
       // Clear session storage
       sessionStorage.removeItem("registrationData")

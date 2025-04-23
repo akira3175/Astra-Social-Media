@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
@@ -21,11 +19,9 @@ import {
   StepLabel,
 } from "@mui/material"
 import { PersonOutline, ArrowForward } from "@mui/icons-material"
-import { useCurrentUser } from "../../contexts/currentUserContext"
 import type { RegisterCredentials } from "../../types/user"
 
 const ProfileSetupPage: React.FC = () => {
-  const { setCurrentUser } = useCurrentUser()
   const [firstName, setFirstName] = useState<string>("")
   const [lastName, setLastName] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
