@@ -42,7 +42,7 @@ public class PasswordResetService {
         resetToken.setUsed(false);
         tokenRepo.save(resetToken);
 
-        String link = "http://localhost:5173/reset-password?token=" + token;
+        String link = "https://astrasocial.netlify.app/reset-password?token=" + token;
         String subject = "Đặt lại mật khẩu";
         String content = "Nhấn vào liên kết sau để đặt lại mật khẩu:\n" + link;
 
