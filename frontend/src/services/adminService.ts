@@ -68,7 +68,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
 
 export const getPosts = async (): Promise<Post[]> => {
   try {
-    const response = await api.get(`/admin/posts/getAllPost`);
+    const response = await api.get(`/admin/posts`);
     return response.data;
   } catch (error) {
     console.error('Error fetching posts:', error);
@@ -106,7 +106,7 @@ export const unlockPost = async (postId: number): Promise<void> => {
 
 export const getComments = async (): Promise<Comment[]> => {
   try {
-    const response = await api.get(`/admin/comments/getAllComment`);
+    const response = await api.get(`/admin/comments`);
     return response.data;
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -144,7 +144,7 @@ export const unlockComment = async (commentId: number): Promise<void> => {
 
 export const getUsers = async (): Promise<User[]> => {
   try {
-    const response = await api.get(`/admin/users/getAllUser`);
+    const response = await api.get(`/admin/users`);
     return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);
