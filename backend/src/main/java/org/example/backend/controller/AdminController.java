@@ -6,15 +6,26 @@ import org.example.backend.security.RequireAdmin;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Calendar;
+import java.text.ParseException;
 
 import org.example.backend.entity.User;
 import org.example.backend.repository.RefreshTokenRepository;
+import org.example.backend.repository.PostRepository;
+import org.example.backend.repository.CommentRepository;
+import org.example.backend.repository.UserRepository;
 import org.example.backend.entity.Comment;
 import org.example.backend.service.UserService;
 import org.example.backend.service.CommentService;
@@ -38,6 +49,9 @@ public class AdminController {
     private final PostService postService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtUtil jwtUtil;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Object>> login(@RequestBody Map<String, String> loginRequest) {
@@ -115,7 +129,39 @@ public class AdminController {
                 .build());
     }
 
-    
+    @RequireAdmin
+    @GetMapping("/statsAt")
+    public ResponseEntity<ApiResponse<Object>> getAdminStatsAt(
+            @RequestParam("start") String startDateStr,
+            @RequestParam("end") String endDateStr) {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
+            
+
+            Map<String, Long> stats = new HashMap<>();
+            stats.put("totalPosts", postRepository.findAll().stream().filter(post -> post.getCreatedAt().after(startDate) && post.getCreatedAt().before(endDate)).count());
+            stats.put("lockedPosts", postRepository.findAll().stream().filter(post -> post.getDeletedAt() != null && post.getCreatedAt().after(startDate) && post.getCreatedAt().before(endDate)).count());
+            stats.put("totalComments", commentRepository.findAll().stream().filter(comment -> comment.getCreatedAt().after(startDate) && comment.getCreatedAt().before(endDate)).count());
+            stats.put("totalUsers", userRepository.findAll().stream().filter(user -> Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).after(startDate) && Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).before(endDate)).count());
+            stats.put("bannedUsers", userRepository.findAll().stream().filter(user -> user.getIsActive() == false && Date.from(user.getLastLogin().atZone(ZoneId.systemDefault()).toInstant()).after(startDate) && Date.from(user.getLastLogin().atZone(ZoneId.systemDefault()).toInstant()).before(endDate)).count());
+
+            return ResponseEntity.ok().body(ApiResponse.builder()
+                    .status(200)
+                    .message("Success")
+                    .data(stats)
+                    .timestamp(System.currentTimeMillis())
+                    .build());
+        } catch (ParseException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status(400)
+                    .message("Invalid date format. Please use dd-MM-yyyy format")
+                    .data(null)
+                    .timestamp(System.currentTimeMillis())
+                    .build());
+        }
+    }
 
     @RequireAdmin
     @GetMapping("/users/getAllUser")
@@ -129,6 +175,44 @@ public class AdminController {
                 .build());
     }
 
+    @RequireAdmin
+    @GetMapping("/users/getAllUserAt")
+    public ResponseEntity<ApiResponse<Object>> getAllNewUser(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr) {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
+
+            List<User> users = userService.getAllUsers().stream().filter(user -> Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).after(startDate) && Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).before(endDate)).collect(Collectors.toList());
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(users)
+                .timestamp(System.currentTimeMillis())
+                .build());
+        } catch (ParseException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status(400)
+                    .message("Invalid date format. Please use dd-MM-yyyy format")
+                    .data(null)
+                    .timestamp(System.currentTimeMillis())
+                    .build());
+        }
+    }
+
+    @RequireAdmin
+    @GetMapping("/users/getUserLoginToday")
+    public ResponseEntity<ApiResponse<Object>> getUserLoginToday() {
+        List<User> users = userService.getAllUsers().stream().filter(user -> user.getLastLogin().isAfter(LocalDateTime.now().minusDays(1))).collect(Collectors.toList());
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(users)
+                .timestamp(System.currentTimeMillis())
+                .build());
+    }
+
+    
     @RequireAdmin
     @PostMapping("/users/{userId}/unban")
     public ResponseEntity<ApiResponse<Object>> unbanUser(@PathVariable Long userId) {
@@ -173,6 +257,58 @@ public class AdminController {
     }
 
     @RequireAdmin
+    @GetMapping("/posts/getAllPostAt")
+    public ResponseEntity<ApiResponse<Object>> getAllPostAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr) {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
+
+            List<User> users = userService.getAllUsers();
+            List<Map<Long, List<Post>>> ListUserPost = new ArrayList<>();
+            
+            for (User user : users) {
+                List<Post> filteredPosts = postService.getPostsByUserId(user.getId())
+                    .stream()
+                    .filter(post -> post.getCreatedAt().after(startDate) && post.getCreatedAt().before(endDate))
+                    .collect(Collectors.toList());
+                
+                if (!filteredPosts.isEmpty()) {
+                    Map<Long, List<Post>> userPost = new HashMap<>();
+                    userPost.put(user.getId(), filteredPosts);
+                    ListUserPost.add(userPost);
+                }
+            }
+            
+            return ResponseEntity.ok().body(ApiResponse.builder()
+                    .status(200)
+                    .message("Success")
+                    .data(ListUserPost)
+                    .timestamp(System.currentTimeMillis())
+                    .build());
+        } catch (ParseException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status(400)
+                    .message("Invalid date format. Please use dd-MM-yyyy format")
+                    .data(null)
+                    .timestamp(System.currentTimeMillis())
+                    .build());
+        }
+    }
+
+    @RequireAdmin
+    @PostMapping("/posts/{postId}/lock")
+    public ResponseEntity<ApiResponse<Object>> lockPost(@PathVariable Long postId) {
+        postService.lockPost(postId);
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data("Post locked")
+                .timestamp(System.currentTimeMillis())
+                .build());
+    }
+
+    @RequireAdmin
     @GetMapping("/comments/getAllComment")
     public ResponseEntity<ApiResponse<Object>> getAllComment() {
         List<Comment> comments = commentService.getAllComments();
@@ -182,6 +318,34 @@ public class AdminController {
                 .data(comments)
                 .timestamp(System.currentTimeMillis())
                 .build());
+    }
+
+    @RequireAdmin
+    @GetMapping("/comments/getAllCommentAt")
+    public ResponseEntity<ApiResponse<Object>> getAllCommentAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr) {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+            Date startDate = dateFormat.parse(startDateStr);
+            Date endDate = dateFormat.parse(endDateStr);
+
+            List<Comment> filteredComments = commentService.getAllComments().stream()
+                .filter(comment -> comment.getCreatedAt().after(startDate) && comment.getCreatedAt().before(endDate))
+                .collect(Collectors.toList());
+
+            return ResponseEntity.ok().body(ApiResponse.builder()
+                    .status(200)
+                    .message("Success")
+                    .data(filteredComments)
+                    .timestamp(System.currentTimeMillis())
+                    .build());
+        } catch (ParseException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status(400)
+                    .message("Invalid date format. Please use dd-MM-yyyy format")
+                    .data(null)
+                    .timestamp(System.currentTimeMillis())
+                    .build());
+        }
     }
 
     @RequireAdmin
