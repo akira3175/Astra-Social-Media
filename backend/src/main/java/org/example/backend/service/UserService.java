@@ -135,6 +135,7 @@ public class UserService {
                         .id(user.getId())
                         .email(user.getEmail())
                         .isSuperUser(user.getIsSuperUser())
+                        .isStaff(user.getIsStaff())
                         .isActive(user.getIsActive())
                         .build())
                 .orElse(null);
@@ -313,5 +314,13 @@ public class UserService {
                 .toList();
 
         userESRepository.saveAll(userDocuments);
+    }
+    
+    public Long countAllUsers() {
+        return userRepository.countAll();
+    }
+
+    public Long countLockedUsers() {
+        return userRepository.countByIsActiveFalse();
     }
 }
