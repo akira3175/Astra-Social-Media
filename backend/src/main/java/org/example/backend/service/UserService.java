@@ -315,4 +315,12 @@ public class UserService {
 
         userESRepository.saveAll(userDocuments);
     }
+    
+    public Long countAllUsers() {
+        return userRepository.countAll();
+    }
+
+    public Long countLockedUsers() {
+        return userRepository.countByIsActiveFalse();
+    }
 }

@@ -155,4 +155,7 @@ public class CommentService {
                 .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
     }
 
+    public Long countAllComments() {
+        return commentRepository.countAll();
+    }
 }

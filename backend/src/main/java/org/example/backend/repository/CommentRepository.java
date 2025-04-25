@@ -16,4 +16,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     Long countByPostId(Long postId);
     
     List<Comment> findByPostIdAndParentCommentIsNullOrderByCreatedAtAsc(Long postId);
+
+    @Query("SELECT COUNT(c) FROM Comment c")
+    Long countAll();
 }

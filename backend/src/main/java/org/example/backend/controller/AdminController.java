@@ -102,13 +102,11 @@ public class AdminController {
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<Object>> getAdminStats() {
         Map<String, Long> stats = new HashMap<>();
-        // fake data
-        stats.put("totalPosts", 1000L);
-        stats.put("lockedPosts", 100L);
-        stats.put("totalComments", 1000L);
-        stats.put("lockedComments", 100L);
-        stats.put("totalUsers", (long) userService.getAllUsers().size());
-        stats.put("bannedUsers", userService.getAllUsers().stream().filter(user -> !user.getIsActive()).count());
+        stats.put("totalPosts", postService.countAllPosts());
+        stats.put("lockedPosts", postService.countLockedPosts());
+        stats.put("totalComments", commentService.countAllComments());
+        stats.put("totalUsers", userService.countAllUsers());
+        stats.put("bannedUsers", userService.countLockedUsers());
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
@@ -116,6 +114,8 @@ public class AdminController {
                 .timestamp(System.currentTimeMillis())
                 .build());
     }
+
+    
 
     @RequireAdmin
     @GetMapping("/users/getAllUser")

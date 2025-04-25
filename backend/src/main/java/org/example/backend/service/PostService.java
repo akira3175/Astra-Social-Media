@@ -310,4 +310,13 @@ public class PostService {
                 .toList();
         postESRepository.saveAll(documents);
     }
+
+
+    public Long countAllPosts() {
+        return postRepository.countAll();
+    }
+
+    public Long countLockedPosts() {
+        return postRepository.countByIsDeletedTrue();
+    }
 }
