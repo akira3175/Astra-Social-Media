@@ -8,7 +8,7 @@ const AdminLoginPage: React.FC = () => {
   const handleLogin = () => {
     // Replace this with actual authentication logic
     if (username === "admin" && password === "password") {
-      console.log("Login successful");
+      
       setError("");
       // Redirect to admin dashboard or perform other actions
     } else {

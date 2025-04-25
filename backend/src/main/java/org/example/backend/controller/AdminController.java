@@ -156,9 +156,9 @@ public class AdminController {
     @GetMapping("/posts/getAllPost")
     public ResponseEntity<ApiResponse<Object>> getAllPost() {
         List<User> users = userService.getAllUsers();
-        
+
         List<Map<Long, List<Post>>> ListUserPost = new ArrayList<>();
-        
+
         for (User user : users) {
             Map<Long, List<Post>> userPost = new HashMap<>();
             userPost.put(user.getId(), postService.getPostsByUserId(user.getId()));
