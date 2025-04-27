@@ -22,20 +22,20 @@ public class FriendshipService {
     private UserRepository userRepository;
 
     @Transactional
-    public Friendship sendFriendRequest(Long userId1, Long userId2) {
-        System.out.println("Processing friend request between users " + userId1 + " and " + userId2);
+    public Friendship sendFriendRequest(Long senderId, Long receiverId) {
+        System.out.println("Processing friend request between users with IDs " + senderId + " and " + receiverId);
 
-        User user1 = userRepository.findById(userId1)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId1));
-        User user2 = userRepository.findById(userId2)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId2));
+        User user1 = userRepository.findById(senderId)
+                .orElseThrow(() -> new RuntimeException("Sender not found with ID: " + senderId));
+        User user2 = userRepository.findById(receiverId)
+                .orElseThrow(() -> new RuntimeException("Receiver not found with ID: " + receiverId));
 
         System.out.println("Found users: " + user1.getFirstName() + " and " + user2.getFirstName());
 
-// Kiểm tra xem đã có friendship nào chưa
-        Optional<Friendship> existingFriendship = friendshipRepository.findByUser1AndUser2(user1, user2);
-        if (existingFriendship.isPresent()) {
-            System.out.println("Friendship already exists: " + existingFriendship.get());
+        // Kiểm tra xem đã có friendship nào chưa (theo cả hai chiều)
+        if (friendshipRepository.existsBetweenUsers(user1, user2)) {
+            System.out.println(
+                    "Friendship already exists between " + user1.getFirstName() + " and " + user2.getFirstName());
             throw new RuntimeException("Friendship already exists");
         }
 
@@ -95,5 +95,11 @@ public class FriendshipService {
                 .orElseThrow(() -> new RuntimeException("Friendship not found"));
         friendship.setActive(active);
         return friendshipRepository.save(friendship);
+    }
+
+    public List<Friendship> getSentFriendRequests(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return friendshipRepository.findByUser1AndStatus(user, ChatMessage.FriendshipStatus.PENDING);
     }
 }

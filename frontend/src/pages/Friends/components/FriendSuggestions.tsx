@@ -1,151 +1,156 @@
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Box, Grid, Typography, CircularProgress, Paper, Button } from "@mui/material"
-import FriendCard from "./FriendCard"
-import type { FriendStatus } from "./FriendCard"
-import { Refresh, PersonAdd } from "@mui/icons-material"
+import { useState, useEffect } from "react";
+import {
+  Box,
+  Grid,
+  Typography,
+  CircularProgress,
+  Button,
+  Avatar,
+  Paper,
+} from "@mui/material";
+import { PersonAdd } from "@mui/icons-material";
+import axios from "axios";
+import { useCurrentUser } from "../../../contexts/currentUserContext";
+import friendshipService from "../../../services/friendshipService";
 
-// Mock data for friend suggestions
-const MOCK_FRIEND_SUGGESTIONS = [
-  {
-    id: 201,
-    name: "Phan Văn M",
-    avatar: "https://i.pravatar.cc/150?img=30",
-    email: "phanvanm@example.com",
-    mutualFriends: 6,
-    status: "suggestion" as FriendStatus,
-  },
-  {
-    id: 202,
-    name: "Lý Thị N",
-    avatar: "https://i.pravatar.cc/150?img=31",
-    email: "lythin@example.com",
-    mutualFriends: 3,
-    status: "suggestion" as FriendStatus,
-  },
-  {
-    id: 203,
-    name: "Hồ Văn O",
-    avatar: "https://i.pravatar.cc/150?img=32",
-    email: "hovano@example.com",
-    mutualFriends: 8,
-    status: "suggestion" as FriendStatus,
-  },
-  {
-    id: 204,
-    name: "Đinh Thị P",
-    avatar: "https://i.pravatar.cc/150?img=33",
-    email: "dinhthip@example.com",
-    mutualFriends: 5,
-    status: "suggestion" as FriendStatus,
-  },
-  {
-    id: 205,
-    name: "Huỳnh Văn Q",
-    avatar: "https://i.pravatar.cc/150?img=34",
-    email: "huynhvanq@example.com",
-    mutualFriends: 2,
-    status: "suggestion" as FriendStatus,
-  },
-  {
-    id: 206,
-    name: "Mai Thị R",
-    avatar: "https://i.pravatar.cc/150?img=35",
-    email: "maithir@example.com",
-    mutualFriends: 4,
-    status: "suggestion" as FriendStatus,
-  },
-  {
-    id: 207,
-    name: "Dương Văn S",
-    avatar: "https://i.pravatar.cc/150?img=36",
-    email: "duongvans@example.com",
-    mutualFriends: 7,
-    status: "suggestion" as FriendStatus,
-  },
-  {
-    id: 208,
-    name: "Võ Thị T",
-    avatar: "https://i.pravatar.cc/150?img=37",
-    email: "vothit@example.com",
-    mutualFriends: 1,
-    status: "suggestion" as FriendStatus,
-  },
-]
+interface SuggestedUser {
+  id: number;
+  name: string;
+  email: string;
+  avatar: string;
+  mutualFriends: number;
+}
 
 const FriendSuggestions: React.FC = () => {
-  const [suggestions, setSuggestions] = useState(MOCK_FRIEND_SUGGESTIONS)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [suggestions, setSuggestions] = useState<SuggestedUser[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { currentUser } = useCurrentUser();
 
-  // Simulate loading
   useEffect(() => {
-    setIsLoading(true)
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [])
+    const fetchSuggestions = async () => {
+      if (!currentUser?.id) {
+        console.log("No current user ID");
+        return;
+      }
 
-  // Handle add friend
-  const handleAddFriend = (id: number) => {
-    console.log(`Add friend with ID: ${id}`)
-    setSuggestions(suggestions.filter((suggestion) => suggestion.id !== id))
-    // Implement add friend functionality
+      try {
+        setIsLoading(true);
+        const response = await axios.get(
+          `http://localhost:8080/api/users/suggestions`,
+          {
+            params: {
+              currentUserId: currentUser.id,
+            },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            },
+          }
+        );
+
+        console.log("API Response:", response.data);
+
+        if (Array.isArray(response.data)) {
+          setSuggestions(response.data);
+        } else {
+          console.error("Invalid response format:", response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching suggestions:", error);
+        if (axios.isAxiosError(error)) {
+          console.error("Error details:", {
+            status: error.response?.status,
+            data: error.response?.data,
+            headers: error.response?.headers,
+          });
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, [currentUser?.id]);
+
+  const handleAddFriend = async (user: SuggestedUser) => {
+    try {
+      await friendshipService.sendFriendRequest(user.email);
+      console.log("Friend request sent successfully");
+
+      // Cập nhật lại danh sách gợi ý
+      setSuggestions(
+        suggestions.filter((suggestion) => suggestion.id !== user.id)
+      );
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      if (error instanceof Error) {
+        if (error.message.includes("đăng nhập lại")) {
+          // Nếu token hết hạn, chuyển hướng về trang đăng nhập
+          localStorage.removeItem("accessToken");
+          window.location.href = "/login";
+        } else {
+          alert(error.message);
+        }
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
-  // Handle refresh suggestions
-  const handleRefreshSuggestions = () => {
-    setIsRefreshing(true)
-    // Simulate API call to refresh suggestions
-    setTimeout(() => {
-      // Shuffle the suggestions array to simulate new suggestions
-      setSuggestions([...suggestions].sort(() => Math.random() - 0.5))
-      setIsRefreshing(false)
-    }, 1000)
+  if (suggestions.length === 0) {
+    return (
+      <Box sx={{ textAlign: "center", p: 3 }}>
+        <Typography variant="h6" color="text.secondary">
+          Không có gợi ý kết bạn nào
+        </Typography>
+      </Box>
+    );
   }
 
   return (
-    <Box>
-      <Paper sx={{ p: 2, mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Box>
-          <Typography variant="h6" sx={{ display: "flex", alignItems: "center" }}>
-            <PersonAdd sx={{ mr: 1 }} />
-            Gợi ý kết bạn
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Dựa trên bạn bè chung và sở thích của bạn
-          </Typography>
-        </Box>
-        <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefreshSuggestions} disabled={isRefreshing}>
-          {isRefreshing ? "Đang làm mới..." : "Làm mới"}
-        </Button>
-      </Paper>
+    <Grid container spacing={2}>
+      {suggestions.map((user) => {
+        console.log("Rendering user:", user);
+        return (
+          <Grid item xs={12} sm={6} md={4} key={user.id}>
+            <Paper
+              sx={{
+                p: 2,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Avatar
+                src={user.avatar}
+                alt={user.name}
+                sx={{ width: 80, height: 80, mb: 2 }}
+              />
+              <Typography variant="h6" align="center" sx={{ mb: 1 }}>
+                {user.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {user.mutualFriends} bạn chung
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<PersonAdd />}
+                onClick={() => handleAddFriend(user)}
+                fullWidth
+              >
+                Kết bạn
+              </Button>
+            </Paper>
+          </Grid>
+        );
+      })}
+    </Grid>
+  );
+};
 
-      {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-          <CircularProgress />
-        </Box>
-      ) : suggestions.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 5 }}>
-          <Typography variant="h6" gutterBottom>
-            Không có gợi ý kết bạn nào
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Hãy quay lại sau để xem thêm gợi ý kết bạn.
-          </Typography>
-        </Box>
-      ) : (
-        <Grid container spacing={3}>
-          {suggestions.map((suggestion) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={suggestion.id}>
-              <FriendCard {...suggestion} onAdd={handleAddFriend} />
-            </Grid>
-          ))}
-        </Grid>
-      )}
-    </Box>
-  )
-}
-
-export default FriendSuggestions
+export default FriendSuggestions;
