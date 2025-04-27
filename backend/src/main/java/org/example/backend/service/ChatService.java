@@ -46,7 +46,6 @@ public class ChatService {
             return savedMessage;
         } catch (Exception e) {
             System.err.println("Error saving message: " + e.getMessage());
-            e.printStackTrace();
             throw e;
         }
     }

@@ -7,31 +7,16 @@ import {
   Avatar,
   Grid,
   CircularProgress,
-  Paper,
   Button,
 } from "@mui/material";
 import { PersonRemove } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-
-interface SentRequest {
-  id: number;
-  status: string;
-  createdAt: string;
-  receiver: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    avatar: string;
-    name: string;
-    mutualFriends: number | null;
-  };
-}
+import { Request } from "../../../types/friendship";
 
 const FriendSent: React.FC = () => {
-  const [requests, setRequests] = useState<SentRequest[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useCurrentUser();
@@ -106,18 +91,18 @@ const FriendSent: React.FC = () => {
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                 <Avatar
-                  src={request.receiver.avatar || ""}
-                  alt={request.receiver.name}
+                  src={request.user2.avatar || ""}
+                  alt={request.user2.name}
                   sx={{ width: 56, height: 56, mr: 2 }}
                 >
-                  {request.receiver.firstName.charAt(0)}
-                  {request.receiver.lastName.charAt(0)}
+                  {request.user2.firstName?.charAt(0)}
+                  {request.user2.lastName?.charAt(0)}
                 </Avatar>
                 <Box>
                   <Typography
                     variant="h6"
                     component={Link}
-                    to={`/profile/${request.receiver.email}`}
+                    to={`/profile/${request.user2.email}`}
                     sx={{
                       textDecoration: "none",
                       color: "inherit",
@@ -126,14 +111,14 @@ const FriendSent: React.FC = () => {
                       },
                     }}
                   >
-                    {request.receiver.name}
+                    {request.user2.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {request.receiver.email}
+                    {request.user2.email}
                   </Typography>
-                  {request.receiver.mutualFriends !== null && (
+                  {request.user2.mutualFriends !== null && (
                     <Typography variant="body2" color="text.secondary">
-                      {request.receiver.mutualFriends} bạn chung
+                      {request.user2.mutualFriends} bạn chung
                     </Typography>
                   )}
                 </Box>

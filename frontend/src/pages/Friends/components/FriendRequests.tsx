@@ -14,34 +14,7 @@ import { Check, Close, PersonAdd } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-
-// Interface định nghĩa cấu trúc dữ liệu của một lời mời kết bạn
-interface FriendRequest {
-  id: number; // ID của lời mời kết bạn
-  status: string; // Trạng thái lời mời (PENDING, ACCEPTED, REJECTED)
-  createdAt: string; // Thời gian gửi lời mời
-  active: boolean; // Trạng thái hoạt động
-  user1: {
-    // Thông tin người gửi lời mời
-    id: number; // ID của người gửi
-    firstName: string; // Tên người gửi
-    lastName: string; // Họ người gửi
-    email: string; // Email người gửi
-    avatar: string; // URL ảnh đại diện
-    name: string; // Tên đầy đủ
-    mutualFriends: number | null; // Số bạn chung
-  };
-  user2: {
-    // Thông tin người nhận lời mời
-    id: number; // ID của người nhận
-    firstName: string; // Tên người nhận
-    lastName: string; // Họ người nhận
-    email: string; // Email người nhận
-    avatar: string; // URL ảnh đại diện
-    name: string; // Tên đầy đủ
-    mutualFriends: number | null; // Số bạn chung
-  };
-}
+import type { FriendRequest } from "../../../types/friendship";
 
 const FriendRequests: React.FC = () => {
   // State quản lý danh sách lời mời kết bạn
@@ -185,8 +158,8 @@ const FriendRequests: React.FC = () => {
                         alt={request.user1.name}
                         sx={{ width: 56, height: 56, mr: 2 }}
                       >
-                        {request.user1.firstName.charAt(0)}
-                        {request.user1.lastName.charAt(0)}
+                        {request.user1.firstName?.charAt(0)}
+                        {request.user1.lastName?.charAt(0)}
                       </Avatar>
                       <Box>
                         <Typography

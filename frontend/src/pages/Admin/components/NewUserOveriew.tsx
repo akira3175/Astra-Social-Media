@@ -12,7 +12,7 @@ import {
   Avatar,
   ListItemText,
 } from "@mui/material";
-import { User } from "../../../services/adminService";
+import { User } from "../../../types/user";
 
 const NewUserOveriew = ({
   users,
@@ -24,7 +24,7 @@ const NewUserOveriew = ({
   const top4NewUsers = users
     .sort(
       (a, b) =>
-        new Date(b.dateJoined).getTime() - new Date(a.dateJoined).getTime()
+        new Date(b.dateJoined || "").getTime() - new Date(a.dateJoined || "").getTime()
     )
     .slice(0, 4);
 
@@ -66,7 +66,7 @@ const NewUserOveriew = ({
                     </ListItemAvatar>
                     <ListItemText
                       primary={user.firstName + " " + user.lastName}
-                      secondary={`${getDaysAgo(user.dateJoined)} ngày trước`}
+                      secondary={`${getDaysAgo(user.dateJoined || "")} ngày trước`}
                       primaryTypographyProps={{ fontWeight: 500 }}
                     />
                   </ListItem>

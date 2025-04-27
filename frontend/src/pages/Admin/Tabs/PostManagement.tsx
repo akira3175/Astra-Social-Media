@@ -1,7 +1,8 @@
 import { faLockOpen, faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
-import { getPosts, Post } from "../../../services/adminService";
+import { getPosts } from "../../../services/adminService";
+import { Post } from "../../../types/post";
 
 const PostManagement: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -71,13 +72,13 @@ const PostManagement: React.FC = () => {
               posts.map((post) => (
                 <tr key={post.id} className="hover:bg-gray-100">
                   <td className="px-4 py-2 border border-gray-300">
-                    {post.title}
+                    {post.content}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
-                    {post.author}
+                    {post.user.email}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
-                    {post.date}
+                    {post.createdAt}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
                     <div className="flex gap-4 items-center justify-center">

@@ -25,8 +25,7 @@ import {
 } from "@mui/icons-material";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
-export type FriendStatus = "friend" | "request" | "suggestion" | "sent";
+import type { FriendStatus } from "../../../types/friendship";
 
 export interface FriendCardProps {
   id: number;

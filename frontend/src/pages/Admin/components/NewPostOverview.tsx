@@ -10,7 +10,7 @@ import {
   ListItem,
   ListItemText,
 } from "@mui/material";
-import { Post } from "../../../services/adminService";
+import { Post } from "../../../types/post";
 
 const NewPostOverview = ({
   posts,
@@ -42,7 +42,7 @@ const NewPostOverview = ({
             {posts.length >0 && posts.map((post) => (
               <ListItem key={post.id} disablePadding sx={{ mb: 2 }}>
                 <ListItemText
-                  primary={post.title}
+                  primary={post.content}
                   secondary={
                     <Box
                       sx={{
@@ -62,7 +62,7 @@ const NewPostOverview = ({
                             color: "text.secondary",
                           }}
                         />
-                        <Typography variant="caption">{post.author}</Typography>
+                        <Typography variant="caption">{post.user.email}</Typography>
                       </Box>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <AccessTime
@@ -73,7 +73,7 @@ const NewPostOverview = ({
                             color: "text.secondary",
                           }}
                         />
-                        <Typography variant="caption">{post.date}</Typography>
+                        <Typography variant="caption">{post.createdAt}</Typography>
                       </Box>
 
                       <Box sx={{ display: "flex", alignItems: "center" }}>

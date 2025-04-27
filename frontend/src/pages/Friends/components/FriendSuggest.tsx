@@ -10,46 +10,29 @@ import {
   CircularProgress,
   Paper,
 } from "@mui/material";
-import { PersonAdd } from "@mui/icons-material";
+import { PersonAdd, PersonRemove } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-
-// Interface định nghĩa cấu trúc dữ liệu của một người dùng gợi ý
-interface SuggestedUser {
-  id: number; // ID của người dùng
-  firstName: string; // Tên
-  lastName: string; // Họ
-  email: string; // Email
-  avatar: string; // URL ảnh đại diện
-  mutualFriends: number | null; // Số bạn chung
-}
+import { User } from "../../../types/user";
 
 const FriendSuggest: React.FC = () => {
-  // State quản lý danh sách người dùng gợi ý
-  const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
-  // State quản lý trạng thái loading
+  const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  // State quản lý thông báo lỗi
   const [error, setError] = useState<string | null>(null);
-  // Lấy thông tin người dùng hiện tại
   const { currentUser } = useCurrentUser();
 
-  // Load danh sách gợi ý kết bạn khi component được mount hoặc currentUser thay đổi
   useEffect(() => {
     if (currentUser?.id) {
       loadSuggestedUsers();
     }
   }, [currentUser?.id]);
 
-  // Hàm load danh sách người dùng gợi ý từ API
   const loadSuggestedUsers = async () => {
     try {
       setLoading(true);
-      // Gọi API để lấy danh sách người dùng gợi ý
       const data = await friendshipService.getSuggestedUsers(currentUser!.id);
-      console.log("Dữ liệu người dùng gợi ý:", data);
-
       setSuggestedUsers(data);
       setError(null);
     } catch (error) {
@@ -64,17 +47,12 @@ const FriendSuggest: React.FC = () => {
     }
   };
 
-  // Hàm xử lý khi người dùng gửi lời mời kết bạn
-  const handleSendRequest = async (userId: number) => {
+  const handleSendRequest = async (email: string) => {
     try {
-      // Gửi lời mời kết bạn
-      await friendshipService.sendFriendRequest(userId);
-
-      // Hiển thị thông báo thành công
+      await friendshipService.sendFriendRequest(email);
+      // Thêm email vào danh sách chờ thay vì xóa khỏi danh sách gợi ý
+      setPendingRequests(prev => new Set(prev).add(email));
       alert("Đã gửi lời mời kết bạn thành công!");
-
-      // Cập nhật lại danh sách sau khi gửi lời mời
-      setSuggestedUsers(suggestedUsers.filter((user) => user.id !== userId));
     } catch (error) {
       if (error instanceof Error) {
         alert(error.message);
@@ -84,7 +62,26 @@ const FriendSuggest: React.FC = () => {
     }
   };
 
-  // Hiển thị loading spinner khi đang tải dữ liệu
+  const handleCancelRequest = async (email: string) => {
+    try {
+      // Giả sử bạn có API để hủy yêu cầu kết bạn
+      await friendshipService.cancelFriendRequest(email);
+      // Xóa email khỏi danh sách chờ
+      setPendingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(email);
+        return newSet;
+      });
+      alert("Đã hủy lời mời kết bạn!");
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert("Đã xảy ra lỗi khi hủy lời mời kết bạn");
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -93,7 +90,6 @@ const FriendSuggest: React.FC = () => {
     );
   }
 
-  // Hiển thị thông báo lỗi nếu có
   if (error) {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>
@@ -104,7 +100,6 @@ const FriendSuggest: React.FC = () => {
 
   return (
     <Box>
-      {/* Header hiển thị số lượng gợi ý */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" sx={{ display: "flex", alignItems: "center" }}>
           <PersonAdd sx={{ mr: 1 }} />
@@ -115,7 +110,6 @@ const FriendSuggest: React.FC = () => {
         </Typography>
       </Paper>
 
-      {/* Hiển thị thông báo khi không có gợi ý nào */}
       {suggestedUsers.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 5 }}>
           <Typography variant="h6" gutterBottom>
@@ -126,61 +120,74 @@ const FriendSuggest: React.FC = () => {
           </Typography>
         </Box>
       ) : (
-        // Hiển thị danh sách gợi ý kết bạn
         <Grid container spacing={3}>
-          {suggestedUsers.map((user) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={user.id}>
-              <Card>
-                <CardContent>
-                  {/* Thông tin người dùng */}
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <Avatar
-                      src={user.avatar || ""}
-                      alt={`${user.firstName} ${user.lastName}`}
-                      sx={{ width: 56, height: 56, mr: 2 }}
-                    >
-                      {user.firstName.charAt(0)}
-                      {user.lastName.charAt(0)}
-                    </Avatar>
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        component={Link}
-                        to={`/profile/${user.email}`}
-                        sx={{
-                          textDecoration: "none",
-                          color: "inherit",
-                          "&:hover": {
-                            color: "primary.main",
-                          },
-                        }}
+          {suggestedUsers.map((user) => {
+            const isPending = pendingRequests.has(user.email);
+            
+            return (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={user.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <Avatar
+                        src={user.avatar || ""}
+                        alt={`${user.firstName} ${user.lastName}`}
+                        sx={{ width: 56, height: 56, mr: 2 }}
                       >
-                        {user.firstName} {user.lastName}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {user.email}
-                      </Typography>
-                      {user.mutualFriends !== null && (
-                        <Typography variant="body2" color="text.secondary">
-                          {user.mutualFriends} bạn chung
+                        {user.firstName?.charAt(0)}
+                        {user.lastName?.charAt(0)}
+                      </Avatar>
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          component={Link}
+                          to={`/profile/${user.email}`}
+                          sx={{
+                            textDecoration: "none",
+                            color: "inherit",
+                            "&:hover": {
+                              color: "primary.main",
+                            },
+                          }}
+                        >
+                          {user.firstName} {user.lastName}
                         </Typography>
-                      )}
+                        <Typography variant="body2" color="text.secondary">
+                          {user.email}
+                        </Typography>
+                        {user.mutualFriends !== null && (
+                          <Typography variant="body2" color="text.secondary">
+                            {user.mutualFriends} bạn chung
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
-                  </Box>
-                  {/* Nút gửi lời mời kết bạn */}
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<PersonAdd />}
-                    onClick={() => handleSendRequest(user.id)}
-                    fullWidth
-                  >
-                    Kết bạn
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                    {isPending ? (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<PersonRemove />}
+                        onClick={() => handleCancelRequest(user.email)}
+                        fullWidth
+                      >
+                        Hủy
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<PersonAdd />}
+                        onClick={() => handleSendRequest(user.email)}
+                        fullWidth
+                      >
+                        Kết bạn
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
     </Box>

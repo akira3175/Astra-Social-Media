@@ -1,24 +1,23 @@
 package org.example.backend.controller;
 
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.example.backend.entity.Friendship;
 import org.example.backend.entity.User;
-import org.example.backend.repository.UserRepository;
+import org.example.backend.exception.FriendshipException;
 import org.example.backend.repository.FriendshipRepository;
+import org.example.backend.repository.UserRepository;
 import org.example.backend.service.FriendshipService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,41 +33,41 @@ public class FriendshipController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> sendFriendRequest(@RequestBody Map<String, String> request) {
         try {
-            System.out.println("Received friend request: " + request);
-
-            // Lấy thông tin người dùng hiện tại
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String currentUserEmail = authentication.getName();
-            User currentUser = userRepository.findByEmail(currentUserEmail)
-                    .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-
-            // Lấy email người nhận từ request
+            // Validate request
             String receiverEmail = request.get("receiverEmail");
-            if (receiverEmail == null) {
-                System.out.println("Missing receiverEmail");
-                return ResponseEntity.badRequest().body("Thiếu thông tin người nhận");
+            if (receiverEmail == null || receiverEmail.isEmpty()) {
+                return ResponseEntity.badRequest().body("Thiếu thông tin email người nhận");
             }
 
-            // Tìm người nhận
-            User receiver = userRepository.findByEmail(receiverEmail)
-                    .orElseThrow(() -> {
-                        System.out.println("Receiver not found: " + receiverEmail);
-                        return new RuntimeException("Người nhận không tồn tại");
-                    });
+            // Get current user
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
-            System.out.println("Found users - Sender: " + currentUserEmail + " (ID: " + currentUser.getId() +
-                    "), Receiver: " + receiverEmail + " (ID: " + receiver.getId() + ")");
+            // Prevent self-friending
+            if (currentUserEmail.equals(receiverEmail)) {
+                return ResponseEntity.badRequest().body("Không thể gửi lời mời kết bạn cho chính mình");
+            }
 
-            // Gửi lời mời kết bạn
-            Friendship friendship = friendshipService.sendFriendRequest(currentUser.getId(), receiver.getId());
+            // Create friendship
+            Friendship friendship = friendshipService.createFriendRequest(currentUserEmail, receiverEmail);
             return ResponseEntity.ok(friendship);
-        } catch (RuntimeException e) {
-            System.err.println("Error in sendFriendRequest: " + e.getMessage());
+
+        } catch (EntityNotFoundException | FriendshipException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            System.err.println("Unexpected error in sendFriendRequest: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi gửi lời mời kết bạn: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/request")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> cancelFriendRequest(@RequestBody Map<String, String> request) {
+        try {
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            friendshipService.cancelFriendRequest(currentUserEmail, request.get("receiverEmail"));
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

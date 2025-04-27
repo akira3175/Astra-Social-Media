@@ -58,12 +58,12 @@ import {
   unbanUser,
   getReports,
   resolveReport,
-  Post,
-  Comment,
-  User,
-  Report,
-  AdminStats,
 } from '../../services/adminService';
+import { AdminStats, Report } from '../../types/management';
+import { Post } from '../../types/post';
+import { Comment } from '../../types/comment';
+import { User } from '../../types/user';
+
 
 const drawerWidth = 240;
 
@@ -401,25 +401,25 @@ const AdminDashboard = () => {
                   posts.map((post) => (
                     <TableRow key={post.id}>
                       <TableCell>{post.id}</TableCell>
-                      <TableCell>{post.title}</TableCell>
-                      <TableCell>{post.author}</TableCell>
-                      <TableCell>{post.date}</TableCell>
+                      <TableCell>{post.content}</TableCell>
+                      <TableCell>{post.user.email}</TableCell>
+                      <TableCell>{post.createdAt}</TableCell>
                       <TableCell>
                         <Chip 
-                          label={post.status === 'active' ? 'Hoạt động' : 'Đã khóa'} 
-                          color={post.status === 'active' ? 'success' : 'error'} 
+                          label={post.isDeleted ? 'Đã xóa' : 'Hoạt động'} 
+                          color={post.isDeleted ? 'error' : 'success'} 
                         />
                       </TableCell>
                       <TableCell>
                         <Button
                           variant="contained"
-                          color={post.status === 'active' ? 'error' : 'success'}
+                          color={post.isDeleted ? 'error' : 'success'}
                           onClick={() => {
                             setSelectedItem(post);
-                            handleAction(post.status === 'active' ? 'lock' : 'unlock');
+                            handleAction(post.isDeleted ? 'unlock' : 'lock');
                           }}
                         >
-                          {post.status === 'active' ? 'Khóa' : 'Mở khóa'}
+                          {post.isDeleted ? 'Mở khóa' : 'Khóa'}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -436,7 +436,7 @@ const AdminDashboard = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>ID</TableCell>
-                  <TableCell>Tiêu đề</TableCell>
+                  <TableCell>Nội dung</TableCell>
                   <TableCell>Tác giả</TableCell>
                   <TableCell>Ngày đăng</TableCell>
                   <TableCell>Trạng thái</TableCell>
@@ -452,9 +452,9 @@ const AdminDashboard = () => {
                   lockedPosts.map((post) => (
                     <TableRow key={post.id}>
                       <TableCell>{post.id}</TableCell>
-                      <TableCell>{post.title}</TableCell>
-                      <TableCell>{post.author}</TableCell>
-                      <TableCell>{post.date}</TableCell>
+                      <TableCell>{post.content}</TableCell>
+                      <TableCell>{post.user.email}</TableCell>
+                      <TableCell>{post.createdAt}</TableCell>
                       <TableCell>
                         <Chip 
                           label="Đã khóa" 
@@ -505,25 +505,25 @@ const AdminDashboard = () => {
                     <TableRow key={comment.id}>
                       <TableCell>{comment.id}</TableCell>
                       <TableCell>{comment.content}</TableCell>
-                      <TableCell>{comment.post}</TableCell>
-                      <TableCell>{comment.author}</TableCell>
-                      <TableCell>{comment.date}</TableCell>
+                      {/* <TableCell>{comment.post.content}</TableCell> */}
+                      <TableCell>{comment.user.email}</TableCell>
+                      <TableCell>{comment.createdAt}</TableCell>
                       <TableCell>
                         <Chip 
-                          label={comment.status === 'active' ? 'Hoạt động' : 'Đã khóa'} 
-                          color={comment.status === 'active' ? 'success' : 'error'} 
+                          label={comment.isDeleted ? 'Đã xóa' : 'Hoạt động'} 
+                          color={comment.isDeleted ? 'error' : 'success'} 
                         />
                       </TableCell>
                       <TableCell>
                         <Button
                           variant="contained"
-                          color={comment.status === 'active' ? 'error' : 'success'}
+                          color={comment.isDeleted ? 'error' : 'success'}
                           onClick={() => {
                             setSelectedItem(comment);
-                            handleAction(comment.status === 'active' ? 'lock' : 'unlock');
+                            handleAction(comment.isDeleted ? 'unlock' : 'lock');
                           }}
                         >
-                          {comment.status === 'active' ? 'Khóa' : 'Mở khóa'}
+                          {comment.isDeleted ? 'Mở khóa' : 'Khóa'}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -558,9 +558,9 @@ const AdminDashboard = () => {
                     <TableRow key={comment.id}>
                       <TableCell>{comment.id}</TableCell>
                       <TableCell>{comment.content}</TableCell>
-                      <TableCell>{comment.post}</TableCell>
-                      <TableCell>{comment.author}</TableCell>
-                      <TableCell>{comment.date}</TableCell>
+                      {/* <TableCell>{comment.post.content}</TableCell> */}
+                      <TableCell>{comment.user.email}</TableCell>
+                      <TableCell>{comment.createdAt}</TableCell>
                       <TableCell>
                         <Chip 
                           label="Đã khóa" 
@@ -743,7 +743,7 @@ const AdminDashboard = () => {
                       <TableCell>{report.type}</TableCell>
                       <TableCell>{report.content}</TableCell>
                       <TableCell>{report.reporter}</TableCell>
-                      <TableCell>{report.date}</TableCell>
+                      <TableCell>{report.createdAt}</TableCell>
                       <TableCell>
                         <Chip 
                           label={report.status === 'pending' ? 'Chờ xử lý' : 'Đã xử lý'} 

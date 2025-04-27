@@ -22,7 +22,6 @@ import {
 } from "@mui/icons-material";
 import BasePage from "../Base/BasePage";
 import FriendRequests from "./components/FriendRequests";
-import FriendSuggestions from "./components/FriendSuggestions";
 import FriendsList from "./components/FriendList";
 import FriendSent from "./components/FriendSent";
 import axios from "axios";
@@ -38,7 +37,7 @@ const FriendsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<FriendTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [friends, setFriends] = useState([]);
+  const [, setFriends] = useState([]);
   const { currentUser } = useCurrentUser();
 
   useEffect(() => {
