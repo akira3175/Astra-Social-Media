@@ -145,8 +145,12 @@ public class UserController {
 
         try {
             User updatedUser = userService.updateUser(email, firstName, lastName, avatar, background, bio);
-            updatedUser.setAvatar((updatedUser.getAvatar() != null && !updatedUser.getAvatar().isEmpty()) ? baseUrl + updatedUser.getAvatar() : null);
-            updatedUser.setBackground((updatedUser.getBackground() != null && !updatedUser.getBackground().isEmpty()) ? baseUrl + updatedUser.getBackground() : null);
+            updatedUser.setAvatar((updatedUser.getAvatar() != null && !updatedUser.getAvatar().isEmpty())
+                    ? baseUrl + updatedUser.getAvatar()
+                    : null);
+            updatedUser.setBackground((updatedUser.getBackground() != null && !updatedUser.getBackground().isEmpty())
+                    ? baseUrl + updatedUser.getBackground()
+                    : null);
             return ResponseEntity.ok(updatedUser);
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Error saving profile");
@@ -174,8 +178,7 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestHeader("Authorization") String token,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request) {
         token = token.replace("Bearer ", "").trim();
         String email = jwtUtil.extractEmail(token);
         User userCurrent = userService.getUserInfo(email);
@@ -187,20 +190,24 @@ public class UserController {
     private User addDomainToImage(User user, HttpServletRequest request) {
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
         user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
-        user.setBackground((user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground() : null);
+        user.setBackground(
+                (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
+                        : null);
         return user;
     }
 
     private UserDocument addDomainToImage(UserDocument user, HttpServletRequest request) {
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
         user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
-        user.setBackground((user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground() : null);
+        user.setBackground(
+                (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
+                        : null);
         return user;
     }
 
     @PatchMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String token,
-                                            @RequestBody Map<String, String> request) {
+            @RequestBody Map<String, String> request) {
         token = token.replace("Bearer ", "").trim();
         String email = jwtUtil.extractEmail(token);
         String oldPassword = request.get("oldPassword");
