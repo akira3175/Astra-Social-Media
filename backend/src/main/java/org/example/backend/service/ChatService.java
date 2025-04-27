@@ -63,7 +63,7 @@ public class ChatService {
         System.out.println("Found " + messages.size() + " messages");
 
         // Sắp xếp tin nhắn theo thời gian tăng dần
-        messages.sort((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()));
+        messages.sort(Comparator.comparing(ChatMessage::getTimestamp));
         return messages;
     }
 

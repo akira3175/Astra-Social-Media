@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.example.backend.entity.User;
 import org.example.backend.exception.AppException;
 import org.example.backend.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
@@ -13,8 +14,10 @@ import org.example.backend.exception.ErrorCode;
 
 @Component
 public class AdminInterceptor implements HandlerInterceptor {
-    private final UserService userService;
-    private final JwtUtil jwtUtil;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private JwtUtil jwtUtil;
 
     public AdminInterceptor(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
@@ -23,10 +26,6 @@ public class AdminInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception{
-
-
-        if (true) return true; // tạm thời bỏ qua xác thực để debug
-
 
         // Chỉ kiểm tra các request đến /api/admin/
         if (!request.getRequestURI().startsWith("/api/admin/")) {
@@ -63,7 +62,7 @@ public class AdminInterceptor implements HandlerInterceptor {
 
             // Lấy thông tin user
             User user = userService.getUserInfo(email);
-            if (user == null || !user.getIsSuperUser()) {
+            if (user == null || !user.getIsStaff()) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 return false;
             }

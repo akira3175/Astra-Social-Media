@@ -5,7 +5,10 @@ export interface Post {
   id: number;
   title: string;
   author: string;
+  createdAt: string;
+
   date: string;
+  likesCount: number;
   status: 'active' | 'locked';
 }
 
@@ -22,6 +25,9 @@ export interface User {
   id: number;
   email: string;
   firstName: string;
+  background:string;
+  bio:string;
+  name:string;
   lastName: string;
   avatar: string;
   isStaff: boolean;
@@ -62,7 +68,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
 
 export const getPosts = async (): Promise<Post[]> => {
   try {
-    const response = await api.get(`/admin/posts`);
+    const response = await api.get(`/admin/posts/getAllPost`);
     return response.data;
   } catch (error) {
     console.error('Error fetching posts:', error);
@@ -100,7 +106,7 @@ export const unlockPost = async (postId: number): Promise<void> => {
 
 export const getComments = async (): Promise<Comment[]> => {
   try {
-    const response = await api.get(`/admin/comments`);
+    const response = await api.get(`/admin/comments/getAllComment`);
     return response.data;
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -138,30 +144,13 @@ export const unlockComment = async (commentId: number): Promise<void> => {
 
 export const getUsers = async (): Promise<User[]> => {
   try {
-    const response = await api.get(`/admin/users`);
+    const response = await api.get(`/admin/users/AllUser`);
     return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
   }
 };
-// export const getUsers = async (): Promise<User[]> => {
-//   try {
-//     const token = tokenService.getAccessToken()
-//     if (!token) throw new Error("Not authenticated")
-
-//     const response: AxiosResponse<User[]> = await api.get(`/admin/users`)
-//     return response.data
-//   } catch (error) {
-//     if (axios.isAxiosError(error)) {
-//       console.error("API error:", error.response?.data || error.message)
-//       throw new Error(`API error: ${error.response?.status} - ${error.response?.statusText}`)
-//     } else {
-//       console.error("Unexpected error:", error)
-//       throw error 
-//     }
-//   } 
-// }
 
 export const getBannedUsers = async (): Promise<User[]> => {
   try {

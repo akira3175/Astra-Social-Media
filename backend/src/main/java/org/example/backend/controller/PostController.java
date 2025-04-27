@@ -18,11 +18,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.example.backend.dto.CreatePostRequest;
 import org.example.backend.dto.PostDTO;
+import org.example.backend.dto.UpdatePostRequest;
 
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
-
+import org.springframework.data.domain.Pageable; 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -38,17 +41,43 @@ public class PostController {
     private UserService userService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PostDTO>>> getAllPosts(Principal principal) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<PostDTO> postDtos = postService.getAllPostDtos(email);
-
-        ApiResponse<List<PostDTO>> response = ApiResponse.<List<PostDTO>>builder()
-                .status(HttpStatus.OK.value())
-                .message("Lấy danh sách bài đăng thành công")
-                .data(postDtos)
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<Page<PostDTO>>> getAllPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction
+    ) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            
+            Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? 
+                Sort.Direction.DESC : Sort.Direction.ASC;
+                
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+            
+            // Sử dụng getPageOfPostDtos thay vì getAllPostDtos
+            Page<PostDTO> postsPage = postService.getPageOfPostDtos(email, pageable);
+            
+            ApiResponse<Page<PostDTO>> response = ApiResponse.<Page<PostDTO>>builder()
+                    .status(HttpStatus.OK.value())
+                    .message("Lấy danh sách bài đăng thành công")
+                    .data(postsPage)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            ApiResponse<Page<PostDTO>> errorResponse = ApiResponse.<Page<PostDTO>>builder()
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .message("Lỗi khi lấy danh sách bài đăng: " + e.getMessage())
+                    .data(null)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorResponse);
+        }
     }
 
     // @GetMapping("/user/{userId}")
@@ -118,18 +147,32 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Post>> updatePost(
+    public ResponseEntity<ApiResponse<PostDTO>> updatePost(
             @PathVariable Long id,
-            @RequestParam("content") String newContent) {
+            @RequestBody UpdatePostRequest request) {
+        
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+                  try {
+            Post updatedPost = postService.updatePost(id, email, request.getContent());
+            PostDTO postDto = postService.getPostDtoById(updatedPost.getId(), email);
 
-        Post updatedPost = postService.updatePost(id, newContent);
-        ApiResponse<Post> response = ApiResponse.<Post>builder()
-                .status(HttpStatus.OK.value())
-                .message("Cập nhật bài đăng thành công")
-                .data(updatedPost)
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.ok(response);
+            ApiResponse<PostDTO> response = ApiResponse.<PostDTO>builder()
+                    .status(HttpStatus.OK.value())
+                    .message("Cập nhật nội dung bài đăng thành công")
+                    .data(postDto)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            ApiResponse<PostDTO> response = ApiResponse.<PostDTO>builder()
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .message(e.getMessage())
+                    .data(null)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @DeleteMapping("/{id}")

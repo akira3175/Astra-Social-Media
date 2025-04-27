@@ -38,7 +38,7 @@ public class PostDocument {
     private Date createdAt;
 
     @Field(type = FieldType.Date, format = DateFormat.date_time, pattern = "yyyy-MM-dd HH:mm:ss.SSS")
-    private String updatedAt;
+    private Date updatedAt;
 
     @Field(type = FieldType.Keyword)
     private String originalPostId;  // Lưu originalPostId thay vì Post

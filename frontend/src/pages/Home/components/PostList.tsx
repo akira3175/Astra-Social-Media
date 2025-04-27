@@ -1,5 +1,6 @@
 import type React from "react"
-import { Box } from "@mui/material"
+import { useEffect, useRef } from "react"
+import { Box, Typography } from "@mui/material"
 import Post from "./Post"
 import PostSkeleton from "./PostSkeleton"
 import type { Post as PostType } from "../../../types/post"
@@ -16,7 +17,32 @@ const PostList: React.FC<PostListProps> = ({
   isLoading,
   className,
 }) => {
-  const { savePost, repostPost } = usePostStore();
+  const { savePost, repostPost, fetchNextPage, hasMore, error } = usePostStore();
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        // Chỉ trigger load more khi không có lỗi
+        if (firstEntry.isIntersecting && !isLoading && hasMore && !error) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentLoaderRef = loaderRef.current;
+    if (currentLoaderRef) {
+      observer.observe(currentLoaderRef);
+    }
+
+    return () => {
+      if (currentLoaderRef) {
+        observer.unobserve(currentLoaderRef);
+      }
+    };
+  }, [isLoading, hasMore, fetchNextPage, error]);
 
   const handleSave = async (postId: number) => {
     try {
@@ -34,19 +60,17 @@ const PostList: React.FC<PostListProps> = ({
     }
   };
 
-  // Render skeletons when loading
-  if (isLoading) {
+  // Giữ nguyên phần render skeleton loading
+  if (isLoading && posts.length === 0) {
     return (
       <Box className={className}>
-        {/* Show 3 skeleton posts while loading */}
         {[...Array(3)].map((_, index) => (
           <PostSkeleton key={index} sx={{ mb: 3 }} />
         ))}
       </Box>
     )
   }
-  // console.log("Posts loaded:", posts)
-  // Render actual posts when loaded
+
   return (
     <Box className={className}>
       {posts.map((post) => (
@@ -58,6 +82,29 @@ const PostList: React.FC<PostListProps> = ({
           sx={{ mb: 3 }}
         />
       ))}
+
+      {/* Lazy loading trigger element - chỉ hiển thị khi không có lỗi */}
+      {hasMore && !error && (
+        <Box ref={loaderRef} sx={{ height: 10, visibility: 'hidden' }} />
+      )}
+
+      {/* Loading indicator for next page */}
+      {isLoading && posts.length > 0 && !error && (
+        <PostSkeleton sx={{ mb: 3 }} />
+      )}
+
+      {/* Error message */}
+      {error && (
+        <Box sx={{ 
+          textAlign: 'center', 
+          py: 2, 
+          color: 'error.main'
+        }}>
+          <Typography>
+            Không thể tải thêm bài viết
+          </Typography>
+        </Box>
+      )}
     </Box>
   )
 }

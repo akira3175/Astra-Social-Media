@@ -20,7 +20,7 @@ interface PostState {
   setLoading: (loading: boolean) => void;
   fetchComments: (postId: number) => Promise<void>;
   addComment: (postId: number, content: string, imageUrls?: string[], parentCommentId?: number | null) => Promise<void>;
-  updatePost: (postId: number) => Promise<void>;
+  updatePost: (postId: number, content: string) => Promise<void>;
 
   repostsById: Record<number, Post[]>;
   isReposting: boolean;
@@ -38,6 +38,15 @@ interface PostState {
 
   likeComment: (postId: number, commentId: number) => Promise<void>;
   unlikeComment: (postId: number, commentId: number) => Promise<void>;
+
+  isUpdating: { [key: number]: boolean };
+
+  currentPage: number;
+  hasMore: boolean;
+  pageSize: number;
+  fetchNextPage: () => Promise<void>;
+
+  fetchPost: (postId: number) => Promise<void>;
 }
 
 const addReplyToCommentTree = (comments: Comment[], newReply: Comment, parentId: number): Comment[] => {
@@ -65,42 +74,32 @@ export const usePostStore = create<PostState>((set, get) => ({
   userPosts: [],
   isLoadingUserPosts: false,
   userPostsError: null,
+  isUpdating: {},
+  currentPage: 0,
+  hasMore: true,
+  pageSize: 10,
 
   fetchPosts: async () => {
-    set({ isLoading: true, error: null });
     try {
-      const fetchedPosts = await PostService.getAllPosts();
-      
-      // Fetch chi tiết của từng post và comments của chúng
-      await Promise.all(fetchedPosts.map(async (post) => {
-        try {
-          // Fetch chi tiết post để lấy thông tin liked, likesCount mới nhất
-          const detailedPost = await PostService.getPostById(post.id);
-          
-          // Fetch comments của post
-          const commentData = await CommentService.getCommentsByPostId(post.id);
-          
-          // Cập nhật store với thông tin mới
-          set(state => ({
-            posts: state.posts.map(p => p.id === post.id ? detailedPost : p),
-            commentDataByPostId: {
-              ...state.commentDataByPostId,
-              [post.id]: commentData
-            }
-          }));
-        } catch (error) {
-          console.error(`Error fetching details for post ${post.id}:`, error);
-        }
-      }));
-
-      // Set initial posts array
-      set({ 
-        posts: fetchedPosts,
-        isLoading: false 
+      set({ isLoading: true });
+      const response = await PostService.getPosts({
+        page: 0,
+        size: get().pageSize,
+        sortBy: 'createdAt',
+        sortDirection: 'desc'
       });
-    } catch (error: any) {
-      console.error("Error fetching posts:", error);
-      set({ isLoading: false, error: error });
+      
+      set({
+        posts: response.content,
+        hasMore: !response.last,
+        currentPage: 0,
+        isLoading: false
+      });
+    } catch (error) {
+      set({ 
+        isLoading: false, 
+        error: error instanceof Error ? error : new Error('Failed to fetch posts') 
+      });
     }
   },
 
@@ -233,16 +232,25 @@ export const usePostStore = create<PostState>((set, get) => ({
     }
   },
 
-  updatePost: async (postId: number) => {
+  updatePost: async (postId: number, content: string) => {
     try {
-      const updatedPost = await PostService.getPostById(postId);
-      set((state) => ({
-        posts: state.posts.map((post) =>
+      set(state => ({
+        isUpdating: { ...state.isUpdating, [postId]: true }
+      }));
+
+      const updatedPost = await PostService.updatePost(postId, content);
+
+      set(state => ({
+        posts: state.posts.map(post => 
           post.id === postId ? updatedPost : post
         ),
+        isUpdating: { ...state.isUpdating, [postId]: false }
       }));
     } catch (error) {
-      console.error("Error updating post:", error);
+      set(state => ({
+        isUpdating: { ...state.isUpdating, [postId]: false }
+      }));
+      throw error;
     }
   },
 
@@ -364,7 +372,59 @@ export const usePostStore = create<PostState>((set, get) => ({
     } catch (error) {
       console.error('Error unliking comment:', error);
     }
-  }
+  },
+
+  fetchNextPage: async () => {
+    const { currentPage, hasMore, isLoading, pageSize, posts } = get();
+    
+    if (!hasMore || isLoading) return;
+
+    try {
+      set({ isLoading: true });
+      
+      const response = await PostService.getPosts({
+        page: currentPage + 1,
+        size: pageSize,
+        sortBy: 'createdAt',
+        sortDirection: 'desc'
+      });
+
+      if (!response.content || response.content.length === 0) {
+        set({ hasMore: false, isLoading: false });
+        return;
+      }
+
+      set({
+        posts: [...posts, ...response.content],
+        currentPage: currentPage + 1,
+        hasMore: !response.last,
+        isLoading: false
+      });
+    } catch (error) {
+      set({ 
+        isLoading: false,
+        error: error instanceof Error ? error : new Error('Failed to fetch more posts')
+      });
+    }
+  },
+
+  fetchPost: async (postId: number) => {
+    try {
+      set({ isLoading: true, error: null });
+      const post = await PostService.getPostById(postId);
+      set((state) => ({
+        posts: state.posts.some(p => p.id === postId)
+          ? state.posts.map(p => p.id === postId ? post : p)
+          : [...state.posts, post],
+        isLoading: false
+      }));
+    } catch (error) {
+      set({ 
+        isLoading: false,
+        error: error instanceof Error ? error : new Error('Failed to fetch post')
+      });
+    }
+  },
 }));
 
 // Helper function to update a comment in the nested tree structure

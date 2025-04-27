@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Avatar, Box, Typography, Button, TextField, Link, IconButton, CircularProgress } from '@mui/material';
 import { Favorite, FavoriteBorder, Image, Close as CloseIcon } from '@mui/icons-material';
 import { Comment } from '../../../types/comment';
 import { usePostStore } from '../../../stores/postStore';
 import { uploadToCloudinary } from '../../../utils/uploadUtils';
 import ExpandableText from '../../../components/ExpandableText';
-
+import { getImageUrl } from '../../../utils/imageUtils';
 interface CommentItemProps {
   comment: Comment;
   postId: number;
@@ -34,6 +34,16 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { likeComment, unlikeComment, addComment } = usePostStore();
 
+  // Thêm state optimistic update
+  const [optimisticUpdate, setOptimisticUpdate] = useState<{
+    isLiked?: boolean;
+    likeCount?: number;
+  } | null>(null);
+
+  // Tính toán giá trị hiển thị
+  const displayLiked = optimisticUpdate?.isLiked ?? comment.isLiked;
+  const displayLikeCount = optimisticUpdate?.likeCount ?? comment.likeCount;
+
   const handleAddReply = async () => {
     if (replyContent.trim() || selectedFile) {
       setIsUploading(true);
@@ -54,38 +64,35 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
       }
     }
   };
-
+  // Sửa lại hàm handleLike
   const handleLike = async () => {
     try {
-      console.log('Before like/unlike - Comment data:', {
-        id: comment.id,
-        content: comment.content,
-        isLiked: comment.isLiked,
-        likeCount: comment.likeCount,
-        likes: comment.likes
-      });
-  
-      if (comment.isLiked) {
-        await unlikeComment(postId, comment.id);
-      } else {
-        await likeComment(postId, comment.id);
-      }
-  
-      // Log updated comment data from store
-      const updatedCommentData = usePostStore.getState().commentDataByPostId[postId]?.comments
-        .find(c => c.id === comment.id);
+      // Cập nhật UI ngay lập tức
+      const newLiked = !displayLiked;
+      const newCount = displayLikeCount + (newLiked ? 1 : -1);
       
-      console.log('After like/unlike - Updated comment data:', {
-        id: updatedCommentData?.id,
-        content: updatedCommentData?.content,
-        isLiked: updatedCommentData?.isLiked,
-        likeCount: updatedCommentData?.likeCount,
-        likes: updatedCommentData?.likes
+      setOptimisticUpdate({
+        isLiked: newLiked,
+        likeCount: newCount
       });
+
+      // Gọi API
+      if (newLiked) {
+        await likeComment(postId, comment.id);
+      } else {
+        await unlikeComment(postId, comment.id);
+      }
     } catch (error) {
+      // Reset về trạng thái ban đầu nếu có lỗi
+      setOptimisticUpdate(null);
       console.error('Error toggling comment like:', error);
     }
   };
+
+  // Thêm useEffect để reset optimistic update
+  useEffect(() => {
+    setOptimisticUpdate(null);
+  }, [comment.id, comment.isLiked, comment.likeCount]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -108,7 +115,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
     <Box sx={{ pl: `${currentIndent}px`, mb: 2 }}>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
         <Avatar
-          src={comment.user.avatarUrl || undefined}
+          src={getImageUrl(comment.user.avatar) || undefined}
           alt={comment.user.username}
           sx={{ width: 32, height: 32, mt: 0.5 }}
         />
@@ -123,8 +130,17 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
               position: 'relative',
             }}
           >
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mr: 1, display: 'inline' }}>
-              {comment.user.username}
+            <Typography 
+              variant="subtitle2" 
+              sx={{ 
+                fontWeight: 'bold', 
+                mr: 1, 
+                display: 'block',  // Changed from inline to block
+                mb: 0.5  // Add margin bottom for spacing
+              }}
+            >
+              {/* Hiển thị đầy đủ tên thay vì username */}
+              {`${comment.user.firstName} ${comment.user.lastName}`}
             </Typography>
             <ExpandableText text={comment.content} maxLines={2} />
 
@@ -161,15 +177,15 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
               size="small"
               onClick={handleLike}
               sx={{ 
-                color: comment.isLiked ? 'red' : 'inherit',
-                '&:hover': { color: comment.isLiked ? '#d32f2f' : '#f44336' }
+                color: displayLiked ? 'red' : 'inherit',
+                '&:hover': { color: displayLiked ? '#d32f2f' : '#f44336' }
               }}
             >
-              {comment.isLiked ? <Favorite /> : <FavoriteBorder />}
+              {displayLiked ? <Favorite /> : <FavoriteBorder />}
             </IconButton>
             <Typography variant="caption" sx={{ ml: 0.5 }}>
-                {comment.likeCount}
-              </Typography>
+              {displayLikeCount}
+            </Typography>
 
             <Link
               href="#"
@@ -196,7 +212,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
                   fullWidth
                   variant="outlined"
                   size="small"
-                  placeholder={`Trả lời ${comment.user.username}...`}
+                  placeholder={`Trả lời ${comment.user.firstName} ${comment.user.lastName}...`}
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
                   multiline

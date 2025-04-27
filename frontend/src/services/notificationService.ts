@@ -26,7 +26,7 @@ export const getNotifications = async (page = 0, size = 10): Promise<Notificatio
 
 export const markNotificationAsRead = async (notificationId: number): Promise<void> => {
   try {
-    await api.put(`/notifications/${notificationId}/read`)
+    await api.put(`/notifications/mark-as-read/${notificationId}`)
   } catch (error) {
     console.error("Error marking notification as read:", error)
     throw error
