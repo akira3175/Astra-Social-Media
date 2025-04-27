@@ -8,14 +8,14 @@ import {
   getPosts,
   getComments,
   getReports,
-  Post,
-  User,
-  Report,
-  Comment,
 } from "../../services/adminService";
 import NewUserOveriew from "./components/NewUserOveriew";
 import NewPostOverview from "./components/NewPostOverview";
 import WeeklyOverview from "./components/WeeklyOverview";
+import { User } from "../../types/user";
+import { Post } from "../../types/post";
+import { Comment } from "../../types/comment";
+import { Report } from "../../types/management";
 
 const DashboardPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);

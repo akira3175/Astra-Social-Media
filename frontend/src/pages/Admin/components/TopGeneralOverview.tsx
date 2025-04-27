@@ -13,11 +13,12 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  Comment,
-  Post,
   Report,
-  User,
-} from "../../../services/adminService";
+} from "../../../types/management";
+import { Comment } from "../../../types/comment";
+import { Post } from "../../../types/post";
+import { User } from "../../../types/user";
+
 
 export const TopGeneralOverview = ({users,posts,isLoading,comments,reports}:{users:User[], posts:Post[], isLoading:boolean, comments:Comment[], reports:Report[]}) => {
   

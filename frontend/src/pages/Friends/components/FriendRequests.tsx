@@ -1,67 +1,127 @@
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Box, Grid, Typography, CircularProgress, Paper } from "@mui/material"
-import FriendCard from "./FriendCard"
-import type { FriendStatus } from "./FriendCard"
-import { PersonAdd } from "@mui/icons-material"
-
-// Mock data for friend requests
-const MOCK_FRIEND_REQUESTS = [
-  {
-    id: 101,
-    name: "Đặng Văn I",
-    avatar: "https://i.pravatar.cc/150?img=20",
-    email: "dangvani@example.com",
-    mutualFriends: 4,
-    status: "request" as FriendStatus,
-  },
-  {
-    id: 102,
-    name: "Bùi Thị K",
-    avatar: "https://i.pravatar.cc/150?img=21",
-    email: "buithik@example.com",
-    mutualFriends: 7,
-    status: "request" as FriendStatus,
-  },
-  {
-    id: 103,
-    name: "Trương Văn L",
-    avatar: "https://i.pravatar.cc/150?img=22",
-    email: "truongvanl@example.com",
-    mutualFriends: 2,
-    status: "request" as FriendStatus,
-  },
-]
+import { useState, useEffect } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Avatar,
+  Grid,
+  CircularProgress,
+  Paper,
+} from "@mui/material";
+import { Check, Close, PersonAdd } from "@mui/icons-material";
+import { useCurrentUser } from "../../../contexts/currentUserContext";
+import friendshipService from "../../../services/friendshipService";
+import { Link } from "react-router-dom";
+import type { FriendRequest } from "../../../types/friendship";
 
 const FriendRequests: React.FC = () => {
-  const [requests, setRequests] = useState(MOCK_FRIEND_REQUESTS)
-  const [isLoading, setIsLoading] = useState(false)
+  // State quản lý danh sách lời mời kết bạn
+  const [requests, setRequests] = useState<FriendRequest[]>([]);
+  // State quản lý trạng thái loading
+  const [loading, setLoading] = useState(true);
+  // State quản lý thông báo lỗi
+  const [error, setError] = useState<string | null>(null);
+  // Lấy thông tin người dùng hiện tại
+  const { currentUser } = useCurrentUser();
 
-  // Simulate loading
+  // Load danh sách lời mời kết bạn khi component được mount hoặc currentUser thay đổi
   useEffect(() => {
-    setIsLoading(true)
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [])
+    if (currentUser?.id) {
+      loadFriendRequests();
+    }
+  }, [currentUser?.id]);
 
-  // Handle accept friend request
-  const handleAcceptRequest = (id: number) => {
-    console.log(`Accept friend request with ID: ${id}`)
-    setRequests(requests.filter((request) => request.id !== id))
-    // Implement accept functionality
+  // Hàm load danh sách lời mời kết bạn từ API
+  const loadFriendRequests = async () => {
+    try {
+      setLoading(true);
+      // Gọi API để lấy danh sách lời mời kết bạn
+      const data = await friendshipService.getPendingRequests(currentUser!.id);
+      console.log("Dữ liệu lời mời kết bạn:", data);
+
+      // Format dữ liệu và lọc chỉ những lời mời có trạng thái PENDING
+      const formattedData = data
+        .filter((request: FriendRequest) => request.status === "PENDING")
+        .map((request: FriendRequest) => {
+          console.log("Request data:", request);
+          return {
+            ...request,
+            // Sử dụng user1 làm thông tin người gửi
+            sender: request.user1,
+          };
+        });
+      setRequests(formattedData);
+      setError(null);
+    } catch (error) {
+      console.error("Lỗi khi tải lời mời kết bạn:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Không thể tải danh sách lời mời kết bạn");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Hàm xử lý khi người dùng chấp nhận lời mời kết bạn
+  const handleAccept = async (
+    friendshipId: number,
+    user1Id: number,
+    user2Id: number
+  ) => {
+    try {
+      // 1. Chấp nhận lời mời kết bạn
+      await friendshipService.acceptFriendRequest(friendshipId);
+
+      // 2. Thêm cả hai người dùng vào bảng friend
+      await friendshipService.addFriend(user1Id, user2Id);
+
+      // 3. Cập nhật lại danh sách sau khi chấp nhận
+      setRequests(requests.filter((request) => request.id !== friendshipId));
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      }
+    }
+  };
+
+  // Hàm xử lý khi người dùng từ chối lời mời kết bạn
+  const handleReject = async (friendshipId: number) => {
+    try {
+      await friendshipService.rejectFriendRequest(friendshipId);
+      // Cập nhật lại danh sách sau khi từ chối
+      setRequests(requests.filter((request) => request.id !== friendshipId));
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      }
+    }
+  };
+
+  // Hiển thị loading spinner khi đang tải dữ liệu
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
-  // Handle reject friend request
-  const handleRejectRequest = (id: number) => {
-    console.log(`Reject friend request with ID: ${id}`)
-    setRequests(requests.filter((request) => request.id !== id))
-    // Implement reject functionality
+  // Hiển thị thông báo lỗi nếu có
+  if (error) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
   }
 
   return (
     <Box>
+      {/* Header hiển thị số lượng lời mời kết bạn */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" sx={{ display: "flex", alignItems: "center" }}>
           <PersonAdd sx={{ mr: 1 }} />
@@ -72,11 +132,8 @@ const FriendRequests: React.FC = () => {
         </Typography>
       </Paper>
 
-      {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-          <CircularProgress />
-        </Box>
-      ) : requests.length === 0 ? (
+      {/* Hiển thị thông báo khi không có lời mời nào */}
+      {requests.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 5 }}>
           <Typography variant="h6" gutterBottom>
             Không có lời mời kết bạn nào
@@ -86,16 +143,94 @@ const FriendRequests: React.FC = () => {
           </Typography>
         </Box>
       ) : (
+        // Hiển thị danh sách lời mời kết bạn
         <Grid container spacing={3}>
-          {requests.map((request) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={request.id}>
-              <FriendCard {...request} onAccept={handleAcceptRequest} onReject={handleRejectRequest} />
-            </Grid>
-          ))}
+          {requests.map((request) => {
+            console.log("Rendering request:", request);
+            return (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={request.id}>
+                <Card>
+                  <CardContent>
+                    {/* Thông tin người gửi lời mời */}
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <Avatar
+                        src={request.user1.avatar || ""}
+                        alt={request.user1.name}
+                        sx={{ width: 56, height: 56, mr: 2 }}
+                      >
+                        {request.user1.firstName?.charAt(0)}
+                        {request.user1.lastName?.charAt(0)}
+                      </Avatar>
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          component={Link}
+                          to={`/profile/${request.user1.email}`}
+                          sx={{
+                            textDecoration: "none",
+                            color: "inherit",
+                            "&:hover": {
+                              color: "primary.main",
+                            },
+                          }}
+                        >
+                          {request.user1.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {request.user1.email}
+                        </Typography>
+                        {request.user1.mutualFriends !== null && (
+                          <Typography variant="body2" color="text.secondary">
+                            {request.user1.mutualFriends} bạn chung
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                    {/* Thời gian gửi lời mời */}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
+                    >
+                      Đã gửi lời mời kết bạn vào{" "}
+                      {new Date(request.createdAt).toLocaleString()}
+                    </Typography>
+                    {/* Các nút chấp nhận và từ chối */}
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<Check />}
+                        onClick={() =>
+                          handleAccept(
+                            request.id,
+                            request.user1.id,
+                            request.user2.id
+                          )
+                        }
+                        fullWidth
+                      >
+                        Chấp nhận
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<Close />}
+                        onClick={() => handleReject(request.id)}
+                        fullWidth
+                      >
+                        Từ chối
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default FriendRequests
+export default FriendRequests;

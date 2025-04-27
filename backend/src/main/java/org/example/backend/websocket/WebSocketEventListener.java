@@ -17,7 +17,7 @@ public class WebSocketEventListener {
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-        String email = accessor.getUser() != null ? accessor.getUser().getName() : null;
+        String email = accessor.getUser().getName();
         if (email != null) {
             userOnlineStatus.put(email, true);
             System.out.println(email + " is ONLINE");
@@ -27,7 +27,7 @@ public class WebSocketEventListener {
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-        String email = accessor.getUser() != null ? accessor.getUser().getName() : null;
+        String email = accessor.getUser().getName();
         if (email != null) {
             userOnlineStatus.remove(email);
             System.out.println(email + " is OFFLINE");
