@@ -90,6 +90,7 @@ class WebSocketClient {
           if (userId) {
             this.subscribe(`/user/${userId}/queue/messages`, onMessage);
             this.subscribe(`/user/queue/notifications`, onMessage);
+            this.subscribe(`/user/queue/friend-status`, onMessage);
           }
         },
         
