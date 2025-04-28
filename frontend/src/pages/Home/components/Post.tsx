@@ -46,7 +46,7 @@ import { useCurrentUser } from '../../../contexts/currentUserContext';
 import { uploadToCloudinary } from '../../../utils/uploadUtils'; // Import the upload function
 import ExpandableText from '../../../components/ExpandableText';
 import EditPostModal from './EditPostModal';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getImageUrl } from '../../../utils/imageUtils';
 // Define the props for the OriginalPostPreview (can be moved later)
 interface OriginalPostPreviewProps {
@@ -418,12 +418,18 @@ const Post: React.FC<PostProps> = ({ post, defaultShowComments = false, ...props
 
       <CardHeader
         avatar={
-          <Avatar 
-            src={getImageUrl(post.user.avatar)} 
-            alt={`${post.user.firstName} ${post.user.lastName}`} 
-          />
+          <Link to={`/profile/${post.user.email}`}>
+            <Avatar 
+              src={getImageUrl(post.user.avatar)} 
+              alt={`${post.user.firstName} ${post.user.lastName}`} 
+            />
+          </Link>
         }
-        title={`${post.user.firstName} ${post.user.lastName}`}
+        title={
+          <Link to={`/profile/${post.user.email}`}>
+            {`${post.user.lastName} ${post.user.firstName}`}
+          </Link>
+        }
         subheader={post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}
         sx={{
           textAlign: "left",

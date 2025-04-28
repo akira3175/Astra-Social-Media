@@ -31,6 +31,7 @@ public class NotificationService {
             case POST -> senderName + " đã đăng bài mới";
             case COMMENT_LIKE -> senderName + " đã thích bình luận của bạn";
             case COMMENT_REPLY -> senderName + " đã trả lời bình luận của bạn";
+            case FRIEND_REQUEST -> senderName + " đã gửi lời mời kết bạn";
         };
     }
 
@@ -132,6 +133,19 @@ public class NotificationService {
         }
     }
 
+    public void notifyFriendRequest(User sender, User receiver) {
+        Notification notification = Notification.builder()
+                .senderId(sender.getId())
+                .receiverId(receiver.getId())
+                .type(NotificationType.FRIEND_REQUEST)
+                .postId(null)
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        notificationRepository.save(notification);
+        sendToUser(receiver.getEmail(), notification);
+    }
+
     public void markAsRead(Long notificationId, User currentUser) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
@@ -161,5 +175,12 @@ public class NotificationService {
         }
 
         notificationRepository.deleteById(notificationId);
+    }
+
+    public void deleteFriendRequestNotification(User receiver, User sender) {
+        Notification notification = notificationRepository.findBySenderIdAndReceiverIdAndType(sender.getId(), receiver.getId(), NotificationType.FRIEND_REQUEST);
+        if (notification != null) {
+            notificationRepository.delete(notification);
+        }
     }
 }

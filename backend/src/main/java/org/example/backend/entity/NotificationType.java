@@ -6,5 +6,6 @@ public enum NotificationType {
     COMMENT,
     SHARE,
     COMMENT_LIKE,
-    COMMENT_REPLY
+    COMMENT_REPLY,
+    FRIEND_REQUEST
 }

@@ -23,6 +23,9 @@ public class FriendshipService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional
     public Friendship createFriendRequest(String senderEmail, String receiverEmail) {
         // Get users by email
@@ -32,6 +35,7 @@ public class FriendshipService {
         User receiver = userRepository.findByEmail(receiverEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Người nhận không tồn tại"));
 
+        notificationService.notifyFriendRequest(sender, receiver);
         return createFriendRequestById(sender, receiver);
     }
 
@@ -62,6 +66,7 @@ public class FriendshipService {
         Friendship friendship = friendshipRepository.findByUser1AndUser2(sender, receiver)
                 .orElseThrow(() -> new FriendshipException("Không tìm thấy lời mời kết bạn"));
 
+        notificationService.deleteFriendRequestNotification(receiver, sender);
         friendshipRepository.delete(friendship);
     }
 
