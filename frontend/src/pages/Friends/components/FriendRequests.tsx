@@ -91,7 +91,10 @@ const FriendRequests: React.FC = () => {
 
   const handleReject = async (friendshipId: number) => {
     try {
-      await friendshipService.rejectFriendRequest(friendshipId);
+      await friendshipService.rejectFriendRequest(
+        friendshipId,
+        currentUser!.id
+      );
       setRequests(requests.filter((request) => request.id !== friendshipId));
     } catch (error) {
       if (error instanceof Error) {

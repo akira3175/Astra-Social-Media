@@ -44,7 +44,7 @@ const FriendSent: React.FC = () => {
     try {
       setLoading(true);
       const data = await friendshipService.getSentRequests(currentUser!.id);
-      const formattedData = data.map((request) => ({
+      const formattedData = data.map((request: any) => ({
         ...request,
         receiver: {
           ...request.receiver,

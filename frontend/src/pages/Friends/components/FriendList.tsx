@@ -55,7 +55,7 @@ const FriendList: React.FC = () => {
     try {
       setLoading(true);
       const data = await friendshipService.getFriends(currentUser!.id);
-      const formattedData = data.map((friend) => ({
+      const formattedData = data.map((friend: Friend) => ({
         ...friend,
         user: {
           ...friend.user,

@@ -1,6 +1,5 @@
 import axios from "axios";
 import { api } from "../configs/api";
-import { useCurrentUser } from "../contexts/currentUserContext";
 
 class FriendshipService {
   // Gửi lời mời kết bạn
