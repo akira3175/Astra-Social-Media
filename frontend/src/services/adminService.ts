@@ -144,7 +144,7 @@ export const unlockComment = async (commentId: number): Promise<void> => {
 
 export const getUsers = async (): Promise<User[]> => {
   try {
-    const response = await api.get(`/admin/users/AllUser`);
+    const response = await api.get(`/admin/users/getAllUser`);
     return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -196,5 +196,18 @@ export const resolveReport = async (reportId: number): Promise<void> => {
   } catch (error) {
     console.error('Error resolving report:', error);
     throw error;
+  }
+
+  export const adminLogin = async ({email,password}:{email:String,password:string}){
+    try {
+      await api.post('/admin/login',{
+        email:email,
+        password:password
+      })
+    } catch (error) {
+      console.error(error);
+      throw error
+      
+    }
   }
 }; 
