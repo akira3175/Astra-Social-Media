@@ -17,7 +17,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor;
     private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
 
-    public WebSocketConfig(JwtHandshakeInterceptor jwtHandshakeInterceptor, WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor) {
+    public WebSocketConfig(JwtHandshakeInterceptor jwtHandshakeInterceptor,
+            WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor) {
         this.jwtHandshakeInterceptor = jwtHandshakeInterceptor;
         this.webSocketAuthChannelInterceptor = webSocketAuthChannelInterceptor;
     }

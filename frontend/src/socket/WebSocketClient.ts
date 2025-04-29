@@ -30,8 +30,8 @@ class WebSocketClient {
    * Kết nối đến WebSocket server
    */
   connect(
-    onConnect: OnConnectCallback, 
-    onMessage: OnMessageCallback, 
+    onConnect: OnConnectCallback,
+    onMessage: OnMessageCallback,
     onError: OnErrorCallback
   ): void {
     const token = tokenService.getAccessToken();
@@ -51,10 +51,10 @@ class WebSocketClient {
       }
 
       console.log('📡 Connecting to WebSocket at:', baseSocketUrl);
-      
+
       // Tạo kết nối SockJS
       const socket = new SockJS(`${baseSocketUrl}?token=${token}`);
-      
+
       // Xử lý lỗi SockJS
       socket.onerror = (error) => {
         console.error('❌ SockJS error:', error);
@@ -75,16 +75,16 @@ class WebSocketClient {
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
-        
+
         // Xử lý khi kết nối thành công
         onConnect: () => {
           console.log('✅ Connected to WebSocket!');
           this.reconnectAttempts = 0; // Reset số lần thử kết nối lại
           onConnect();
-          
+
           // Đăng ký kênh chung
           this.subscribe('/topic/public', onMessage);
-          
+
           // Đăng ký kênh cá nhân (nếu cần)
           const userId = this.getUserIdFromToken(token);
           if (userId) {
@@ -92,14 +92,14 @@ class WebSocketClient {
             this.subscribe(`/user/queue/notifications`, onMessage);
           }
         },
-        
+
         // Xử lý lỗi STOMP
         onStompError: (frame) => {
           console.error('❌ STOMP error:', frame.headers['message']);
           console.error('Additional details:', frame.body);
           onError(frame.headers['message'] || 'Lỗi kết nối STOMP');
         },
-        
+
         // Xử lý khi mất kết nối
         onWebSocketClose: () => {
           console.warn('⚠️ WebSocket connection closed');
@@ -113,7 +113,7 @@ class WebSocketClient {
 
       // Kích hoạt kết nối
       this.client.activate();
-      
+
     } catch (error) {
       console.error('❌ Error initializing WebSocket:', error);
       onError('Lỗi khởi tạo kết nối WebSocket');
@@ -128,7 +128,7 @@ class WebSocketClient {
       console.warn('⚠️ Cannot subscribe, client not connected');
       return;
     }
-    
+
     if (!this.subscriptions[topic]) {
       console.log(`📥 Subscribing to ${topic}`);
       this.subscriptions[topic] = this.client.subscribe(topic, (message) => {
@@ -184,7 +184,7 @@ class WebSocketClient {
     Object.keys(this.subscriptions).forEach(topic => {
       this.unsubscribe(topic);
     });
-    
+
     // Đóng kết nối STOMP
     if (this.client) {
       this.client.deactivate();

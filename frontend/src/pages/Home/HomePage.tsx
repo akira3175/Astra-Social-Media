@@ -10,15 +10,12 @@ import PostList from "./components/PostList"
 import MobileBottomNav from "./components/MobileBottomNav"
 import { usePostStore } from "../../stores/postStore"
 import { useCurrentUser } from "../../contexts/currentUserContext" // Import useCurrentUser
-import ChatBox from "../../components/ChatBox/ChatBox"
 import { Outlet } from 'react-router-dom';
 
 const HomePage: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"))
-  const [isChatOpen, setIsChatOpen] = useState(false)
-  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
   const { currentUser } = useCurrentUser()
 
   const { posts, isLoading, fetchPosts, } = usePostStore()
@@ -33,14 +30,6 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     fetchPosts()
   }, [fetchPosts])
-
-  const toggleChat = () => {
-    setIsChatOpen(!isChatOpen)
-    console.log(isChatOpen)
-    console.log(currentUser)
-    console.log(selectedReceiverId)
-    setSelectedReceiverId("1")
-  }
 
   // Nếu layout chưa sẵn sàng, hiển thị container trống với kích thước cố định
   if (!isLayoutReady) {
@@ -60,16 +49,6 @@ const HomePage: React.FC = () => {
   return (
     <>
       <BasePage>
-        {/* Render ChatBox ở cấp cao nhất */}
-        {isChatOpen && currentUser?.id && selectedReceiverId && (
-          <ChatBox
-            isOpen={isChatOpen}
-            onClose={() => setIsChatOpen(false)}
-            receiverId={selectedReceiverId}
-            currentUserId={currentUser.id.toString()}
-          />
-        )}
-
         <Box
           className="layout-container"
           sx={{
@@ -110,10 +89,7 @@ const HomePage: React.FC = () => {
                 },
               }}
             >
-              <LeftSidebar
-                onToggleChat={toggleChat}
-                setSelectedReceiverId={setSelectedReceiverId}
-              />
+              <LeftSidebar onToggleChat={() => { }} />
             </Box>
           )}
 

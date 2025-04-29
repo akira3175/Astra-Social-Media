@@ -1,0 +1,34 @@
+R
+N
+ID
+M
+E1 E2 E3 ... En
+
+Trong đó:
+• R - Là một số nguyên ngẫu nhiên nằm trong khoảng từ [1..10].
+• N - Là giá trị tổng số lượng mảnh thiên thạch cần tìm, là một số nguyên từ 1 đến 99.
+• ID: Là một số nguyên nằm trong khoảng [1..4].
+• M: Là số tiền ban đầu mà các anh hùng mang theo, là một số nguyên có giá trị trong khoảng[0...999].
+• Ei
+
+ID:
+– ID = 1: Perseus - Anh hùng được Athena tin tưởng nhất, có HP bằng 999.
+– ID = 2: Theseus - Vị vua huyền thoại của Athens, có HP bằng 900.
+– ID = 3: Odysseus - Người nổi tiếng với trí thông minh, có HP bằng 888. (ko bán tt đỏ)
+– ID = 4: Hercules - Á thần với sức mạnh phi thường, có HP bằng 777.
+Ei:
+Là mã sự kiện thứ i xảy ra trên hành trình. Mỗi sự kiện được đánh số từ 1 và được mô tả bằng một mã số.
+1XY Tìm thấy một mảnh thiên thạch màu xanh
+2XY Tìm thấy một mảnh thiên thạch màu đỏ
+3XY Đến đền thờ của thần Asclepius
+4XY Gặp quái vật của thần Ares
+5XY Gặp nữ thần Athena
+6XY Nhặt được lá chắn của thần Zeus
+7XY Gặp Titan
+8XY Gặp nữ thần Hera
+9XY Gặp thần Hermes
+
+MainResult = HPc + Mc + Vd
+Trong đó HPc, Mc và Vd lần lượt là các giá trị HP hiện hành, số drachma còn lại của
+anh hùng ngay khi tìm được mảnh thiên thạch cuối cùng và tổng giá trị của các mảnh
+thiên thạch tìm được.

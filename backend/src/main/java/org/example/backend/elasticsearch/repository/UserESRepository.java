@@ -10,11 +10,11 @@ import java.util.List;
 public interface UserESRepository extends ElasticsearchRepository<UserDocument, String> {
 
     List<UserDocument> findByFullNameContainingIgnoreCase(String keyword);
+
     Page<UserDocument> findByFullNameContainingIgnoreCaseAndIsStaffAndIsActive(
             String fullName,
             Boolean isStaff,
             Boolean isActive,
-            Pageable pageable
-    );
+            Pageable pageable);
 
 }
