@@ -54,8 +54,9 @@ class FriendshipService {
         },
       });
 
-      if (response.data.status === 200) {
-        return response.data.data;
+      // Kiểm tra nếu response có dữ liệu thì trả về dữ liệu đó
+      if (response.data) {
+        return response.data;
       }
 
       throw new Error(
