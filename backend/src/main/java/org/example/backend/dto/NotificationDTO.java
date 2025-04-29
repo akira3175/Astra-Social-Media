@@ -14,6 +14,7 @@ public class NotificationDTO {
     private Long id;
     private Long senderId;
     private String senderName;
+    private String senderEmail;
     private String senderAvatarUrl;
     private NotificationType type;
     private Long postId;

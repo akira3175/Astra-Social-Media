@@ -50,6 +50,7 @@ public class NotificationService {
                 noti.getId(),
                 sender.getId(),
                 sender.getLastName() + " " +sender.getFirstName(),
+                sender.getEmail(),
                 avatarUrl,
                 noti.getType(),
                 noti.getPostId(),
