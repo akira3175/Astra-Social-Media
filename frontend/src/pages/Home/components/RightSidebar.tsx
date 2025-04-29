@@ -1,4 +1,4 @@
-import type React from "react"
+import type React from "react";
 import {
   Avatar,
   Box,
@@ -11,58 +11,34 @@ import {
   ListItemText,
   Paper,
   Typography,
-} from "@mui/material"
+} from "@mui/material";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useCurrentUser } from "../../../contexts/currentUserContext";
 
-interface SuggestedUser {
-  id: number
-  name: string
-  avatar: string
-  mutualFriends: number
+interface User {
+  id: number;
+  name: string;
+  avatar: string;
+  mutualFriends: number;
+  friendshipStatus?: string;
+  isUser1?: boolean;
+  friendshipId?: number;
+}
+
+interface SuggestedUserResponse {
+  id: number;
+  name: string;
+  avatar: string;
+  mutualFriends: number;
+  friendshipStatus?: string;
+  isUser1?: boolean;
+  friendshipId?: number;
 }
 
 interface RightSidebarProps {
-  className?: string
+  className?: string;
 }
-
-// Giả lập dữ liệu người dùng được đề xuất
-const SUGGESTED_USERS: SuggestedUser[] = [
-  {
-    id: 201,
-    name: "Phạm Thị D",
-    avatar: "https://i.pravatar.cc/150?img=10",
-    mutualFriends: 5,
-  },
-  {
-    id: 202,
-    name: "Hoàng Văn E",
-    avatar: "https://i.pravatar.cc/150?img=11",
-    mutualFriends: 2,
-  },
-  {
-    id: 203,
-    name: "Vũ Thị F",
-    avatar: "https://i.pravatar.cc/150?img=12",
-    mutualFriends: 8,
-  },
-  {
-    id: 204,
-    name: "Nguyễn Văn G",
-    avatar: "https://i.pravatar.cc/150?img=13",
-    mutualFriends: 3,
-  },
-  {
-    id: 205,
-    name: "Trần Thị H",
-    avatar: "https://i.pravatar.cc/150?img=14",
-    mutualFriends: 6,
-  },
-  {
-    id: 206,
-    name: "Lê Văn I",
-    avatar: "https://i.pravatar.cc/150?img=15",
-    mutualFriends: 4,
-  },
-]
 
 // Thêm nhiều xu hướng để test scroll
 const TRENDING_TOPICS = [
@@ -76,9 +52,82 @@ const TRENDING_TOPICS = [
   "#SứcKhỏe",
   "#GiáoDục",
   "#KinhTế",
-]
+];
 
 const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
+  const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
+  const { currentUser } = useCurrentUser();
+
+  useEffect(() => {
+    const fetchSuggestedUsers = async () => {
+      if (!currentUser?.id) {
+        console.log("No current user ID found");
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          console.error("No access token found");
+          return;
+        }
+
+        console.log("Fetching suggested users for user ID:", currentUser.id);
+        console.log("Using token:", token);
+
+        const response = await axios.get<SuggestedUserResponse[]>(
+          `http://localhost:8080/api/users/suggestions?currentUserId=${currentUser.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log("API Response status:", response.status);
+        console.log("API Response data:", response.data);
+
+        if (!response.data || !Array.isArray(response.data)) {
+          console.error("Invalid response format:", response.data);
+          return;
+        }
+
+        if (response.data.length === 0) {
+          console.log("No suggested users found");
+          return;
+        }
+
+        setSuggestedUsers(
+          response.data.map((user) => {
+            console.log("Processing user:", user);
+            return {
+              id: user.id,
+              name: user.name,
+              avatar: user.avatar || "",
+              mutualFriends: user.mutualFriends || 0,
+              friendshipStatus: user.friendshipStatus,
+              isUser1: user.isUser1,
+              friendshipId: user.friendshipId,
+            };
+          })
+        );
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          console.error("Error details:", {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message,
+          });
+        } else {
+          console.error("Unknown error:", error);
+        }
+      }
+    };
+
+    fetchSuggestedUsers();
+  }, [currentUser?.id]);
+
   return (
     <Paper
       className={className}
@@ -92,7 +141,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
         Gợi ý kết bạn
       </Typography>
       <List disablePadding>
-        {SUGGESTED_USERS.map((user) => (
+        {suggestedUsers.map((user) => (
           <ListItem
             key={user.id}
             secondaryAction={
@@ -128,8 +177,9 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                 },
-                maxWidth: "91px"
-              }} />
+                maxWidth: "91px",
+              }}
+            />
           </ListItem>
         ))}
       </List>
@@ -151,10 +201,20 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
           © 2025 AstraSocial
         </Typography>
         <Box sx={{ mt: 1 }}>
-          <Typography variant="caption" color="text.secondary" component="span" sx={{ mr: 1 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            component="span"
+            sx={{ mr: 1 }}
+          >
             Giới thiệu
           </Typography>
-          <Typography variant="caption" color="text.secondary" component="span" sx={{ mr: 1 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            component="span"
+            sx={{ mr: 1 }}
+          >
             Điều khoản
           </Typography>
           <Typography variant="caption" color="text.secondary" component="span">
@@ -163,8 +223,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
         </Box>
       </Box>
     </Paper>
-  )
-}
+  );
+};
 
-export default RightSidebar
-
+export default RightSidebar;

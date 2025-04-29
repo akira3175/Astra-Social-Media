@@ -55,7 +55,8 @@ public class UserService {
         return user;
     }
 
-    public User updateUser(String email, String firstName, String lastName, MultipartFile avatar, MultipartFile background, String bio) throws IOException {
+    public User updateUser(String email, String firstName, String lastName, MultipartFile avatar,
+            MultipartFile background, String bio) throws IOException {
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
             throw new RuntimeException("User not found");
@@ -141,11 +142,11 @@ public class UserService {
                 .orElse(null);
     }
 
-    public Page<UserDocument> searchUsers(String keyword, String isStaffStr, String isActiveStr, int page, int size, User user) {
+    public Page<UserDocument> searchUsers(String keyword, String isStaffStr, String isActiveStr, int page, int size,
+            User user) {
         // Convert string to Boolean (or null if "all")
         Boolean isStaff = parseToBoolean(isStaffStr);
         Boolean isActive = parseToBoolean(isActiveStr);
-
 
         // Remove empty keyword
         if (keyword != null && keyword.trim().isEmpty()) {
@@ -161,18 +162,23 @@ public class UserService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "lastLogin"));
 
         if (user.getIsStaff()) {
-            userDocuments = userESRepository.findByFullNameContainingIgnoreCaseAndIsStaffAndIsActive(keyword, isStaff, isActive, pageable);
+            userDocuments = userESRepository.findByFullNameContainingIgnoreCaseAndIsStaffAndIsActive(keyword, isStaff,
+                    isActive, pageable);
         } else {
-            userDocuments = userESRepository.findByFullNameContainingIgnoreCaseAndIsStaffAndIsActive(keyword, isStaff, false, pageable);
+            userDocuments = userESRepository.findByFullNameContainingIgnoreCaseAndIsStaffAndIsActive(keyword, isStaff,
+                    false, pageable);
         }
 
         return userDocuments;
     }
 
     private Boolean parseToBoolean(String str) {
-        if (str == null || str.equalsIgnoreCase("all")) return null;
-        if (str.equalsIgnoreCase("true")) return true;
-        if (str.equalsIgnoreCase("false")) return false;
+        if (str == null || str.equalsIgnoreCase("all"))
+            return null;
+        if (str.equalsIgnoreCase("true"))
+            return true;
+        if (str.equalsIgnoreCase("false"))
+            return false;
         return null;
     }
 
@@ -198,8 +204,6 @@ public class UserService {
 
         return true;
     }
-
-
 
     // Provide ADMIN API
     public List<User> getAllUsers() {
@@ -236,6 +240,7 @@ public class UserService {
                     Map<String, Object> userMap = new HashMap<>();
                     userMap.put("id", user.getId());
                     userMap.put("name", user.getLastName() + user.getFirstName());
+                    userMap.put("email", user.getEmail());
                     userMap.put("avatar", user.getAvatar());
                     userMap.put("mutualFriends", user.getMutualFriends() != null ? user.getMutualFriends() : 0);
                     userMap.put("status", null);
@@ -271,6 +276,14 @@ public class UserService {
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid user ID format");
         }
+    }
+
+    public List<String> getFriendsEmails(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findFriendsByEmail(email).stream()
+                .map(User::getEmail)
+                .collect(Collectors.toList());
     }
 
     private UserDocument convertToUserDocument(User user) {

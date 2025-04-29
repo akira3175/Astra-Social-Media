@@ -1,8 +1,28 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse, type AxiosInstance } from "axios";
-import { refreshToken, processQueue, failedQueue, handleAuthError } from "../services/authService";
+import { refreshToken, setAuthHeader } from "../services/authService";
 import { tokenService } from "../services/tokenService";
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+interface QueueItem {
+  resolve: (value: string | PromiseLike<string>) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reject: (reason?: any) => void;
+}
+
+// Refresh token management
+export let failedQueue: QueueItem[] = [];
+
+export const processQueue = (
+  error: Error | null,
+  token: string | null = null
+): void => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else prom.resolve(token as string);
+  });
+  failedQueue = [];
+};
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -71,5 +91,17 @@ api.interceptors.response.use(
     }
   }
 );
+
+export const handleAuthError = (customHandler?: () => void): void => {
+  tokenService.clear();
+  setAuthHeader(null);
+
+  if (typeof customHandler === "function") {
+    customHandler();
+  } else {
+    // Default behavior - redirect to login
+    window.location.href = "/login";
+  }
+};
 
 export { api, apiNoAuth };
