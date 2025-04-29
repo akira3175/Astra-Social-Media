@@ -13,7 +13,20 @@ import { PersonRemove } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-import { Request } from "../../../types/friendship";
+
+interface Request {
+  id: number;
+  receiver: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+    mutualFriends?: number;
+  };
+  status: string;
+  createdAt: string;
+}
 
 const FriendSent: React.FC = () => {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -31,7 +44,16 @@ const FriendSent: React.FC = () => {
     try {
       setLoading(true);
       const data = await friendshipService.getSentRequests(currentUser!.id);
-      setRequests(data);
+      const formattedData = data.map((request) => ({
+        ...request,
+        receiver: {
+          ...request.receiver,
+          avatar: request.receiver.avatar
+            ? `http://localhost:8080${request.receiver.avatar}`
+            : "",
+        },
+      }));
+      setRequests(formattedData);
       setError(null);
     } catch (error) {
       console.error("Lỗi khi tải danh sách lời mời đã gửi:", error);
@@ -47,7 +69,10 @@ const FriendSent: React.FC = () => {
 
   const handleCancelRequest = async (requestId: number) => {
     try {
-      await friendshipService.rejectFriendRequest(requestId);
+      if (!currentUser?.id) {
+        throw new Error("Không tìm thấy thông tin người dùng");
+      }
+      await friendshipService.rejectFriendRequest(requestId, currentUser.id);
       setRequests(requests.filter((request) => request.id !== requestId));
     } catch (error) {
       console.error("Lỗi khi hủy lời mời:", error);
@@ -91,18 +116,18 @@ const FriendSent: React.FC = () => {
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                 <Avatar
-                  src={request.user2.avatar || ""}
-                  alt={request.user2.name}
+                  src={request.receiver.avatar || ""}
+                  alt={`${request.receiver.firstName} ${request.receiver.lastName}`}
                   sx={{ width: 56, height: 56, mr: 2 }}
                 >
-                  {request.user2.firstName?.charAt(0)}
-                  {request.user2.lastName?.charAt(0)}
+                  {request.receiver.firstName?.charAt(0)}
+                  {request.receiver.lastName?.charAt(0)}
                 </Avatar>
                 <Box>
                   <Typography
                     variant="h6"
                     component={Link}
-                    to={`/profile/${request.user2.email}`}
+                    to={`/profile/${request.receiver.email}`}
                     sx={{
                       textDecoration: "none",
                       color: "inherit",
@@ -111,14 +136,14 @@ const FriendSent: React.FC = () => {
                       },
                     }}
                   >
-                    {request.user2.name}
+                    {`${request.receiver.firstName} ${request.receiver.lastName}`}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {request.user2.email}
+                    {request.receiver.email}
                   </Typography>
-                  {request.user2.mutualFriends !== null && (
+                  {request.receiver.mutualFriends !== undefined && (
                     <Typography variant="body2" color="text.secondary">
-                      {request.user2.mutualFriends} bạn chung
+                      {request.receiver.mutualFriends} bạn chung
                     </Typography>
                   )}
                 </Box>
