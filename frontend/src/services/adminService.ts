@@ -1,4 +1,5 @@
-import { api } from "../configs/api"
+import { api } from "../configs/api";
+import { tokenService } from "./tokenService";
 
 // Định nghĩa các interface
 export interface Post {
@@ -9,7 +10,7 @@ export interface Post {
 
   date: string;
   likesCount: number;
-  status: 'active' | 'locked';
+  status: "active" | "locked";
 }
 
 export interface Comment {
@@ -18,16 +19,16 @@ export interface Comment {
   post: string;
   author: string;
   date: string;
-  status: 'active' | 'locked';
+  status: "active" | "locked";
 }
 
 export interface User {
   id: number;
   email: string;
   firstName: string;
-  background:string;
-  bio:string;
-  name:string;
+  background: string;
+  bio: string;
+  name: string;
   lastName: string;
   avatar: string;
   isStaff: boolean;
@@ -39,11 +40,11 @@ export interface User {
 
 export interface Report {
   id: number;
-  type: 'Bài đăng' | 'Comment' | 'User';
+  type: "Bài đăng" | "Comment" | "User";
   content: string;
   reporter: string;
   date: string;
-  status: 'pending' | 'resolved';
+  status: "pending" | "resolved";
 }
 
 export interface AdminStats {
@@ -61,7 +62,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
     const response = await api.get(`/admin/stats`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching admin stats:', error);
+    console.error("Error fetching admin stats:", error);
     throw error;
   }
 };
@@ -71,7 +72,7 @@ export const getPosts = async (): Promise<Post[]> => {
     const response = await api.get(`/admin/posts/getAllPost`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    console.error("Error fetching posts:", error);
     throw error;
   }
 };
@@ -81,7 +82,7 @@ export const getLockedPosts = async (): Promise<Post[]> => {
     const response = await api.get(`/admin/posts/locked`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching locked posts:', error);
+    console.error("Error fetching locked posts:", error);
     throw error;
   }
 };
@@ -90,7 +91,7 @@ export const lockPost = async (postId: number): Promise<void> => {
   try {
     await api.put(`/admin/posts/${postId}/lock`);
   } catch (error) {
-    console.error('Error locking post:', error);
+    console.error("Error locking post:", error);
     throw error;
   }
 };
@@ -99,7 +100,7 @@ export const unlockPost = async (postId: number): Promise<void> => {
   try {
     await api.put(`/admin/posts/${postId}/unlock`);
   } catch (error) {
-    console.error('Error unlocking post:', error);
+    console.error("Error unlocking post:", error);
     throw error;
   }
 };
@@ -109,7 +110,7 @@ export const getComments = async (): Promise<Comment[]> => {
     const response = await api.get(`/admin/comments/getAllComment`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    console.error("Error fetching comments:", error);
     throw error;
   }
 };
@@ -119,7 +120,7 @@ export const getLockedComments = async (): Promise<Comment[]> => {
     const response = await api.get(`/admin/comments/locked`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching locked comments:', error);
+    console.error("Error fetching locked comments:", error);
     throw error;
   }
 };
@@ -128,7 +129,7 @@ export const lockComment = async (commentId: number): Promise<void> => {
   try {
     await api.put(`/admin/comments/${commentId}/lock`);
   } catch (error) {
-    console.error('Error locking comment:', error);
+    console.error("Error locking comment:", error);
     throw error;
   }
 };
@@ -137,7 +138,7 @@ export const unlockComment = async (commentId: number): Promise<void> => {
   try {
     await api.put(`/admin/comments/${commentId}/unlock`);
   } catch (error) {
-    console.error('Error unlocking comment:', error);
+    console.error("Error unlocking comment:", error);
     throw error;
   }
 };
@@ -147,7 +148,7 @@ export const getUsers = async (): Promise<User[]> => {
     const response = await api.get(`/admin/users/getAllUser`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error("Error fetching users:", error);
     throw error;
   }
 };
@@ -157,7 +158,7 @@ export const getBannedUsers = async (): Promise<User[]> => {
     const response = await api.get(`/admin/users/banned`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching banned users:', error);
+    console.error("Error fetching banned users:", error);
     throw error;
   }
 };
@@ -166,7 +167,7 @@ export const banUser = async (userId: number): Promise<void> => {
   try {
     await api.put(`/admin/users/${userId}/ban`);
   } catch (error) {
-    console.error('Error banning user:', error);
+    console.error("Error banning user:", error);
     throw error;
   }
 };
@@ -175,7 +176,7 @@ export const unbanUser = async (userId: number): Promise<void> => {
   try {
     await api.put(`/admin/users/${userId}/unban`);
   } catch (error) {
-    console.error('Error unbanning user:', error);
+    console.error("Error unbanning user:", error);
     throw error;
   }
 };
@@ -185,7 +186,7 @@ export const getReports = async (): Promise<Report[]> => {
     const response = await api.get(`/admin/reports`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching reports:', error);
+    console.error("Error fetching reports:", error);
     throw error;
   }
 };
@@ -194,20 +195,30 @@ export const resolveReport = async (reportId: number): Promise<void> => {
   try {
     await api.put(`/admin/reports/${reportId}/resolve`);
   } catch (error) {
-    console.error('Error resolving report:', error);
+    console.error("Error resolving report:", error);
     throw error;
   }
 
-  export const adminLogin = async ({email,password}:{email:String,password:string}){
-    try {
-      await api.post('/admin/login',{
-        email:email,
-        password:password
-      })
-    } catch (error) {
-      console.error(error);
-      throw error
-      
-    }
+};
+
+export const adminLogin = async ({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}): Promise<void> => {
+  try {
+    const response = await api.post(`/admin/login`, {
+      email: email,
+      password: password,
+    });
+    const token = response.data.accessToken;
+    const refreshToken = response.data.refreshToken;
+    tokenService.setAccessToken(token);
+    tokenService.setRefreshToken(refreshToken);
+  } catch (error) {
+    console.error("Error logging in:", error);
+    throw error;
   }
-}; 
+};

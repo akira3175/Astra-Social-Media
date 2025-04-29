@@ -1,19 +1,14 @@
 import React, { useState } from "react";
+import { adminLogin } from "../../../services/adminService";
 
 const AdminLoginPage: React.FC = () => {
-  const [username, setUsername] = useState("");
+  const [email, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState("");
 
   const handleLogin = () => {
-    // Replace this with actual authentication logic
-    if (username === "admin" && password === "password") {
-      
-      setError("");
-      // Redirect to admin dashboard or perform other actions
-    } else {
-      setError("Tên đăng nhập hoặc mật khẩu không chính xác.");
-    }
+    adminLogin({ email, password });
   };
 
   return (
@@ -32,12 +27,14 @@ const AdminLoginPage: React.FC = () => {
           <input
             type="text"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={username}
+            value={email}
             onChange={(e) => setUsername(e.target.value)}
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">Mật khẩu</label>
+          <label className="block text-gray-700 font-medium mb-2">
+            Mật khẩu
+          </label>
           <input
             type="password"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -56,4 +53,4 @@ const AdminLoginPage: React.FC = () => {
   );
 };
 
-export default AdminLoginPage;  
+export default AdminLoginPage;
