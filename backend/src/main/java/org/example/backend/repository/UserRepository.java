@@ -35,6 +35,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findFriendsById(Long id);
 
+    List<User> findFriendsByEmail(String email);
+
     List<User> findTop6ByOrderByMutualFriendsDesc();
 
     @Query("SELECT COUNT(u) FROM User u")

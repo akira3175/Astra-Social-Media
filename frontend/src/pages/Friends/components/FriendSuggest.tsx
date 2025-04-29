@@ -41,6 +41,7 @@ const FriendSuggest: React.FC = () => {
       }));
       setSuggestedUsers(formattedData);
       setError(null);
+      console.log("suggestedUsers", data);
     } catch (error) {
       console.error("Lỗi khi tải danh sách gợi ý:", error);
       if (error instanceof Error) {

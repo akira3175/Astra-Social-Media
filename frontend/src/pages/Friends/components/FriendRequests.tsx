@@ -17,30 +17,23 @@ import { Link } from "react-router-dom";
 import type { FriendRequest } from "../../../types/friendship";
 
 const FriendRequests: React.FC = () => {
-  // State quản lý danh sách lời mời kết bạn
   const [requests, setRequests] = useState<FriendRequest[]>([]);
-  // State quản lý trạng thái loading
   const [loading, setLoading] = useState(true);
-  // State quản lý thông báo lỗi
   const [error, setError] = useState<string | null>(null);
-  // Lấy thông tin người dùng hiện tại
   const { currentUser } = useCurrentUser();
 
-  // Load danh sách lời mời kết bạn khi component được mount hoặc currentUser thay đổi
   useEffect(() => {
     if (currentUser?.id) {
       loadFriendRequests();
     }
   }, [currentUser?.id]);
 
-  // Hàm load danh sách lời mời kết bạn từ API
   const loadFriendRequests = async () => {
     try {
       setLoading(true);
       const data = await friendshipService.getPendingRequests(currentUser!.id);
       console.log("Dữ liệu lời mời kết bạn:", data);
 
-      // Format dữ liệu và lọc chỉ những lời mời có trạng thái PENDING
       const formattedData = data
         .filter((request: FriendRequest) => request.status === "PENDING")
         .map((request: FriendRequest) => {
@@ -50,7 +43,6 @@ const FriendRequests: React.FC = () => {
 
           return {
             ...request,
-            // Sử dụng user1 làm thông tin người gửi
             sender: request.user1,
             // Thêm base URL vào trước avatar URL
             user1: {
@@ -75,7 +67,6 @@ const FriendRequests: React.FC = () => {
     }
   };
 
-  // Hàm xử lý khi người dùng chấp nhận lời mời kết bạn
   const handleAccept = async (
     friendshipId: number,
     user1Id: number,
@@ -88,7 +79,6 @@ const FriendRequests: React.FC = () => {
       // 2. Sau đó mới cập nhật trạng thái
       await friendshipService.acceptFriendRequest(friendshipId);
 
-      // 3. Cập nhật lại danh sách sau khi chấp nhận
       setRequests(requests.filter((request) => request.id !== friendshipId));
     } catch (error) {
       if (error instanceof Error) {
@@ -99,11 +89,9 @@ const FriendRequests: React.FC = () => {
     }
   };
 
-  // Hàm xử lý khi người dùng từ chối lời mời kết bạn
   const handleReject = async (friendshipId: number) => {
     try {
       await friendshipService.rejectFriendRequest(friendshipId);
-      // Cập nhật lại danh sách sau khi từ chối
       setRequests(requests.filter((request) => request.id !== friendshipId));
     } catch (error) {
       if (error instanceof Error) {
@@ -112,7 +100,6 @@ const FriendRequests: React.FC = () => {
     }
   };
 
-  // Hiển thị loading spinner khi đang tải dữ liệu
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -121,7 +108,6 @@ const FriendRequests: React.FC = () => {
     );
   }
 
-  // Hiển thị thông báo lỗi nếu có
   if (error) {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>

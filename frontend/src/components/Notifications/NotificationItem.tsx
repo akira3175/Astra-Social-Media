@@ -116,7 +116,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
         return notification.postId ? `/post/${notification.postId}` : "/"
       case "FRIEND_REQUEST":
       case "FRIEND_ACCEPT":
-        return `/profile/${notification.senderId}`
+        return `/profile/${notification.senderEmail}`
       default:
         return "/"
     }
