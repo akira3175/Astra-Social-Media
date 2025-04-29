@@ -44,7 +44,7 @@ const FriendSent: React.FC = () => {
     try {
       setLoading(true);
       const data = await friendshipService.getSentRequests(currentUser!.id);
-      const formattedData = data.map((request: any) => ({
+      const formattedData = data.map((request: Request) => ({
         ...request,
         receiver: {
           ...request.receiver,
@@ -72,8 +72,19 @@ const FriendSent: React.FC = () => {
       if (!currentUser?.id) {
         throw new Error("Không tìm thấy thông tin người dùng");
       }
-      await friendshipService.rejectFriendRequest(requestId, currentUser.id);
-      setRequests(requests.filter((request) => request.id !== requestId));
+
+      // Tìm request cần hủy
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) {
+        throw new Error("Không tìm thấy lời mời kết bạn");
+      }
+
+      // Gọi API hủy lời mời
+      await friendshipService.cancelFriendRequest(request.receiver.email);
+
+      // Cập nhật lại danh sách
+      setRequests(requests.filter((r) => r.id !== requestId));
+      alert("Đã hủy lời mời kết bạn thành công!");
     } catch (error) {
       console.error("Lỗi khi hủy lời mời:", error);
       if (error instanceof Error) {
