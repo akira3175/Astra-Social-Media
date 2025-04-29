@@ -35,6 +35,7 @@ const FriendSuggest: React.FC = () => {
       const data = await friendshipService.getSuggestedUsers(currentUser!.id);
       setSuggestedUsers(data);
       setError(null);
+      console.log("suggestedUsers", data);
     } catch (error) {
       console.error("Lỗi khi tải danh sách gợi ý:", error);
       if (error instanceof Error) {

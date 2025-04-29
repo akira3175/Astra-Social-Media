@@ -10,6 +10,7 @@ export interface Notification {
   id: number
   senderId: number
   senderName: string
+  senderEmail: string
   senderAvatarUrl: string
   type: "LIKE" | "COMMENT" | "FRIEND_REQUEST" | "FRIEND_ACCEPT" | string
   postId?: number
