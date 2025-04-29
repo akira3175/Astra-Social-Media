@@ -45,6 +45,8 @@ interface PostState {
   hasMore: boolean;
   pageSize: number;
   fetchNextPage: () => Promise<void>;
+
+  fetchPost: (postId: number) => Promise<void>;
 }
 
 const addReplyToCommentTree = (comments: Comment[], newReply: Comment, parentId: number): Comment[] => {
@@ -402,6 +404,24 @@ export const usePostStore = create<PostState>((set, get) => ({
       set({ 
         isLoading: false,
         error: error instanceof Error ? error : new Error('Failed to fetch more posts')
+      });
+    }
+  },
+
+  fetchPost: async (postId: number) => {
+    try {
+      set({ isLoading: true, error: null });
+      const post = await PostService.getPostById(postId);
+      set((state) => ({
+        posts: state.posts.some(p => p.id === postId)
+          ? state.posts.map(p => p.id === postId ? post : p)
+          : [...state.posts, post],
+        isLoading: false
+      }));
+    } catch (error) {
+      set({ 
+        isLoading: false,
+        error: error instanceof Error ? error : new Error('Failed to fetch post')
       });
     }
   },

@@ -27,6 +27,7 @@
     "@types/stompjs": "^2.3.9",
     "axios": "^1.8.3",
     "date-fns": "^4.1.0",
+    "frontend": "file:",
     "lucide-react": "^0.482.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

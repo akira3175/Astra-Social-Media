@@ -5,8 +5,8 @@ import {
   banUser,
   getUsers,
   unbanUser,
-  User,
 } from "../../../services/adminService";
+import { User } from "../../../types/user";
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);

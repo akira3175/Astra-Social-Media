@@ -14,4 +14,5 @@ export interface Comment {
   isLiked: boolean;
   parentId: number | null; 
   replies: Comment[]; 
+  isDeleted: boolean;
 }

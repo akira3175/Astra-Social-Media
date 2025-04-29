@@ -13,11 +13,15 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+    
     Optional<User> findByEmail(String email);
+
     boolean existsByEmail(String email);
+
     Page<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
             String firstName, String lastName, Pageable pageable
     );
+
     @Query("SELECT u FROM User u " +
             "WHERE (:keyword IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "   OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
@@ -31,5 +35,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findFriendsById(Long id);
 
+    List<User> findFriendsByEmail(String email);
+
     List<User> findTop6ByOrderByMutualFriendsDesc();
+
+    @Query("SELECT COUNT(u) FROM User u")
+    Long countAll();
+
+    Long countByIsActiveFalse();
 }

@@ -1,6 +1,7 @@
 package org.example.backend.repository;
 
 import org.example.backend.entity.Notification;
+import org.example.backend.entity.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,5 +13,6 @@ import java.util.List;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     List<Notification> findByReceiverIdOrderByCreatedAtDesc(Long receiverId);
     Page<Notification> findByReceiverIdOrderByCreatedAtDesc(Long receiverId, Pageable pageable);
+    Notification findBySenderIdAndReceiverIdAndType(Long senderId, Long receiverId, NotificationType type);
 }
 

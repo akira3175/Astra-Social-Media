@@ -1,59 +1,8 @@
 import { api } from "../configs/api"
-
-// Định nghĩa các interface
-export interface Post {
-  id: number;
-  title: string;
-  author: string;
-  createdAt: string;
-
-  date: string;
-  likesCount: number;
-  status: 'active' | 'locked';
-}
-
-export interface Comment {
-  id: number;
-  content: string;
-  post: string;
-  author: string;
-  date: string;
-  status: 'active' | 'locked';
-}
-
-export interface User {
-  id: number;
-  email: string;
-  firstName: string;
-  background:string;
-  bio:string;
-  name:string;
-  lastName: string;
-  avatar: string;
-  isStaff: boolean;
-  isSuperUser: boolean;
-  isActive: boolean;
-  dateJoined: string;
-  lastLogin: string;
-}
-
-export interface Report {
-  id: number;
-  type: 'Bài đăng' | 'Comment' | 'User';
-  content: string;
-  reporter: string;
-  date: string;
-  status: 'pending' | 'resolved';
-}
-
-export interface AdminStats {
-  totalPosts: number;
-  lockedPosts: number;
-  totalComments: number;
-  lockedComments: number;
-  totalUsers: number;
-  bannedUsers: number;
-}
+import type { User } from "../types/user"
+import type { Post } from "../types/post"
+import type { Comment } from "../types/comment"
+import type { AdminStats, Report } from "../types/management"
 
 // API calls
 export const getAdminStats = async (): Promise<AdminStats> => {
@@ -68,7 +17,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
 
 export const getPosts = async (): Promise<Post[]> => {
   try {
-    const response = await api.get(`/admin/posts`);
+    const response = await api.get(`/admin/posts/getAllPost`);
     return response.data;
   } catch (error) {
     console.error('Error fetching posts:', error);
@@ -106,7 +55,7 @@ export const unlockPost = async (postId: number): Promise<void> => {
 
 export const getComments = async (): Promise<Comment[]> => {
   try {
-    const response = await api.get(`/admin/comments`);
+    const response = await api.get(`/admin/comments/getAllComment`);
     return response.data;
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -144,7 +93,7 @@ export const unlockComment = async (commentId: number): Promise<void> => {
 
 export const getUsers = async (): Promise<User[]> => {
   try {
-    const response = await api.get(`/admin/users`);
+    const response = await api.get(`/admin/users/AllUser`);
     return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import {
   Box,
@@ -18,9 +18,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
-import { PostService } from "../../../services/PostService"
 import Post from "./Post"
-import type { Post as PostType } from "../../../types/post"
 import { usePostStore } from "../../../stores/postStore"
 
 const LoadingSkeleton = () => {
@@ -205,56 +203,43 @@ const PostDetailModal = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const theme = useTheme()
-  const [post, setPost] = useState<PostType | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const { savePost, repostPost } = usePostStore()
 
-  // Kiểm tra xem modal có nên mở hay không dựa vào URL
+  // Lấy state và actions từ Zustand store
+  const { 
+    posts,
+    isLoading,
+    error,
+    fetchPost,
+    savePost, 
+    repostPost,
+    fetchComments 
+  } = usePostStore()
+
+  // Lấy post từ store dựa vào id
+  const post = posts.find(p => p.id === Number(id))
   const isOpen = location.pathname.includes("/post/")
 
-
-  const loadPostAndComments = async () => {
+  useEffect(() => {
     if (!id || !isOpen) return
 
-    try {
-      setLoading(true)
-      setError(null)
-
-      if (isNaN(Number(id))) {
-        setError("ID bài viết không hợp lệ")
-        return
-      }
-
-      const postData = await PostService.getPostById(Number(id))
-      if (!postData) {
-        setError("Không tìm thấy bài viết")
-        return
-      }
-      setPost(postData)
-
-      // Load comments
-      await usePostStore.getState().fetchComments(Number(id))
-    } catch (err) {
-      setError("Không thể tải bài viết. Vui lòng thử lại sau.")
-      console.error("Error fetching post:", err)
-    } finally {
-      setLoading(false)
+    if (isNaN(Number(id))) {
+      return
     }
-  }
 
-  useEffect(() => {
-    loadPostAndComments();
-  }, [id, isOpen, ]);
+    // Fetch post từ store
+    fetchPost(Number(id))
+    
+    // Fetch comments
+    fetchComments(Number(id))
+  }, [id, isOpen, fetchPost, fetchComments])
 
   const handleClose = () => {
-    navigate(-1) // Quay lại trang trước đó
+    navigate(-1)
   }
 
   const handleSave = async (postId: number) => {
     try {
       await savePost(postId)
-      loadPostAndComments();
     } catch (error) {
       console.error("Error saving post:", error)
     }
@@ -365,8 +350,8 @@ const PostDetailModal = () => {
           },
         }}
       >
-        {loading ? (
-          <Fade in={loading} timeout={300}>
+        {isLoading ? (
+          <Fade in={isLoading} timeout={300}>
             <Box>
               <LoadingSkeleton />
               <Box display="flex" justifyContent="center" alignItems="center" mt={2} mb={2} sx={{ height: 60 }}>
@@ -381,7 +366,7 @@ const PostDetailModal = () => {
             </Box>
           </Fade>
         ) : error ? (
-          <Fade in={!loading} timeout={300}>
+          <Fade in={!isLoading} timeout={300}>
             <Paper
               elevation={0}
               sx={{
@@ -410,7 +395,7 @@ const PostDetailModal = () => {
                 Không thể hiển thị bài viết
               </Typography>
               <Typography color="text.secondary" align="center" sx={{ mb: 3 }}>
-                {error}
+                {error instanceof Error ? error.message : String(error)}
               </Typography>
               <Button
                 variant="contained"
@@ -428,7 +413,7 @@ const PostDetailModal = () => {
             </Paper>
           </Fade>
         ) : post ? (
-          <Fade in={!loading} timeout={300}>
+          <Fade in={!isLoading} timeout={300}>
             <Box sx={{ pt: 1 }}>
               <Post
                 post={post}

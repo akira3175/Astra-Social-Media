@@ -9,10 +9,6 @@ interface CreatePostPayload {
   imageUrls: string[];
 }
 
-// interface UpdatePostRequest {
-//   content: string;
-// }
-
 interface PageResponse<T> {
   content: T[];
   totalElements: number;

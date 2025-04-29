@@ -3,23 +3,7 @@ import type { User } from "../types/user";
 import { tokenService } from "./tokenService";
 import { api, apiNoAuth } from "../configs/api";
 import { createApiWithTimeout } from "../utils/apiUtil";
-import type { RegisterData } from "../types/user";
-
-// Types
-interface TokenPair {
-  accessToken: string;
-  refreshToken: string;
-}
-
-interface QueueItem {
-  resolve: (value: string | PromiseLike<string>) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  reject: (reason?: any) => void;
-}
-
-interface RefreshResponse {
-  accessToken: string;
-}
+import type { RegisterData, TokenPair, RefreshResponse } from "../types/user";
 
 // Constants
 const ENDPOINTS = {
@@ -89,32 +73,6 @@ export const setAuthHeader = (token: string | null): void => {
   } else {
     delete api.defaults.headers.common["Authorization"];
   }
-};
-
-export const handleAuthError = (customHandler?: () => void): void => {
-  tokenService.clear();
-  setAuthHeader(null);
-
-  if (typeof customHandler === "function") {
-    customHandler();
-  } else {
-    // Default behavior - redirect to login
-    window.location.href = "/login";
-  }
-};
-
-// Refresh token management
-export let failedQueue: QueueItem[] = [];
-
-export const processQueue = (
-  error: Error | null,
-  token: string | null = null
-): void => {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve(token as string);
-  });
-  failedQueue = [];
 };
 
 export const refreshToken = async (): Promise<string> => {

@@ -1,7 +1,8 @@
 import { faLockOpen, faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
-import { Comment, getComments } from "../../../services/adminService";
+import { getComments } from "../../../services/adminService";
+import { Comment } from "../../../types/comment";
 
 const CommentManagement: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
@@ -75,10 +76,10 @@ const CommentManagement: React.FC = () => {
                     {comment.content}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
-                    {comment.author}
+                    {comment.user.email}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
-                    {comment.date}
+                    {comment.createdAt}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
                     <div className="flex gap-4 items-center justify-center">

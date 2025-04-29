@@ -136,6 +136,7 @@ public class UserService {
                         .id(user.getId())
                         .email(user.getEmail())
                         .isSuperUser(user.getIsSuperUser())
+                        .isStaff(user.getIsStaff())
                         .isActive(user.getIsActive())
                         .build())
                 .orElse(null);
@@ -239,6 +240,7 @@ public class UserService {
                     Map<String, Object> userMap = new HashMap<>();
                     userMap.put("id", user.getId());
                     userMap.put("name", user.getLastName() + user.getFirstName());
+                    userMap.put("email", user.getEmail());
                     userMap.put("avatar", user.getAvatar());
                     userMap.put("mutualFriends", user.getMutualFriends() != null ? user.getMutualFriends() : 0);
                     userMap.put("status", null);
@@ -274,6 +276,20 @@ public class UserService {
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid user ID format");
         }
+    }
+
+    public List<String> getAllUsersEmails() {
+        return userRepository.findAll().stream()
+                .map(User::getEmail)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getFriendsEmails(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findFriendsByEmail(email).stream()
+                .map(User::getEmail)
+                .collect(Collectors.toList());
     }
 
     private UserDocument convertToUserDocument(User user) {
@@ -317,5 +333,13 @@ public class UserService {
                 .toList();
 
         userESRepository.saveAll(userDocuments);
+    }
+    
+    public Long countAllUsers() {
+        return userRepository.countAll();
+    }
+
+    public Long countLockedUsers() {
+        return userRepository.countByIsActiveFalse();
     }
 }
