@@ -55,7 +55,22 @@ const FriendList: React.FC = () => {
     try {
       setLoading(true);
       const data = await friendshipService.getFriends(currentUser!.id);
-      setFriends(data);
+      const formattedData = data.map((friend) => ({
+        ...friend,
+        user: {
+          ...friend.user,
+          avatar: friend.user.avatar
+            ? `http://localhost:8080${friend.user.avatar}`
+            : "",
+        },
+        friend: {
+          ...friend.friend,
+          avatar: friend.friend.avatar
+            ? `http://localhost:8080${friend.friend.avatar}`
+            : "",
+        },
+      }));
+      setFriends(formattedData);
       setError(null);
     } catch (error) {
       if (error instanceof Error) {

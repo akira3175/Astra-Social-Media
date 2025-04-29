@@ -37,7 +37,6 @@ const FriendRequests: React.FC = () => {
   const loadFriendRequests = async () => {
     try {
       setLoading(true);
-      // Gọi API để lấy danh sách lời mời kết bạn
       const data = await friendshipService.getPendingRequests(currentUser!.id);
       console.log("Dữ liệu lời mời kết bạn:", data);
 
@@ -46,10 +45,20 @@ const FriendRequests: React.FC = () => {
         .filter((request: FriendRequest) => request.status === "PENDING")
         .map((request: FriendRequest) => {
           console.log("Request data:", request);
+          console.log("Avatar URL:", request.user1.avatar);
+          console.log("User1 data:", request.user1);
+
           return {
             ...request,
             // Sử dụng user1 làm thông tin người gửi
             sender: request.user1,
+            // Thêm base URL vào trước avatar URL
+            user1: {
+              ...request.user1,
+              avatar: request.user1.avatar
+                ? `http://localhost:8080${request.user1.avatar}`
+                : "",
+            },
           };
         });
       setRequests(formattedData);
@@ -73,17 +82,19 @@ const FriendRequests: React.FC = () => {
     user2Id: number
   ) => {
     try {
-      // 1. Chấp nhận lời mời kết bạn
-      await friendshipService.acceptFriendRequest(friendshipId);
-
-      // 2. Thêm cả hai người dùng vào bảng friend
+      // 1. Thêm cả hai người dùng vào bảng friend trước
       await friendshipService.addFriend(user1Id, user2Id);
+
+      // 2. Sau đó mới cập nhật trạng thái
+      await friendshipService.acceptFriendRequest(friendshipId);
 
       // 3. Cập nhật lại danh sách sau khi chấp nhận
       setRequests(requests.filter((request) => request.id !== friendshipId));
     } catch (error) {
       if (error instanceof Error) {
         alert(error.message);
+        // Nếu có lỗi, reload lại danh sách để đảm bảo trạng thái chính xác
+        loadFriendRequests();
       }
     }
   };
@@ -154,12 +165,16 @@ const FriendRequests: React.FC = () => {
                     {/* Thông tin người gửi lời mời */}
                     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                       <Avatar
-                        src={request.user1.avatar || ""}
+                        src={request.user1.avatar}
                         alt={request.user1.name}
                         sx={{ width: 56, height: 56, mr: 2 }}
                       >
-                        {request.user1.firstName?.charAt(0)}
-                        {request.user1.lastName?.charAt(0)}
+                        {!request.user1.avatar && (
+                          <>
+                            {request.user1.firstName?.charAt(0)}
+                            {request.user1.lastName?.charAt(0)}
+                          </>
+                        )}
                       </Avatar>
                       <Box>
                         <Typography
