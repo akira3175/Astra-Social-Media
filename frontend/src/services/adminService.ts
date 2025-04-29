@@ -207,18 +207,25 @@ export const adminLogin = async ({
 }: {
   email: string;
   password: string;
-}): Promise<void> => {
+}): Promise<{ accessToken: string; refreshToken: string }> => {
   try {
     const response = await api.post(`/admin/login`, {
       email: email,
       password: password,
     });
-    const token = response.data.accessToken;
-    const refreshToken = response.data.refreshToken;
-    tokenService.setAccessToken(token);
+
+    // Extract tokens from the response
+    const { data } = response;
+    const accessToken = data.data.accessToken;
+    const refreshToken = data.data.refreshToken;
+
+    // Save tokens using tokenService
+    tokenService.setAccessToken(accessToken);
     tokenService.setRefreshToken(refreshToken);
+
+    return { accessToken, refreshToken };
   } catch (error) {
-    console.error("Error logging in:", error);
+    console.error("Error logging in as admin:", error);
     throw error;
   }
 };
