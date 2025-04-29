@@ -27,16 +27,26 @@ class FriendshipService {
   }
 
   // Hủy lời mời kết bạn
-  async cancelFriendRequest(email: string) {
+  async cancelFriendRequest(receiverEmail: string) {
     try {
       const response = await api.delete(`/friends/request`, {
         data: {
-          receiverEmail: email,
+          receiverEmail: receiverEmail,
         },
       });
+
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          throw new Error("Không tìm thấy người dùng");
+        }
+        if (error.response?.status === 401) {
+          throw new Error("Bạn cần đăng nhập để thực hiện thao tác này");
+        }
+        if (error.response?.status === 403) {
+          throw new Error("Bạn không có quyền hủy lời mời này");
+        }
         throw new Error(
           error.response?.data?.message || "Không thể hủy lời mời kết bạn"
         );
@@ -181,33 +191,19 @@ class FriendshipService {
 
   // Thêm bạn bè
   async addFriend(userId1: number, userId2: number) {
-    try {
-      const response = await api.post(`/friendships/${userId1}/${userId2}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post(`/friendships/${userId1}/${userId2}`);
+    return response.data;
   }
 
   // Xóa bạn bè
   async removeFriend(userId1: number, userId2: number) {
-    try {
-      await api.delete(`/friendships/${userId1}/${userId2}`);
-    } catch (error) {
-      throw error;
-    }
+    await api.delete(`/friendships/${userId1}/${userId2}`);
   }
 
   // Kiểm tra xem hai người có phải là bạn bè không
   async areFriends(userId1: number, userId2: number) {
-    try {
-      const response = await api.get(
-        `/friendships/check/${userId1}/${userId2}`
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get(`/friendships/check/${userId1}/${userId2}`);
+    return response.data;
   }
 
   // Lấy danh sách người dùng gợi ý kết bạn

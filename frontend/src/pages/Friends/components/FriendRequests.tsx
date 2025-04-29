@@ -119,7 +119,10 @@ const FriendRequests: React.FC = () => {
   // Hàm xử lý khi người dùng từ chối lời mời kết bạn
   const handleReject = async (friendshipId: number) => {
     try {
-      await friendshipService.rejectFriendRequest(friendshipId);
+      if (!currentUser?.id) {
+        throw new Error("Không tìm thấy thông tin người dùng");
+      }
+      await friendshipService.rejectFriendRequest(friendshipId, currentUser.id);
       // Cập nhật lại danh sách sau khi từ chối
       setRequests(requests.filter((request) => request.id !== friendshipId));
     } catch (error) {
