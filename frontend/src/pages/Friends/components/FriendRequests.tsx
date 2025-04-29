@@ -117,9 +117,9 @@ const FriendRequests: React.FC = () => {
   };
 
   // Hàm xử lý khi người dùng từ chối lời mời kết bạn
-  const handleReject = async (friendshipId: number) => {
+  const handleReject = async (friendshipId: number, currentUserId: number) => {
     try {
-      await friendshipService.rejectFriendRequest(friendshipId);
+      await friendshipService.rejectFriendRequest(friendshipId, currentUserId);
       // Cập nhật lại danh sách sau khi từ chối
       setRequests(requests.filter((request) => request.id !== friendshipId));
     } catch (error) {
@@ -248,7 +248,9 @@ const FriendRequests: React.FC = () => {
                         variant="outlined"
                         color="error"
                         startIcon={<Close />}
-                        onClick={() => handleReject(request.id)}
+                        onClick={() =>
+                          handleReject(request.id, currentUser!.id)
+                        }
                         fullWidth
                       >
                         Từ chối
