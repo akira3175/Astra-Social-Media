@@ -14,10 +14,10 @@ import { Check, Close, PersonAdd } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-import type { FriendRequest } from "../../../types/friendship";
+import type { FriendRequest, Friendship } from "../../../types/friendship";
 
 const FriendRequests: React.FC = () => {
-  const [requests, setRequests] = useState<FriendRequest[]>([]);
+  const [requests, setRequests] = useState<Friendship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useCurrentUser();
@@ -31,19 +31,9 @@ const FriendRequests: React.FC = () => {
   const loadFriendRequests = async () => {
     try {
       setLoading(true);
-      const data = await friendshipService.getPendingRequests(currentUser!.id);
-      console.log("Dữ liệu lời mời kết bạn:", data);
-
-      const formattedData = data
-        .filter((request: FriendRequest) => request.status === "PENDING")
-        .map((request: FriendRequest) => {
-          console.log("Request data:", request);
-          return {
-            ...request,
-            sender: request.user1,
-          };
-        });
-      setRequests(formattedData);
+      const data = await friendshipService.getPendingFriendRequests();
+      setRequests(data as unknown as Friendship[]);
+      console.log("requests", data);
       setError(null);
     } catch (error) {
       console.error("Lỗi khi tải lời mời kết bạn:", error);
@@ -57,27 +47,45 @@ const FriendRequests: React.FC = () => {
     }
   };
 
-  const handleAccept = async (
-    friendshipId: number,
-    user1Id: number,
-    user2Id: number
-  ) => {
+  // Hàm xử lý khi người dùng chấp nhận lời mời kết bạn
+  const handleAccept = async (friendshipId: number) => {
     try {
+      // 1. Thêm cả hai người dùng vào bảng friend trước
       await friendshipService.acceptFriendRequest(friendshipId);
 
-      await friendshipService.addFriend(user1Id, user2Id);
-
+      // 3. Cập nhật lại danh sách sau khi chấp nhận
       setRequests(requests.filter((request) => request.id !== friendshipId));
+
+      // 4. Hiển thị thông báo thành công
+      alert("Đã chấp nhận lời mời kết bạn thành công!");
     } catch (error) {
-      if (error instanceof Error) {
-        alert(error.message);
+      // Kiểm tra nếu lỗi là do đã tồn tại trong bảng friend
+      if (error instanceof Error && error.message.includes("đã tồn tại")) {
+        // Nếu đã tồn tại trong bảng friend, chỉ cần cập nhật trạng thái
+        try {
+          await friendshipService.acceptFriendRequest(friendshipId);
+          setRequests(
+            requests.filter((request) => request.id !== friendshipId)
+          );
+          alert("Đã chấp nhận lời mời kết bạn thành công!");
+        } catch (innerError) {
+          console.error("Lỗi khi cập nhật trạng thái:", innerError);
+          alert("Đã xảy ra lỗi khi cập nhật trạng thái kết bạn");
+        }
+      } else {
+        console.error("Lỗi khi chấp nhận lời mời kết bạn:", error);
+        alert("Đã xảy ra lỗi khi chấp nhận lời mời kết bạn");
       }
+      // Nếu có lỗi, reload lại danh sách để đảm bảo trạng thái chính xác
+      loadFriendRequests();
     }
   };
 
+  // Hàm xử lý khi người dùng từ chối lời mời kết bạn
   const handleReject = async (friendshipId: number) => {
     try {
       await friendshipService.rejectFriendRequest(friendshipId);
+      // Cập nhật lại danh sách sau khi từ chối
       setRequests(requests.filter((request) => request.id !== friendshipId));
     } catch (error) {
       if (error instanceof Error) {
@@ -86,6 +94,7 @@ const FriendRequests: React.FC = () => {
     }
   };
 
+  // Hiển thị loading spinner khi đang tải dữ liệu
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -94,6 +103,7 @@ const FriendRequests: React.FC = () => {
     );
   }
 
+  // Hiển thị thông báo lỗi nếu có
   if (error) {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>
@@ -137,18 +147,22 @@ const FriendRequests: React.FC = () => {
                     {/* Thông tin người gửi lời mời */}
                     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                       <Avatar
-                        src={request.user1.avatar || ""}
-                        alt={request.user1.name}
+                        src={request.user.avatar}
+                        alt={request.user.name}
                         sx={{ width: 56, height: 56, mr: 2 }}
                       >
-                        {request.user1.firstName?.charAt(0)}
-                        {request.user1.lastName?.charAt(0)}
+                        {!request.user.avatar && (
+                          <>
+                            {request.user.firstName?.charAt(0)}
+                            {request.user.lastName?.charAt(0)}
+                          </>
+                        )}
                       </Avatar>
                       <Box>
                         <Typography
                           variant="h6"
                           component={Link}
-                          to={`/profile/${request.user1.email}`}
+                          to={`/profile/${request.user.email}`}
                           sx={{
                             textDecoration: "none",
                             color: "inherit",
@@ -157,14 +171,14 @@ const FriendRequests: React.FC = () => {
                             },
                           }}
                         >
-                          {request.user1.name}
+                          {request.user.lastName} {request.user.firstName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {request.user1.email}
+                          {request.user.email}
                         </Typography>
-                        {request.user1.mutualFriends !== null && (
+                        {request.user.mutualFriends !== null && (
                           <Typography variant="body2" color="text.secondary">
-                            {request.user1.mutualFriends} bạn chung
+                            {request.user.mutualFriends} bạn chung
                           </Typography>
                         )}
                       </Box>
@@ -176,7 +190,14 @@ const FriendRequests: React.FC = () => {
                       sx={{ mb: 2 }}
                     >
                       Đã gửi lời mời kết bạn vào{" "}
-                      {new Date(request.createdAt).toLocaleString()}
+                      {new Date(
+                        request.createdAt[0],
+                        request.createdAt[1] - 1,
+                        request.createdAt[2],
+                        request.createdAt[3],
+                        request.createdAt[4],
+                        request.createdAt[5]
+                      ).toLocaleDateString()}
                     </Typography>
                     {/* Các nút chấp nhận và từ chối */}
                     <Box sx={{ display: "flex", gap: 1 }}>
@@ -184,13 +205,7 @@ const FriendRequests: React.FC = () => {
                         variant="contained"
                         color="primary"
                         startIcon={<Check />}
-                        onClick={() =>
-                          handleAccept(
-                            request.id,
-                            request.user1.id,
-                            request.user2.id
-                          )
-                        }
+                        onClick={() => handleAccept(request.id)}
                         fullWidth
                       >
                         Chấp nhận
