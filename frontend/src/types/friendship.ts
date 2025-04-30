@@ -38,11 +38,11 @@ export interface SentRequest {
 
 export interface Friendship {
     id: number;
-    requester: User;
-    receiver: User;
     status: string;
-    createdAt: string;
+    createdAt: number[];
+    acceptedAt: number[];
     active: boolean;
+    user: User;
 }
 
 

@@ -35,13 +35,8 @@ const FriendSuggest: React.FC = () => {
     try {
       setLoading(true);
       const data = await friendshipService.getFriendSuggestions();
-      const formattedData = data.map((user: User) => ({
-        ...user,
-        avatar: user.avatar ? `http://localhost:8080${user.avatar}` : "",
-      }));
-      setSuggestedUsers(formattedData);
+      setSuggestedUsers(data);
       setError(null);
-      console.log("suggestedUsers", data);
     } catch (error) {
       console.error("Lỗi khi tải danh sách gợi ý:", error);
       if (error instanceof Error) {
@@ -57,7 +52,6 @@ const FriendSuggest: React.FC = () => {
   const handleSendRequest = async (email: string) => {
     try {
       await friendshipService.sendFriendRequest(email);
-      // Thêm email vào danh sách chờ thay vì xóa khỏi danh sách gợi ý
       setPendingRequests((prev) => new Set(prev).add(email));
       alert("Đã gửi lời mời kết bạn thành công!");
     } catch (error) {
@@ -71,9 +65,7 @@ const FriendSuggest: React.FC = () => {
 
   const handleCancelRequest = async (email: string) => {
     try {
-      // Giả sử bạn có API để hủy yêu cầu kết bạn
       await friendshipService.cancelFriendRequest(email);
-      // Xóa email khỏi danh sách chờ
       setPendingRequests((prev) => {
         const newSet = new Set(prev);
         newSet.delete(email);

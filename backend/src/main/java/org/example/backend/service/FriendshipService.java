@@ -10,6 +10,7 @@ import org.example.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -104,6 +105,7 @@ public class FriendshipService {
         }
 
         friendship.setStatus(Friendship.FriendshipStatus.ACCEPTED);
+        friendship.setAcceptedAt(LocalDateTime.now());  
         return friendshipRepository.save(friendship);
     }
 

@@ -17,7 +17,7 @@ import { Link } from "react-router-dom";
 import type { FriendRequest, Friendship } from "../../../types/friendship";
 
 const FriendRequests: React.FC = () => {
-  const [requests, setRequests] = useState<FriendRequest[]>([]);
+  const [requests, setRequests] = useState<Friendship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useCurrentUser();
@@ -32,27 +32,8 @@ const FriendRequests: React.FC = () => {
     try {
       setLoading(true);
       const data = await friendshipService.getPendingFriendRequests();
-      console.log("Dữ liệu lời mời kết bạn:", data);
-
-      const formattedData = data
-        .filter((request: Friendship) => request.status === "PENDING")
-        .map((request: Friendship) => {
-          console.log("Request data:", request);
-          console.log("Avatar URL:", request.requester.avatar);
-          console.log("User1 data:", request.requester);
-
-          return {
-            ...request,
-            sender: request.requester,
-            user1: {
-              ...request.requester,
-              avatar: request.requester.avatar
-                ? `http://localhost:8080${request.requester.avatar}`
-                : "",
-            },
-          };
-        });
-      setRequests(formattedData as unknown as FriendRequest[]);
+      setRequests(data as unknown as Friendship[]);
+      console.log("requests", data);
       setError(null);
     } catch (error) {
       console.error("Lỗi khi tải lời mời kết bạn:", error);
@@ -166,14 +147,14 @@ const FriendRequests: React.FC = () => {
                     {/* Thông tin người gửi lời mời */}
                     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                       <Avatar
-                        src={request.user1.avatar}
-                        alt={request.user1.name}
+                        src={request.user.avatar}
+                        alt={request.user.name}
                         sx={{ width: 56, height: 56, mr: 2 }}
                       >
-                        {!request.user1.avatar && (
+                        {!request.user.avatar && (
                           <>
-                            {request.user1.firstName?.charAt(0)}
-                            {request.user1.lastName?.charAt(0)}
+                            {request.user.firstName?.charAt(0)}
+                            {request.user.lastName?.charAt(0)}
                           </>
                         )}
                       </Avatar>
@@ -181,7 +162,7 @@ const FriendRequests: React.FC = () => {
                         <Typography
                           variant="h6"
                           component={Link}
-                          to={`/profile/${request.user1.email}`}
+                          to={`/profile/${request.user.email}`}
                           sx={{
                             textDecoration: "none",
                             color: "inherit",
@@ -190,14 +171,14 @@ const FriendRequests: React.FC = () => {
                             },
                           }}
                         >
-                          {request.user1.name}
+                          {request.user.lastName} {request.user.firstName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {request.user1.email}
+                          {request.user.email}
                         </Typography>
-                        {request.user1.mutualFriends !== null && (
+                        {request.user.mutualFriends !== null && (
                           <Typography variant="body2" color="text.secondary">
-                            {request.user1.mutualFriends} bạn chung
+                            {request.user.mutualFriends} bạn chung
                           </Typography>
                         )}
                       </Box>
@@ -209,7 +190,14 @@ const FriendRequests: React.FC = () => {
                       sx={{ mb: 2 }}
                     >
                       Đã gửi lời mời kết bạn vào{" "}
-                      {new Date(request.createdAt).toLocaleString()}
+                      {new Date(
+                        request.createdAt[0],
+                        request.createdAt[1] - 1,
+                        request.createdAt[2],
+                        request.createdAt[3],
+                        request.createdAt[4],
+                        request.createdAt[5]
+                      ).toLocaleDateString()}
                     </Typography>
                     {/* Các nút chấp nhận và từ chối */}
                     <Box sx={{ display: "flex", gap: 1 }}>
