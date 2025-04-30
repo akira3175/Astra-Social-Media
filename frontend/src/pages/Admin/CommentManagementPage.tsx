@@ -26,117 +26,11 @@ import {
   Tooltip,
   Alert,
   InputAdornment,
+  CircularProgress,
 } from "@mui/material"
-import { Delete, Search, Visibility, FilterList, Flag } from "@mui/icons-material"
+import { Delete, Search, Visibility } from "@mui/icons-material"
 import AdminLayout from "./components/AdminLayout"
-
-// Định nghĩa kiểu dữ liệu
-interface Comment {
-  id: number
-  content: string
-  author: {
-    id: number
-    name: string
-    avatar: string
-  }
-  post: {
-    id: number
-    title: string
-  }
-  status: "approved" | "pending" | "spam" | "rejected"
-  createdAt: string
-  likes: number
-  reports: number
-}
-
-// Dữ liệu mẫu
-const SAMPLE_COMMENTS: Comment[] = [
-  {
-    id: 1,
-    content: "Bài viết rất hữu ích, cảm ơn bạn!",
-    author: {
-      id: 3,
-      name: "Lê Văn C",
-      avatar: "https://i.pravatar.cc/150?img=8",
-    },
-    post: {
-      id: 1,
-      title: "Hướng dẫn sử dụng React Hooks",
-    },
-    status: "approved",
-    createdAt: "2023-05-15 11:30",
-    likes: 5,
-    reports: 0,
-  },
-  {
-    id: 2,
-    content: "Tôi đã áp dụng và thấy hiệu quả ngay",
-    author: {
-      id: 4,
-      name: "Phạm Thị D",
-      avatar: "https://i.pravatar.cc/150?img=10",
-    },
-    post: {
-      id: 2,
-      title: "10 xu hướng thiết kế UI/UX năm 2023",
-    },
-    status: "approved",
-    createdAt: "2023-05-14 15:45",
-    likes: 8,
-    reports: 0,
-  },
-  {
-    id: 3,
-    content: "Bạn có thể giải thích rõ hơn về phần useEffect không?",
-    author: {
-      id: 5,
-      name: "Hoàng Văn E",
-      avatar: "https://i.pravatar.cc/150?img=11",
-    },
-    post: {
-      id: 1,
-      title: "Hướng dẫn sử dụng React Hooks",
-    },
-    status: "pending",
-    createdAt: "2023-05-16 09:20",
-    likes: 0,
-    reports: 0,
-  },
-  {
-    id: 4,
-    content: "Mua ngay sản phẩm giảm giá tại link: https://spam-link.com",
-    author: {
-      id: 6,
-      name: "Spam User",
-      avatar: "https://i.pravatar.cc/150?img=12",
-    },
-    post: {
-      id: 3,
-      title: "Tối ưu hóa hiệu suất ứng dụng React",
-    },
-    status: "spam",
-    createdAt: "2023-05-16 10:15",
-    likes: 0,
-    reports: 3,
-  },
-  {
-    id: 5,
-    content: "Nội dung này không phù hợp với chủ đề bài viết",
-    author: {
-      id: 7,
-      name: "Trương Văn F",
-      avatar: "https://i.pravatar.cc/150?img=13",
-    },
-    post: {
-      id: 4,
-      title: "Cách xây dựng API với Node.js và Express",
-    },
-    status: "rejected",
-    createdAt: "2023-05-15 16:30",
-    likes: 1,
-    reports: 2,
-  },
-]
+import { Comment, getComments, deleteComment } from "../../services/adminService"
 
 const CommentManagementPage: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([])
@@ -148,17 +42,31 @@ const CommentManagementPage: React.FC = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [openViewDialog, setOpenViewDialog] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Tải dữ liệu bình luận
+  // Fetch comments data
+  const fetchComments = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await getComments({ page: 0, size: 100 }) // Fetch all comments for now
+      setComments(response)
+      setFilteredComments(response)
+    } catch (err) {
+      setError("Không thể tải danh sách bình luận. Vui lòng thử lại sau.")
+      console.error("Error fetching comments:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load comments on component mount
   useEffect(() => {
-    // Giả lập API call
-    setTimeout(() => {
-      setComments(SAMPLE_COMMENTS)
-      setFilteredComments(SAMPLE_COMMENTS)
-    }, 500)
+    fetchComments()
   }, [])
 
-  // Lọc bình luận khi tìm kiếm
+  // Filter comments when search query changes
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredComments(comments)
@@ -166,30 +74,29 @@ const CommentManagementPage: React.FC = () => {
       const filtered = comments.filter(
         (comment) =>
           comment.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          comment.author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          comment.post.title.toLowerCase().includes(searchQuery.toLowerCase()),
+          `${comment.user.lastName} ${comment.user.firstName}`.toLowerCase().includes(searchQuery.toLowerCase())
       )
       setFilteredComments(filtered)
     }
     setPage(0)
   }, [searchQuery, comments])
 
-  // Xử lý thay đổi trang
+  // Handle page change
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage)
   }
 
-  // Xử lý thay đổi số hàng mỗi trang
+  // Handle rows per page change
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(Number.parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  // Xử lý xóa bình luận
-  const handleDeleteComment = () => {
+  // Handle delete comment
+  const handleDeleteComment = async () => {
     if (selectedComment) {
-      // Giả lập API call
-      setTimeout(() => {
+      try {
+        await deleteComment(selectedComment.id)
         setComments(comments.filter((comment) => comment.id !== selectedComment.id))
         setFilteredComments(filteredComments.filter((comment) => comment.id !== selectedComment.id))
         setNotification({
@@ -198,11 +105,17 @@ const CommentManagementPage: React.FC = () => {
         })
         setOpenDeleteDialog(false)
         setSelectedComment(null)
-      }, 500)
+      } catch (err) {
+        setNotification({
+          type: "error",
+          message: "Không thể xóa bình luận. Vui lòng thử lại sau.",
+        })
+        console.error("Error deleting comment:", err)
+      }
     }
   }
 
-  // Hiển thị thông báo
+  // Clear notification after 3 seconds
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => {
@@ -211,6 +124,38 @@ const CommentManagementPage: React.FC = () => {
       return () => clearTimeout(timer)
     }
   }, [notification])
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleString("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+        </Box>
+      </AdminLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
+      </AdminLayout>
+    )
+  }
 
   return (
     <AdminLayout>
@@ -246,9 +191,6 @@ const CommentManagementPage: React.FC = () => {
               }}
               size="small"
             />
-            <Button variant="outlined" startIcon={<FilterList />}>
-              Lọc
-            </Button>
           </Box>
 
           <TableContainer component={Paper}>
@@ -259,8 +201,8 @@ const CommentManagementPage: React.FC = () => {
                   <TableCell>Nội dung</TableCell>
                   <TableCell>Người dùng</TableCell>
                   <TableCell>Bài viết</TableCell>
-                  <TableCell>Trạng thái</TableCell>
                   <TableCell>Ngày tạo</TableCell>
+                  <TableCell>Lượt thích</TableCell>
                   <TableCell>Thao tác</TableCell>
                 </TableRow>
               </TableHead>
@@ -280,60 +222,20 @@ const CommentManagementPage: React.FC = () => {
                       >
                         {comment.content}
                       </Typography>
-                      {comment.reports > 0 && (
-                        <Chip
-                          icon={<Flag fontSize="small" />}
-                          label={`${comment.reports} báo cáo`}
-                          size="small"
-                          color="error"
-                          variant="outlined"
-                          sx={{ mt: 0.5 }}
-                        />
-                      )}
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Avatar src={comment.author.avatar} sx={{ width: 24, height: 24, mr: 1 }} />
-                        <Typography variant="body2">{comment.author.name}</Typography>
+                        <Avatar src={comment.user.avatar || undefined} sx={{ width: 24, height: 24, mr: 1 }} />
+                        <Typography variant="body2">
+                          {comment.user.lastName} {comment.user.firstName}
+                        </Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          maxWidth: 200,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {comment.post.title}
-                      </Typography>
+                      <Typography variant="body2">ID: {comment.post.id}</Typography>
                     </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={
-                          comment.status === "approved"
-                            ? "Đã duyệt"
-                            : comment.status === "pending"
-                              ? "Chờ duyệt"
-                              : comment.status === "spam"
-                                ? "Spam"
-                                : "Từ chối"
-                        }
-                        color={
-                          comment.status === "approved"
-                            ? "success"
-                            : comment.status === "pending"
-                              ? "warning"
-                              : comment.status === "spam"
-                                ? "error"
-                                : "default"
-                        }
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{comment.createdAt}</TableCell>
+                    <TableCell>{formatDate(comment.createdAt)}</TableCell>
+                    <TableCell>{comment.likeCount}</TableCell>
                     <TableCell>
                       <Tooltip title="Xem chi tiết">
                         <IconButton
@@ -384,7 +286,7 @@ const CommentManagementPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog xác nhận xóa */}
+      {/* Delete confirmation dialog */}
       <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
         <DialogTitle>Xác nhận xóa</DialogTitle>
         <DialogContent>
@@ -400,18 +302,20 @@ const CommentManagementPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog xem chi tiết */}
+      {/* View details dialog */}
       <Dialog open={openViewDialog} onClose={() => setOpenViewDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Chi tiết bình luận</DialogTitle>
         <DialogContent>
           {selectedComment && (
             <Box sx={{ pt: 1 }}>
               <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Avatar src={selectedComment.author.avatar} sx={{ mr: 2 }} />
+                <Avatar src={selectedComment.user.avatar || undefined} sx={{ mr: 2 }} />
                 <Box>
-                  <Typography variant="subtitle1">{selectedComment.author.name}</Typography>
+                  <Typography variant="subtitle1">
+                    {selectedComment.user.lastName} {selectedComment.user.firstName}
+                  </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {selectedComment.createdAt}
+                    {formatDate(selectedComment.createdAt)}
                   </Typography>
                 </Box>
               </Box>
@@ -428,38 +332,21 @@ const CommentManagementPage: React.FC = () => {
                   <strong>ID:</strong> {selectedComment.id}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Bài viết:</strong> {selectedComment.post.title}
+                  <strong>Bài viết ID:</strong> {selectedComment.post.id}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Trạng thái:</strong>{" "}
-                  <Chip
-                    label={
-                      selectedComment.status === "approved"
-                        ? "Đã duyệt"
-                        : selectedComment.status === "pending"
-                          ? "Chờ duyệt"
-                          : selectedComment.status === "spam"
-                            ? "Spam"
-                            : "Từ chối"
-                    }
-                    color={
-                      selectedComment.status === "approved"
-                        ? "success"
-                        : selectedComment.status === "pending"
-                          ? "warning"
-                          : selectedComment.status === "spam"
-                            ? "error"
-                            : "default"
-                    }
-                    size="small"
-                  />
+                  <strong>Lượt thích:</strong> {selectedComment.likeCount}
                 </Typography>
-                <Typography variant="body2">
-                  <strong>Lượt thích:</strong> {selectedComment.likes}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Báo cáo:</strong> {selectedComment.reports}
-                </Typography>
+                {selectedComment.images && selectedComment.images.length > 0 && (
+                  <Typography variant="body2">
+                    <strong>Số hình ảnh:</strong> {selectedComment.images.length}
+                  </Typography>
+                )}
+                {selectedComment.parentComment && (
+                  <Typography variant="body2">
+                    <strong>Bình luận cha:</strong> {selectedComment.parentComment.id}
+                  </Typography>
+                )}
               </Box>
             </Box>
           )}
