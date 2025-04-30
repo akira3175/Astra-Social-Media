@@ -13,23 +13,10 @@ import { PersonRemove } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-
-interface Request {
-  id: number;
-  receiver: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    avatar?: string;
-    mutualFriends?: number;
-  };
-  status: string;
-  createdAt: string;
-}
+import { Friendship } from "../../../types/friendship";
 
 const FriendSent: React.FC = () => {
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [requests, setRequests] = useState<Friendship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useCurrentUser();
@@ -43,17 +30,8 @@ const FriendSent: React.FC = () => {
   const loadSentRequests = async () => {
     try {
       setLoading(true);
-      const data = await friendshipService.getSentRequests(currentUser!.id);
-      const formattedData = data.map((request: any) => ({
-        ...request,
-        receiver: {
-          ...request.receiver,
-          avatar: request.receiver.avatar
-            ? `http://localhost:8080${request.receiver.avatar}`
-            : "",
-        },
-      }));
-      setRequests(formattedData);
+      const data = await friendshipService.getSentFriendRequests();
+      setRequests(data as unknown as Friendship[]);
       setError(null);
     } catch (error) {
       console.error("Lỗi khi tải danh sách lời mời đã gửi:", error);
@@ -72,8 +50,19 @@ const FriendSent: React.FC = () => {
       if (!currentUser?.id) {
         throw new Error("Không tìm thấy thông tin người dùng");
       }
-      await friendshipService.rejectFriendRequest(requestId, currentUser.id);
-      setRequests(requests.filter((request) => request.id !== requestId));
+
+      // Tìm request cần hủy
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) {
+        throw new Error("Không tìm thấy lời mời kết bạn");
+      }
+
+      // Gọi API hủy lời mời
+      await friendshipService.cancelFriendRequest(request.user.email);
+
+      // Cập nhật lại danh sách
+      setRequests(requests.filter((r) => r.id !== requestId));
+      alert("Đã hủy lời mời kết bạn thành công!");
     } catch (error) {
       console.error("Lỗi khi hủy lời mời:", error);
       if (error instanceof Error) {
@@ -116,18 +105,18 @@ const FriendSent: React.FC = () => {
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                 <Avatar
-                  src={request.receiver.avatar || ""}
-                  alt={`${request.receiver.firstName} ${request.receiver.lastName}`}
+                  src={request.user.avatar || ""}
+                  alt={`${request.user.firstName} ${request.user.lastName}`}
                   sx={{ width: 56, height: 56, mr: 2 }}
                 >
-                  {request.receiver.firstName?.charAt(0)}
-                  {request.receiver.lastName?.charAt(0)}
+                  {request.user.firstName?.charAt(0)}
+                  {request.user.lastName?.charAt(0)}
                 </Avatar>
                 <Box>
                   <Typography
                     variant="h6"
                     component={Link}
-                    to={`/profile/${request.receiver.email}`}
+                    to={`/profile/${request.user.email}`}
                     sx={{
                       textDecoration: "none",
                       color: "inherit",
@@ -136,14 +125,14 @@ const FriendSent: React.FC = () => {
                       },
                     }}
                   >
-                    {`${request.receiver.firstName} ${request.receiver.lastName}`}
+                    {`${request.user.lastName} ${request.user.firstName}`}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {request.receiver.email}
+                    {request.user.email}
                   </Typography>
-                  {request.receiver.mutualFriends !== undefined && (
+                  {request.user.mutualFriends !== undefined && (
                     <Typography variant="body2" color="text.secondary">
-                      {request.receiver.mutualFriends} bạn chung
+                      {request.user.mutualFriends} bạn chung
                     </Typography>
                   )}
                 </Box>

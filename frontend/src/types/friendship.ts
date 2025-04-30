@@ -35,3 +35,14 @@ export interface SentRequest {
     user1: User;
     user2: User;
 }
+
+export interface Friendship {
+    id: number;
+    status: string;
+    createdAt: number[];
+    acceptedAt: number[];
+    active: boolean;
+    user: User;
+}
+
+

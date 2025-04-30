@@ -17,31 +17,15 @@ import { PersonRemove } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-
-interface Friend {
-  id: number;
-  user: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    avatar: string;
-  };
-  friend: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    avatar: string;
-  };
-  since: string;
-}
+import { Friendship } from "../../../types/friendship";
 
 const FriendList: React.FC = () => {
-  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friends, setFriends] = useState<Friendship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
+  const [selectedFriend, setSelectedFriend] = useState<Friendship | null>(
+    null
+  );
   const [openDialog, setOpenDialog] = useState(false);
   const { currentUser } = useCurrentUser();
 
@@ -54,23 +38,9 @@ const FriendList: React.FC = () => {
   const loadFriends = async () => {
     try {
       setLoading(true);
-      const data = await friendshipService.getFriends(currentUser!.id);
-      const formattedData = data.map((friend: Friend) => ({
-        ...friend,
-        user: {
-          ...friend.user,
-          avatar: friend.user.avatar
-            ? `http://localhost:8080${friend.user.avatar}`
-            : "",
-        },
-        friend: {
-          ...friend.friend,
-          avatar: friend.friend.avatar
-            ? `http://localhost:8080${friend.friend.avatar}`
-            : "",
-        },
-      }));
-      setFriends(formattedData);
+      const data = await friendshipService.getFriends();
+      setFriends(data as unknown as Friendship[]);
+      console.log("friends", data);
       setError(null);
     } catch (error) {
       if (error instanceof Error) {
@@ -83,7 +53,7 @@ const FriendList: React.FC = () => {
     }
   };
 
-  const handleUnfriend = async (friend: Friend) => {
+  const handleUnfriend = async (friend: Friendship) => {
     setSelectedFriend(friend);
     setOpenDialog(true);
   };
@@ -92,7 +62,7 @@ const FriendList: React.FC = () => {
     if (!selectedFriend) return;
 
     try {
-      await friendshipService.unfriend(selectedFriend.id);
+      await friendshipService.removeFriend(selectedFriend.id);
       // Cập nhật lại danh sách
       setFriends(friends.filter((friend) => friend.id !== selectedFriend.id));
       setOpenDialog(false);
@@ -102,10 +72,6 @@ const FriendList: React.FC = () => {
         alert(error.message);
       }
     }
-  };
-
-  const getFriendInfo = (friend: Friend) => {
-    return friend.user.id === currentUser?.id ? friend.friend : friend.user;
   };
 
   if (loading) {
@@ -138,22 +104,22 @@ const FriendList: React.FC = () => {
     <>
       <Grid container spacing={2}>
         {friends.map((friend) => {
-          const friendInfo = getFriendInfo(friend);
+          const friendInfo = friend;
           return (
             <Grid item xs={12} sm={6} md={4} key={friend.id}>
               <Card>
                 <CardContent>
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <Avatar
-                      src={friendInfo.avatar}
-                      alt={`${friendInfo.firstName} ${friendInfo.lastName}`}
+                      src={friendInfo.user.avatar}
+                      alt={`${friendInfo.user.firstName} ${friendInfo.user.lastName}`}
                       sx={{ width: 56, height: 56, mr: 2 }}
                     />
                     <Box>
                       <Typography
                         variant="h6"
                         component={Link}
-                        to={`/profile/${friendInfo.email}`}
+                        to={`/profile/${friendInfo.user.email}`}
                         sx={{
                           textDecoration: "none",
                           color: "inherit",
@@ -162,10 +128,10 @@ const FriendList: React.FC = () => {
                           },
                         }}
                       >
-                        {friendInfo.firstName} {friendInfo.lastName}
+                        {friendInfo.user.lastName} {friendInfo.user.firstName}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {friendInfo.email}
+                        {friendInfo.user.email}
                       </Typography>
                     </Box>
                   </Box>
@@ -174,10 +140,17 @@ const FriendList: React.FC = () => {
                     color="text.secondary"
                     sx={{ mb: 2 }}
                   >
-                    Đã kết bạn từ {new Date(friend.since).toLocaleString()}
+                    Đã kết bạn từ{" "}
+                    {new Date(
+                      friend.acceptedAt[0],
+                      friend.acceptedAt[1] - 1,
+                      friend.acceptedAt[2],
+                      friend.acceptedAt[3],
+                      friend.acceptedAt[4],
+                      friend.acceptedAt[5]
+                    ).toLocaleDateString()}
                   </Typography>
                   <Button
-                    variant="outlined"
                     color="error"
                     startIcon={<PersonRemove />}
                     onClick={() => handleUnfriend(friend)}
@@ -198,9 +171,7 @@ const FriendList: React.FC = () => {
           <Typography>
             Bạn có chắc chắn muốn xóa{" "}
             {selectedFriend
-              ? `${getFriendInfo(selectedFriend).firstName} ${
-                  getFriendInfo(selectedFriend).lastName
-                }`
+              ? `${selectedFriend.user.firstName} ${selectedFriend.user.lastName}`
               : ""}{" "}
             khỏi danh sách bạn bè?
           </Typography>
