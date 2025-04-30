@@ -27,6 +27,7 @@ import {
   InputAdornment,
   Grid,
   Divider,
+  CircularProgress,
 } from "@mui/material"
 import {
   Search,
@@ -40,150 +41,7 @@ import {
   Image as ImageIcon,
 } from "@mui/icons-material"
 import AdminLayout from "./components/AdminLayout"
-import type { Post } from "../../types/post"
-
-// Dữ liệu mẫu
-const SAMPLE_POSTS: Post[] = [
-  {
-    id: 1,
-    content:
-      "React Hooks là một tính năng mới được giới thiệu trong React 16.8. Hooks cho phép bạn sử dụng state và các tính năng khác của React mà không cần viết class...",
-    images: [{ id: 101, url: "https://source.unsplash.com/random/600x400?react" }],
-    createdAt: "2023-05-15 10:30",
-    updatedAt: null,
-    user: {
-      id: 1,
-      firstName: "Văn",
-      lastName: "Nguyễn",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      email: "nguyenvana@gmail.com",
-    },
-    likesCount: 45,
-    liked: false,
-    commentsCount: 12,
-    saved: false,
-    isDeleted: false,
-  },
-  {
-    id: 2,
-    content:
-      "Năm 2023 chứng kiến nhiều xu hướng thiết kế UI/UX mới và thú vị. Từ thiết kế tối giản đến giao diện 3D, các nhà thiết kế đang không ngừng sáng tạo...",
-    images: [{ id: 102, url: "https://source.unsplash.com/random/600x400?design" }],
-    createdAt: "2023-05-10 14:15",
-    updatedAt: "2023-05-11 09:20",
-    user: {
-      id: 2,
-      firstName: "Thị",
-      lastName: "Trần",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      email: "tranthib@gmail.com",
-    },
-    likesCount: 78,
-    liked: false,
-    commentsCount: 23,
-    saved: false,
-    isDeleted: false,
-  },
-  {
-    id: 3,
-    content:
-      "Hiệu suất là một yếu tố quan trọng trong phát triển ứng dụng. Bài viết này sẽ chia sẻ các kỹ thuật tối ưu hóa hiệu suất cho ứng dụng React của bạn...",
-    images: [{ id: 103, url: "https://source.unsplash.com/random/600x400?code" }],
-    createdAt: "2023-04-25 16:45",
-    updatedAt: null,
-    user: {
-      id: 1,
-      firstName: "Văn",
-      lastName: "Nguyễn",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      email: "nguyenvana@gmail.com",
-    },
-    likesCount: 32,
-    liked: false,
-    commentsCount: 8,
-    saved: false,
-    isDeleted: false,
-  },
-  {
-    id: 4,
-    content:
-      "Node.js và Express là công cụ tuyệt vời để xây dựng API. Trong bài viết này, tôi sẽ hướng dẫn cách tạo một RESTful API đơn giản...",
-    images: [{ id: 104, url: "https://source.unsplash.com/random/600x400?server" }],
-    createdAt: "2023-04-05 09:20",
-    updatedAt: null,
-    user: {
-      id: 3,
-      firstName: "Văn",
-      lastName: "Lê",
-      avatar: "https://i.pravatar.cc/150?img=8",
-      email: "levanc@gmail.com",
-    },
-    likesCount: 65,
-    liked: false,
-    commentsCount: 15,
-    saved: false,
-    isDeleted: true,
-  },
-  {
-    id: 5,
-    content:
-      "TypeScript là một superset của JavaScript cung cấp tính năng kiểu dữ liệu tĩnh. Bài viết này sẽ giới thiệu các khái niệm cơ bản cho người mới bắt đầu...",
-    images: [{ id: 105, url: "https://source.unsplash.com/random/600x400?typescript" }],
-    createdAt: "2023-05-18 16:45",
-    updatedAt: "2023-05-19 10:30",
-    user: {
-      id: 2,
-      firstName: "Thị",
-      lastName: "Trần",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      email: "tranthib@gmail.com",
-    },
-    likesCount: 56,
-    liked: false,
-    commentsCount: 15,
-    saved: false,
-    isDeleted: false,
-  },
-  {
-    id: 6,
-    content: "Đây là một bài đăng lại từ bài viết gốc về React Hooks",
-    images: [],
-    createdAt: "2023-05-20 11:30",
-    updatedAt: null,
-    user: {
-      id: 4,
-      firstName: "Thị",
-      lastName: "Phạm",
-      avatar: "https://i.pravatar.cc/150?img=10",
-      email: "phamthid@gmail.com",
-    },
-    likesCount: 12,
-    liked: false,
-    commentsCount: 3,
-    saved: false,
-    originalPost: {
-      id: 1,
-      content:
-        "React Hooks là một tính năng mới được giới thiệu trong React 16.8. Hooks cho phép bạn sử dụng state và các tính năng khác của React mà không cần viết class...",
-      images: [{ id: 101, url: "https://source.unsplash.com/random/600x400?react" }],
-      createdAt: "2023-05-15 10:30",
-      updatedAt: null,
-      user: {
-        id: 1,
-        firstName: "Văn",
-        lastName: "Nguyễn",
-        avatar: "https://i.pravatar.cc/150?img=1",
-        email: "nguyenvana@gmail.com",
-      },
-      likesCount: 45,
-      liked: false,
-      commentsCount: 12,
-      saved: false,
-      isDeleted: false,
-    },
-    isDeleted: false,
-  },
-]
+import { Post, getPosts, lockPost } from "../../services/adminService"
 
 const PostManagementPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([])
@@ -195,32 +53,46 @@ const PostManagementPage: React.FC = () => {
   const [openViewDialog, setOpenViewDialog] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "deleted">("all")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Tải dữ liệu bài viết
+  // Fetch posts data
+  const fetchPosts = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await getPosts({ page: 0, size: 100 }) // Fetch all posts for now
+      setPosts(response)
+      setFilteredPosts(response)
+    } catch (err) {
+      setError("Không thể tải danh sách bài viết. Vui lòng thử lại sau.")
+      console.error("Error fetching posts:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load posts on component mount
   useEffect(() => {
-    // Giả lập API call
-    setTimeout(() => {
-      setPosts(SAMPLE_POSTS)
-      setFilteredPosts(SAMPLE_POSTS)
-    }, 500)
+    fetchPosts()
   }, [])
 
-  // Lọc bài viết khi tìm kiếm hoặc thay đổi bộ lọc
+  // Filter posts when search query or status filter changes
   useEffect(() => {
     let filtered = posts
 
-    // Lọc theo trạng thái
+    // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter((post) => (statusFilter === "deleted" ? post.isDeleted : !post.isDeleted))
     }
 
-    // Lọc theo từ khóa tìm kiếm
+    // Filter by search query
     if (searchQuery.trim() !== "") {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
         (post) =>
           post.content.toLowerCase().includes(query) ||
-          `${post.user.lastName} ${post.user.firstName}`.toLowerCase().includes(query),
+          `${post.user.lastName} ${post.user.firstName}`.toLowerCase().includes(query)
       )
     }
 
@@ -228,31 +100,43 @@ const PostManagementPage: React.FC = () => {
     setPage(0)
   }, [searchQuery, posts, statusFilter])
 
-  // Xử lý thay đổi trang
+  // Handle page change
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage)
   }
 
-  // Xử lý thay đổi số hàng mỗi trang
+  // Handle rows per page change
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(Number.parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  // Xử lý khóa/mở khóa bài viết
-  const handleTogglePostStatus = (post: Post) => {
-    const updatedPosts = posts.map((p) => (p.id === post.id ? { ...p, isDeleted: !p.isDeleted } : p))
+  // Handle post status toggle (lock/unlock)
+  const handleTogglePostStatus = async (post: Post) => {
+    try {
+      await lockPost(post.id)
+      
+      // Update local state
+      const updatedPosts = posts.map((p) =>
+        p.id === post.id ? { ...p, isDeleted: !p.isDeleted } : p
+      )
+      setPosts(updatedPosts)
+      setFilteredPosts(updatedPosts)
 
-    setPosts(updatedPosts)
-    setFilteredPosts(updatedPosts)
-
-    setNotification({
-      type: "success",
-      message: `Đã ${post.isDeleted ? "khôi phục" : "khóa"} bài viết thành công`,
-    })
+      setNotification({
+        type: "success",
+        message: `Đã ${post.isDeleted ? "khôi phục" : "khóa"} bài viết thành công`,
+      })
+    } catch (err) {
+      setNotification({
+        type: "error",
+        message: `Không thể ${post.isDeleted ? "khôi phục" : "khóa"} bài viết. Vui lòng thử lại sau.`,
+      })
+      console.error("Error toggling post status:", err)
+    }
   }
 
-  // Hiển thị thông báo
+  // Clear notification after 3 seconds
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => {
@@ -262,12 +146,12 @@ const PostManagementPage: React.FC = () => {
     }
   }, [notification])
 
-  // Xử lý thay đổi bộ lọc trạng thái
+  // Handle status filter change
   const handleStatusFilterChange = (status: "all" | "active" | "deleted") => {
     setStatusFilter(status)
   }
 
-  // Format thời gian
+  // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleString("vi-VN", {
@@ -279,10 +163,30 @@ const PostManagementPage: React.FC = () => {
     })
   }
 
-  // Rút gọn nội dung
+  // Truncate content
   const truncateContent = (content: string, maxLength = 100) => {
     if (content.length <= maxLength) return content
     return content.substring(0, maxLength) + "..."
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+        </Box>
+      </AdminLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
+      </AdminLayout>
+    )
   }
 
   return (
