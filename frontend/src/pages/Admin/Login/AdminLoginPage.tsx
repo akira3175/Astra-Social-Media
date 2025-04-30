@@ -7,8 +7,8 @@ const AdminLoginPage: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState("");
 
-  const handleLogin = () => {
-    adminLogin({ email, password });
+  const handleLogin = async () => {
+   await adminLogin({ email, password });
   };
 
   return (

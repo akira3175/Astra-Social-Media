@@ -7,7 +7,6 @@ export interface Post {
   title: string;
   author: string;
   createdAt: string;
-
   date: string;
   likesCount: number;
   status: "active" | "locked";
@@ -25,11 +24,11 @@ export interface Comment {
 export interface User {
   id: number;
   email: string;
+  name:string;
   firstName: string;
+  lastName: string;
   background: string;
   bio: string;
-  name: string;
-  lastName: string;
   avatar: string;
   isStaff: boolean;
   isSuperUser: boolean;
@@ -51,7 +50,6 @@ export interface AdminStats {
   totalPosts: number;
   lockedPosts: number;
   totalComments: number;
-  lockedComments: number;
   totalUsers: number;
   bannedUsers: number;
 }
@@ -60,85 +58,24 @@ export interface AdminStats {
 export const getAdminStats = async (): Promise<AdminStats> => {
   try {
     const response = await api.get(`/admin/stats`);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error("Error fetching admin stats:", error);
     throw error;
   }
 };
 
-export const getPosts = async (): Promise<Post[]> => {
+export const getAdminStatsAt = async (startDate: string, endDate: string): Promise<AdminStats> => {
   try {
-    const response = await api.get(`/admin/posts/getAllPost`);
-    return response.data;
+    const response = await api.get(`/admin/statsAt`, {
+      params: {
+        start: startDate,
+        end: endDate
+      }
+    });
+    return response.data.data;
   } catch (error) {
-    console.error("Error fetching posts:", error);
-    throw error;
-  }
-};
-
-export const getLockedPosts = async (): Promise<Post[]> => {
-  try {
-    const response = await api.get(`/admin/posts/locked`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching locked posts:", error);
-    throw error;
-  }
-};
-
-export const lockPost = async (postId: number): Promise<void> => {
-  try {
-    await api.put(`/admin/posts/${postId}/lock`);
-  } catch (error) {
-    console.error("Error locking post:", error);
-    throw error;
-  }
-};
-
-export const unlockPost = async (postId: number): Promise<void> => {
-  try {
-    await api.put(`/admin/posts/${postId}/unlock`);
-  } catch (error) {
-    console.error("Error unlocking post:", error);
-    throw error;
-  }
-};
-
-export const getComments = async (): Promise<Comment[]> => {
-  try {
-    const response = await api.get(`/admin/comments/getAllComment`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching comments:", error);
-    throw error;
-  }
-};
-
-export const getLockedComments = async (): Promise<Comment[]> => {
-  try {
-    const response = await api.get(`/admin/comments/locked`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching locked comments:", error);
-    throw error;
-  }
-};
-
-export const lockComment = async (commentId: number): Promise<void> => {
-  try {
-    await api.put(`/admin/comments/${commentId}/lock`);
-  } catch (error) {
-    console.error("Error locking comment:", error);
-    throw error;
-  }
-};
-
-export const unlockComment = async (commentId: number): Promise<void> => {
-  try {
-    await api.put(`/admin/comments/${commentId}/unlock`);
-  } catch (error) {
-    console.error("Error unlocking comment:", error);
+    console.error("Error fetching admin stats at date range:", error);
     throw error;
   }
 };
@@ -146,26 +83,41 @@ export const unlockComment = async (commentId: number): Promise<void> => {
 export const getUsers = async (): Promise<User[]> => {
   try {
     const response = await api.get(`/admin/users/getAllUser`);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error("Error fetching users:", error);
     throw error;
   }
 };
 
-export const getBannedUsers = async (): Promise<User[]> => {
+export const getUsersAt = async (startDate: string, endDate: string): Promise<User[]> => {
   try {
-    const response = await api.get(`/admin/users/banned`);
-    return response.data;
+    const response = await api.get(`/admin/users/getAllUserAt`, {
+      params: {
+        start: startDate,
+        end: endDate
+      }
+    });
+    return response.data.data;
   } catch (error) {
-    console.error("Error fetching banned users:", error);
+    console.error("Error fetching users at date range:", error);
+    throw error;
+  }
+};
+
+export const getUsersLoginToday = async (): Promise<User[]> => {
+  try {
+    const response = await api.get(`/admin/users/getUserLoginToday`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching users logged in today:", error);
     throw error;
   }
 };
 
 export const banUser = async (userId: number): Promise<void> => {
   try {
-    await api.put(`/admin/users/${userId}/ban`);
+    await api.post(`/admin/users/${userId}/ban`);
   } catch (error) {
     console.error("Error banning user:", error);
     throw error;
@@ -174,9 +126,77 @@ export const banUser = async (userId: number): Promise<void> => {
 
 export const unbanUser = async (userId: number): Promise<void> => {
   try {
-    await api.put(`/admin/users/${userId}/unban`);
+    await api.post(`/admin/users/${userId}/unban`);
   } catch (error) {
     console.error("Error unbanning user:", error);
+    throw error;
+  }
+};
+
+export const getPosts = async (): Promise<Post[]> => {
+  try {
+    const response = await api.get(`/admin/posts/getAllPost`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    throw error;
+  }
+};
+
+export const getPostsAt = async (startDate: string, endDate: string): Promise<Post[]> => {
+  try {
+    const response = await api.get(`/admin/posts/getAllPostAt`, {
+      params: {
+        start: startDate,
+        end: endDate
+      }
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching posts at date range:", error);
+    throw error;
+  }
+};
+
+export const lockPost = async (postId: number): Promise<void> => {
+  try {
+    await api.post(`/admin/posts/${postId}/lock`);
+  } catch (error) {
+    console.error("Error locking post:", error);
+    throw error;
+  }
+};
+
+export const getComments = async (): Promise<Comment[]> => {
+  try {
+    const response = await api.get(`/admin/comments/getAllComment`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    throw error;
+  }
+};
+
+export const getCommentsAt = async (startDate: string, endDate: string): Promise<Comment[]> => {
+  try {
+    const response = await api.get(`/admin/comments/getAllCommentAt`, {
+      params: {
+        start: startDate,
+        end: endDate
+      }
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching comments at date range:", error);
+    throw error;
+  }
+};
+
+export const deleteComment = async (commentId: number): Promise<void> => {
+  try {
+    await api.post(`/admin/comments/${commentId}/delete`);
+  } catch (error) {
+    console.error("Error deleting comment:", error);
     throw error;
   }
 };
@@ -198,7 +218,6 @@ export const resolveReport = async (reportId: number): Promise<void> => {
     console.error("Error resolving report:", error);
     throw error;
   }
-
 };
 
 export const adminLogin = async ({
@@ -226,6 +245,18 @@ export const adminLogin = async ({
     return { accessToken, refreshToken };
   } catch (error) {
     console.error("Error logging in as admin:", error);
+    throw error;
+  }
+};
+
+export const refreshAdminToken = async (refreshToken: string): Promise<{ accessToken: string }> => {
+  try {
+    const response = await api.post(`/admin/login/refresh`, {
+      refreshToken: refreshToken,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error refreshing admin token:", error);
     throw error;
   }
 };
