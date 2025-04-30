@@ -25,12 +25,14 @@ import {
   Tooltip,
   Alert,
   InputAdornment,
+  CircularProgress,
 } from "@mui/material"
 import { Visibility, Block, CheckCircle, FilterList, Search } from "@mui/icons-material"
 import AdminLayout from "./components/AdminLayout"
+import { getUsers, banUser, unbanUser, User } from "../../services/adminService"
 
-// Định nghĩa kiểu dữ liệu
-interface User {
+// Định nghĩa kiểu dữ liệu cho UI
+interface UserUI {
   id: number
   name: string
   username: string
@@ -42,82 +44,52 @@ interface User {
   lastActive: string
 }
 
-// Dữ liệu mẫu
-const SAMPLE_USERS: User[] = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    username: "nguyenvana",
-    email: "nguyenvana@example.com",
-    avatar: "https://i.pravatar.cc/150?img=1",
-    status: "active",
-    role: "admin",
-    registeredDate: "2023-01-15",
-    lastActive: "2023-05-20 14:30",
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    username: "tranthib",
-    email: "tranthib@example.com",
-    avatar: "https://i.pravatar.cc/150?img=5",
-    status: "active",
-    role: "user",
-    registeredDate: "2023-02-10",
-    lastActive: "2023-05-19 09:15",
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    username: "levanc",
-    email: "levanc@example.com",
-    avatar: "https://i.pravatar.cc/150?img=8",
-    status: "inactive",
-    role: "user",
-    registeredDate: "2023-03-05",
-    lastActive: "2023-04-30 16:45",
-  },
-  {
-    id: 4,
-    name: "Phạm Thị D",
-    username: "phamthid",
-    email: "phamthid@example.com",
-    avatar: "https://i.pravatar.cc/150?img=10",
-    status: "banned",
-    role: "user",
-    registeredDate: "2023-03-20",
-    lastActive: "2023-04-15 11:20",
-  },
-  {
-    id: 5,
-    name: "Hoàng Văn E",
-    username: "hoangvane",
-    email: "hoangvane@example.com",
-    avatar: "https://i.pravatar.cc/150?img=11",
-    status: "active",
-    role: "user",
-    registeredDate: "2023-04-01",
-    lastActive: "2023-05-18 13:10",
-  },
-]
+// Transform backend user data to UI format
+const transformUserToUI = (user: User): UserUI => {
+  return {
+    id: user.id,
+    name: `${user.firstName} ${user.lastName}`,
+    username: user.email.split('@')[0], // Using email prefix as username
+    email: user.email,
+    avatar: user.avatar || `https://i.pravatar.cc/150?img=${user.id}`, // Fallback avatar
+    status: user.isActive ? "active" : "banned",
+    role: user.isSuperUser ? "admin" : "user",
+    registeredDate: new Date(user.dateJoined).toLocaleDateString(),
+    lastActive: new Date(user.lastLogin).toLocaleString(),
+  }
+}
 
 const UserManagementPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<UserUI[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<UserUI[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [selectedUser, setSelectedUser] = useState<UserUI | null>(null)
   const [openViewDialog, setOpenViewDialog] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Tải dữ liệu người dùng
   useEffect(() => {
-    // Giả lập API call
-    setTimeout(() => {
-      setUsers(SAMPLE_USERS)
-      setFilteredUsers(SAMPLE_USERS)
-    }, 500)
+    const fetchUsers = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await getUsers()
+        const transformedUsers = response.map(transformUserToUI)
+        setUsers(transformedUsers)
+        setFilteredUsers(transformedUsers)
+      } catch (err) {
+        setError("Không thể tải danh sách người dùng. Vui lòng thử lại sau.")
+        console.error("Error fetching users:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUsers()
   }, [])
 
   // Lọc người dùng khi tìm kiếm
@@ -148,17 +120,34 @@ const UserManagementPage: React.FC = () => {
   }
 
   // Xử lý khóa/mở khóa người dùng
-  const handleToggleUserStatus = (user: User) => {
-    const newStatus = user.status === "active" ? "banned" : "active"
-    // const updatedUsers = users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
+  const handleToggleUserStatus = async (user: UserUI) => {
+    try {
+      if (user.status === "active") {
+        await banUser(user.id)
+      } else {
+        await unbanUser(user.id)
+      }
 
-    // setUsers(updatedUsers)
-    // setFilteredUsers(updatedUsers)
+      // Update local state
+      const updatedUsers = users.map((u) =>
+        u.id === user.id
+          ? { ...u, status: u.status === "active" ? "banned" : "active" }
+          : u
+      )
+      setUsers(updatedUsers as UserUI[])
+      setFilteredUsers(updatedUsers as UserUI[])
 
-    setNotification({
-      type: "success",
-      message: `Đã ${newStatus === "active" ? "mở khóa" : "khóa"} tài khoản ${user.name} thành công`,
-    })
+      setNotification({
+        type: "success",
+        message: `Đã ${user.status === "active" ? "khóa" : "mở khóa"} tài khoản ${user.name} thành công`,
+      })
+    } catch (err) {
+      setNotification({
+        type: "error",
+        message: `Không thể ${user.status === "active" ? "khóa" : "mở khóa"} tài khoản. Vui lòng thử lại sau.`,
+      })
+      console.error("Error toggling user status:", err)
+    }
   }
 
   // Hiển thị thông báo
@@ -170,6 +159,26 @@ const UserManagementPage: React.FC = () => {
       return () => clearTimeout(timer)
     }
   }, [notification])
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+        </Box>
+      </AdminLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
+      </AdminLayout>
+    )
+  }
 
   return (
     <AdminLayout>
@@ -252,14 +261,8 @@ const UserManagementPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={
-                          user.status === "active"
-                            ? "Hoạt động"
-                            : user.status === "inactive"
-                              ? "Không hoạt động"
-                              : "Bị cấm"
-                        }
-                        color={user.status === "active" ? "success" : user.status === "inactive" ? "warning" : "error"}
+                        label={user.status === "active" ? "Hoạt động" : "Bị cấm"}
+                        color={user.status === "active" ? "success" : "error"}
                         size="small"
                       />
                     </TableCell>
@@ -351,20 +354,8 @@ const UserManagementPage: React.FC = () => {
               <Typography variant="body2">
                 Trạng thái:{" "}
                 <Chip
-                  label={
-                    selectedUser.status === "active"
-                      ? "Hoạt động"
-                      : selectedUser.status === "inactive"
-                        ? "Không hoạt động"
-                        : "Bị cấm"
-                  }
-                  color={
-                    selectedUser.status === "active"
-                      ? "success"
-                      : selectedUser.status === "inactive"
-                        ? "warning"
-                        : "error"
-                  }
+                  label={selectedUser.status === "active" ? "Hoạt động" : "Bị cấm"}
+                  color={selectedUser.status === "active" ? "success" : "error"}
                   size="small"
                 />
               </Typography>
