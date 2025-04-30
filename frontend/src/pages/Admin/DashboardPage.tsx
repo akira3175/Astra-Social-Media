@@ -10,7 +10,6 @@ import {
   getReports,
   Post,
   User,
-  Report,
   Comment,
 } from "../../services/adminService";
 import NewUserOveriew from "./components/NewUserOveriew";
