@@ -14,7 +14,7 @@ import { Check, Close, PersonAdd } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-import type { FriendRequest, Friendship } from "../../../types/friendship";
+import type { Friendship } from "../../../types/friendship";
 
 const FriendRequests: React.FC = () => {
   const [requests, setRequests] = useState<Friendship[]>([]);

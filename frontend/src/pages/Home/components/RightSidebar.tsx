@@ -6,10 +6,12 @@ import {
   List,
   ListItem,
   ListItemAvatar,
+  ListItemButton,
   ListItemText,
   Paper,
   Typography,
 } from "@mui/material";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
@@ -63,24 +65,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
       }
 
       try {
-        const data = await friendshipService.getFriends(currentUser.id);
-        // Format lại đường dẫn avatar
-        const formattedData = data.map((friend: Friend) => ({
-          ...friend,
-          user: {
-            ...friend.user,
-            avatar: friend.user.avatar
-              ? `http://localhost:8080${friend.user.avatar}`
-              : "",
-          },
-          friend: {
-            ...friend.friend,
-            avatar: friend.friend.avatar
-              ? `http://localhost:8080${friend.friend.avatar}`
-              : "",
-          },
-        }));
-        setFriends(formattedData);
+        const data = await friendshipService.getFriends();
+        setFriends(data as unknown as Friend[]);
       } catch (error) {
         console.error("Error fetching friends:", error);
       }
@@ -102,10 +88,16 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
         Bạn bè
       </Typography>
       <List disablePadding>
-        {friends.map((friend) => {
-          const friendUser =
-            friend.user.id === currentUser?.id ? friend.friend : friend.user;
+        {friends.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            Không có bạn bè
+          </Typography>
+        ) : (
+          friends.map((friend) => {
+            const friendUser =
+              friend.user.id === currentUser?.id ? friend.friend : friend.user;
           return (
+            <Link to={`/profile/${friendUser.email}`}>
             <ListItem
               key={friend.id}
               disablePadding
@@ -157,10 +149,24 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
                 }}
               />
             </ListItem>
-          );
-        })}
+            </Link>
+            );
+          })
+        )}
       </List>
       <Divider sx={{ my: 2 }} />
+      <Typography variant="h6" sx={{ mb: 2 }}>
+         Xu hướng
+       </Typography>
+       <List disablePadding>
+         {TRENDING_TOPICS.map((tag, index) => (
+           <ListItem key={index} disablePadding sx={{ mb: 1 }}>
+             <ListItemButton sx={{ borderRadius: 1 }}>
+               <ListItemText primary={tag} />
+             </ListItemButton>
+           </ListItem>
+         ))}
+       </List>
       <Box sx={{ mt: 3 }}>
         <Typography variant="caption" color="text.secondary">
           © 2025 AstraSocial
