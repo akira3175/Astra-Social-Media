@@ -243,48 +243,48 @@ public class UserController {
         return ResponseEntity.ok(Collections.singletonMap("exists", exists));
     }
 
-    @GetMapping("/suggestions")
-    public ResponseEntity<List<Map<String, Object>>> getSuggestedUsers(
-            @RequestHeader("Authorization") String token,
-            HttpServletRequest request) {
-        
-        String email = jwtUtil.extractEmail(token.replace("Bearer ", "").trim());
-        User currentUser = userService.getUserInfo(email);
-        
-        List<Map<String, Object>> suggestedUsers = userService.getSuggestedUsers(currentUser.getId());
-        
-        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        System.out.println(baseUrl);
-        
-        for (Map<String, Object> user : suggestedUsers) {
-            Object avatarObj = user.get("avatar");
-            if (avatarObj != null && !avatarObj.toString().isEmpty()) {
-                String avatar = avatarObj.toString();
-                if (!avatar.startsWith("http")) {
-                    user.put("avatar", baseUrl + avatar);
-                }
-            }
-            
-            Object backgroundObj = user.get("background");
-            if (backgroundObj != null && !backgroundObj.toString().isEmpty()) {
-                String background = backgroundObj.toString();
-                if (!background.startsWith("http")) {
-                    user.put("background", baseUrl + background);
-                }
-            }
-            
-            if (webSocketEventListener != null && user.containsKey("email")) {
-                String userEmail = user.get("email").toString();
-                user.put("isOnline", webSocketEventListener.isUserOnline(userEmail));
-            }
-        }
-        
-        return ResponseEntity.ok(suggestedUsers);
-    }
+//    @GetMapping("/suggestions")
+//    public ResponseEntity<List<Map<String, Object>>> getSuggestedUsers(
+//            @RequestHeader("Authorization") String token,
+//            HttpServletRequest request) {
+//
+//        String email = jwtUtil.extractEmail(token.replace("Bearer ", "").trim());
+//        User currentUser = userService.getUserInfo(email);
+//
+//        List<Map<String, Object>> suggestedUsers = userService.getSuggestedUsers(currentUser.getId());
+//
+//        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+//        System.out.println(baseUrl);
+//
+//        for (Map<String, Object> user : suggestedUsers) {
+//            Object avatarObj = user.get("avatar");
+//            if (avatarObj != null && !avatarObj.toString().isEmpty()) {
+//                String avatar = avatarObj.toString();
+//                if (!avatar.startsWith("http")) {
+//                    user.put("avatar", baseUrl + avatar);
+//                }
+//            }
+//
+//            Object backgroundObj = user.get("background");
+//            if (backgroundObj != null && !backgroundObj.toString().isEmpty()) {
+//                String background = backgroundObj.toString();
+//                if (!background.startsWith("http")) {
+//                    user.put("background", baseUrl + background);
+//                }
+//            }
+//
+//            if (webSocketEventListener != null && user.containsKey("email")) {
+//                String userEmail = user.get("email").toString();
+//                user.put("isOnline", webSocketEventListener.isUserOnline(userEmail));
+//            }
+//        }
+//
+//        return ResponseEntity.ok(suggestedUsers);
+//    }
 
-    @GetMapping("/{userId}/friends")
-    public ResponseEntity<?> getFriendsList(@PathVariable String userId) {
-        List<User> friends = userService.getFriendsList(userId);
-        return ResponseEntity.ok(friends);
-    }
+//    @GetMapping("/{userId}/friends")
+//    public ResponseEntity<?> getFriendsList(@PathVariable String userId) {
+//        List<User> friends = userService.getFriendsList(userId);
+//        return ResponseEntity.ok(friends);
+//    }
 }

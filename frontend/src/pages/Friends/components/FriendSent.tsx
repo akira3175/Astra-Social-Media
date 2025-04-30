@@ -13,6 +13,7 @@ import { PersonRemove } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
+import { Friendship } from "../../../types/friendship";
 
 interface Request {
   id: number;
@@ -43,8 +44,8 @@ const FriendSent: React.FC = () => {
   const loadSentRequests = async () => {
     try {
       setLoading(true);
-      const data = await friendshipService.getSentRequests(currentUser!.id);
-      const formattedData = data.map((request: Request) => ({
+      const data = await friendshipService.getSentFriendRequests();
+      const formattedData = data.map((request: Friendship) => ({
         ...request,
         receiver: {
           ...request.receiver,
@@ -53,7 +54,7 @@ const FriendSent: React.FC = () => {
             : "",
         },
       }));
-      setRequests(formattedData);
+      setRequests(formattedData as unknown as Request[]);
       setError(null);
     } catch (error) {
       console.error("Lỗi khi tải danh sách lời mời đã gửi:", error);

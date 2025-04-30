@@ -14,7 +14,7 @@ import { Check, Close, PersonAdd } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-import type { FriendRequest } from "../../../types/friendship";
+import type { FriendRequest, Friendship } from "../../../types/friendship";
 
 const FriendRequests: React.FC = () => {
   const [requests, setRequests] = useState<FriendRequest[]>([]);
@@ -31,28 +31,28 @@ const FriendRequests: React.FC = () => {
   const loadFriendRequests = async () => {
     try {
       setLoading(true);
-      const data = await friendshipService.getPendingRequests(currentUser!.id);
+      const data = await friendshipService.getPendingFriendRequests();
       console.log("Dữ liệu lời mời kết bạn:", data);
 
       const formattedData = data
-        .filter((request: FriendRequest) => request.status === "PENDING")
-        .map((request: FriendRequest) => {
+        .filter((request: Friendship) => request.status === "PENDING")
+        .map((request: Friendship) => {
           console.log("Request data:", request);
-          console.log("Avatar URL:", request.user1.avatar);
-          console.log("User1 data:", request.user1);
+          console.log("Avatar URL:", request.requester.avatar);
+          console.log("User1 data:", request.requester);
 
           return {
             ...request,
-            sender: request.user1,
+            sender: request.requester,
             user1: {
-              ...request.user1,
-              avatar: request.user1.avatar
-                ? `http://localhost:8080${request.user1.avatar}`
+              ...request.requester,
+              avatar: request.requester.avatar
+                ? `http://localhost:8080${request.requester.avatar}`
                 : "",
             },
           };
         });
-      setRequests(formattedData);
+      setRequests(formattedData as unknown as FriendRequest[]);
       setError(null);
     } catch (error) {
       console.error("Lỗi khi tải lời mời kết bạn:", error);
@@ -67,16 +67,9 @@ const FriendRequests: React.FC = () => {
   };
 
   // Hàm xử lý khi người dùng chấp nhận lời mời kết bạn
-  const handleAccept = async (
-    friendshipId: number,
-    user1Id: number,
-    user2Id: number
-  ) => {
+  const handleAccept = async (friendshipId: number) => {
     try {
       // 1. Thêm cả hai người dùng vào bảng friend trước
-      await friendshipService.addFriend(user1Id, user2Id);
-
-      // 2. Sau đó mới cập nhật trạng thái
       await friendshipService.acceptFriendRequest(friendshipId);
 
       // 3. Cập nhật lại danh sách sau khi chấp nhận
@@ -108,9 +101,9 @@ const FriendRequests: React.FC = () => {
   };
 
   // Hàm xử lý khi người dùng từ chối lời mời kết bạn
-  const handleReject = async (friendshipId: number, currentUserId: number) => {
+  const handleReject = async (friendshipId: number) => {
     try {
-      await friendshipService.rejectFriendRequest(friendshipId, currentUserId);
+      await friendshipService.rejectFriendRequest(friendshipId);
       // Cập nhật lại danh sách sau khi từ chối
       setRequests(requests.filter((request) => request.id !== friendshipId));
     } catch (error) {
@@ -224,13 +217,7 @@ const FriendRequests: React.FC = () => {
                         variant="contained"
                         color="primary"
                         startIcon={<Check />}
-                        onClick={() =>
-                          handleAccept(
-                            request.id,
-                            request.user1.id,
-                            request.user2.id
-                          )
-                        }
+                        onClick={() => handleAccept(request.id)}
                         fullWidth
                       >
                         Chấp nhận
@@ -239,9 +226,7 @@ const FriendRequests: React.FC = () => {
                         variant="outlined"
                         color="error"
                         startIcon={<Close />}
-                        onClick={() =>
-                          handleReject(request.id, currentUser!.id)
-                        }
+                        onClick={() => handleReject(request.id)}
                         fullWidth
                       >
                         Từ chối

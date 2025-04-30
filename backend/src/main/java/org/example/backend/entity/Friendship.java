@@ -2,45 +2,52 @@ package org.example.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "friendships")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Friendship {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Người gửi yêu cầu kết bạn
     @ManyToOne
-    @JoinColumn(name = "user_id_1", nullable = false)
-    private User user1;
+    @JoinColumn(name = "requester_id", nullable = false)
+    private User requester;
 
+    // Người nhận yêu cầu kết bạn
     @ManyToOne
-    @JoinColumn(name = "user_id_2", nullable = false)
-    private User user2;
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private User receiver;
 
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private ChatMessage.FriendshipStatus status;
+    @Column(nullable = false)
+    private FriendshipStatus status;
 
     @Column(nullable = false)
     private boolean active = true;
 
-    @Column(nullable = false, updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public enum FriendshipStatus {
+        PENDING,
+        ACCEPTED,
+        REJECTED,
+        BLOCKED
     }
 }

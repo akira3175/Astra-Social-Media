@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -69,97 +70,211 @@ public class FriendshipController {
     }
 
     @PostMapping("/accept/{friendshipId}")
-    public ResponseEntity<Friendship> acceptFriendRequest(@PathVariable Long friendshipId) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> acceptFriendRequest(@PathVariable Long friendshipId) {
         try {
-            Friendship friendship = friendshipService.acceptFriendRequest(friendshipId);
+            String currentUserEmail = getCurrentUserEmail();
+            Friendship friendship = friendshipService.acceptFriendRequest(friendshipId, currentUserEmail);
             return ResponseEntity.ok(friendship);
         } catch (FriendshipException e) {
-            System.out.println("Friendship not found: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
-            System.out.println("Error accepting friend request: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi chấp nhận lời mời kết bạn: " + e.getMessage());
         }
     }
-
 
     @PostMapping("/reject/{friendshipId}")
-    public ResponseEntity<Friendship> rejectFriendRequest(@PathVariable Long friendshipId) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> rejectFriendRequest(@PathVariable Long friendshipId) {
         try {
-            Friendship friendship = friendshipService.rejectFriendRequest(friendshipId);
+            String currentUserEmail = getCurrentUserEmail();
+            Friendship friendship = friendshipService.rejectFriendRequest(friendshipId, currentUserEmail);
+            return ResponseEntity.ok(friendship);
+        } catch (FriendshipException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi từ chối lời mời kết bạn: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/block/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> blockUser(@PathVariable Long userId) {
+        try {
+            String currentUserEmail = getCurrentUserEmail();
+            Friendship friendship = friendshipService.blockUser(currentUserEmail, userId);
             return ResponseEntity.ok(friendship);
         } catch (Exception e) {
-            System.out.println("Error rejecting friend request: " + e.getMessage());
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi chặn người dùng: " + e.getMessage());
         }
     }
 
-    @GetMapping("/pending/{userId}")
-    public ResponseEntity<List<Friendship>> getPendingFriendRequests(@PathVariable Long userId) {
-        List<Friendship> pendingRequests = friendshipService.getPendingFriendRequests(userId);
-        return ResponseEntity.ok(pendingRequests);
-    }
-
-    @GetMapping("/requests/{userId}")
-    public ResponseEntity<List<Map<String, Object>>> getFriendRequests(@PathVariable Long userId) {
-        List<Friendship> pendingRequests = friendshipService.getPendingFriendRequests(userId);
-        List<Map<String, Object>> requests = mapFriendshipToRequestMap(pendingRequests);
-        return ResponseEntity.ok(requests);
-    }
-
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<Friendship>> getFriends(@PathVariable Long userId) {
-        List<Friendship> friends = friendshipService.getFriends(userId);
-        return ResponseEntity.ok(friends);
-    }
-
-    @PutMapping("/{friendshipId}/active")
-    public ResponseEntity<Friendship> updateFriendshipActive(@PathVariable Long friendshipId,
-                                                             @RequestParam boolean active) {
-        Friendship friendship = friendshipService.updateFriendshipActive(friendshipId, active);
-        return ResponseEntity.ok(friendship);
-    }
-
-    @GetMapping("/sent/{userId}")
+    @PostMapping("/unblock/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<Map<String, Object>>> getSentFriendRequests(@PathVariable Long userId) {
+    public ResponseEntity<?> unblockUser(@PathVariable Long userId) {
         try {
-            if (!isValidUserRequest(userId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(List.of());
-            }
-
-            List<Friendship> sentRequests = friendshipService.getSentFriendRequests(userId);
-            List<Map<String, Object>> requests = mapFriendshipToRequestMap(sentRequests);
-            return ResponseEntity.ok(requests);
+            String currentUserEmail = getCurrentUserEmail();
+            friendshipService.unblockUser(currentUserEmail, userId);
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(List.of());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi bỏ chặn người dùng: " + e.getMessage());
         }
     }
 
-    // Helper methods to improve readability
+    @GetMapping("/pending")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getPendingFriendRequests() {
+        try {
+            String currentUserEmail = getCurrentUserEmail();
+            User currentUser = userRepository.findByEmail(currentUserEmail)
+                    .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại"));
+
+            List<Map<String, Object>> pendingRequests = friendshipService.getPendingFriendRequests(currentUser.getId())
+                    .stream()
+                    .map(this::mapFriendshipToResponse)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(pendingRequests);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy danh sách lời mời kết bạn: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/sent")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getSentFriendRequests() {
+        try {
+            String currentUserEmail = getCurrentUserEmail();
+            User currentUser = userRepository.findByEmail(currentUserEmail)
+                    .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại"));
+
+            List<Map<String, Object>> sentRequests = friendshipService.getSentFriendRequests(currentUser.getId())
+                    .stream()
+                    .map(this::mapFriendshipToResponse)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(sentRequests);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy danh sách lời mời đã gửi: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/friends")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getFriends() {
+        try {
+            String currentUserEmail = getCurrentUserEmail();
+            User currentUser = userRepository.findByEmail(currentUserEmail)
+                    .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại"));
+
+            List<Map<String, Object>> friends = friendshipService.getFriends(currentUser.getId())
+                    .stream()
+                    .map(this::mapFriendshipToResponse)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(friends);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy danh sách bạn bè: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/blocked")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getBlockedUsers() {
+        try {
+            String currentUserEmail = getCurrentUserEmail();
+            User currentUser = userRepository.findByEmail(currentUserEmail)
+                    .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại"));
+
+            List<Map<String, Object>> blockedUsers = friendshipService.getBlockedUsers(currentUser.getId())
+                    .stream()
+                    .map(this::mapFriendshipToResponse)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(blockedUsers);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy danh sách người dùng bị chặn: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/suggestions")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getFriendSuggestions() {
+        try {
+            String currentUserEmail = getCurrentUserEmail();
+            User currentUser = userRepository.findByEmail(currentUserEmail)
+                    .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại"));
+
+            List<Map<String, Object>> suggestions = friendshipService.getFriendSuggestions(currentUser.getId());
+            return ResponseEntity.ok(suggestions);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy danh sách gợi ý kết bạn: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/status/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getFriendshipStatus(@PathVariable Long userId) {
+        try {
+            String currentUserEmail = getCurrentUserEmail();
+            User currentUser = userRepository.findByEmail(currentUserEmail)
+                    .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại"));
+
+            Map<String, Object> status = friendshipService.getFriendshipStatus(currentUser.getId(), userId);
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy trạng thái kết bạn: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{friendshipId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> removeFriend(@PathVariable Long friendshipId) {
+        try {
+            String currentUserEmail = getCurrentUserEmail();
+            friendshipService.removeFriend(friendshipId, currentUserEmail);
+            return ResponseEntity.ok().build();
+        } catch (FriendshipException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi xóa bạn bè: " + e.getMessage());
+        }
+    }
+
+    // Helper methods
     private String getCurrentUserEmail() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
-    private boolean isValidUserRequest(Long userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUserEmail = authentication.getName();
-        User currentUser = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-        return currentUser.getId().equals(userId);
+    private Map<String, Object> mapFriendshipToResponse(Friendship friendship) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", friendship.getId());
+        response.put("requester", mapUserBasicInfo(friendship.getRequester()));
+        response.put("receiver", mapUserBasicInfo(friendship.getReceiver()));
+        response.put("status", friendship.getStatus());
+        response.put("createdAt", friendship.getCreatedAt());
+        response.put("active", friendship.isActive());
+        return response;
     }
 
-    private List<Map<String, Object>> mapFriendshipToRequestMap(List<Friendship> friendships) {
-        return friendships.stream()
-                .map(friendship -> {
-                    Map<String, Object> request = new HashMap<>();
-                    request.put("id", friendship.getId());
-                    request.put("sender", friendship.getUser1());
-                    request.put("receiver", friendship.getUser2());
-                    request.put("status", friendship.getStatus());
-                    request.put("createdAt", friendship.getCreatedAt());
-                    return request;
-                })
-                .collect(Collectors.toList());
+    private Map<String, Object> mapUserBasicInfo(User user) {
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("id", user.getId());
+        userInfo.put("email", user.getEmail());
+        userInfo.put("firstName", user.getFirstName());
+        userInfo.put("lastName", user.getLastName());
+        userInfo.put("avatar", user.getAvatar());
+        return userInfo;
     }
 }

@@ -17,6 +17,7 @@ import { PersonRemove } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
+import { Friendship } from "../../../types/friendship";
 
 interface Friend {
   id: number;
@@ -34,7 +35,7 @@ interface Friend {
     email: string;
     avatar: string;
   };
-  since: string;
+  createdAt: string;
 }
 
 const FriendList: React.FC = () => {
@@ -54,23 +55,23 @@ const FriendList: React.FC = () => {
   const loadFriends = async () => {
     try {
       setLoading(true);
-      const data = await friendshipService.getFriends(currentUser!.id);
-      const formattedData = data.map((friend: Friend) => ({
+      const data = await friendshipService.getFriends();
+      const formattedData = data.map((friend: Friendship) => ({
         ...friend,
         user: {
-          ...friend.user,
-          avatar: friend.user?.avatar
-            ? `http://localhost:8080${friend.user.avatar}`
+          ...friend.requester,
+          avatar: friend.requester?.avatar
+            ? `http://localhost:8080${friend.requester.avatar}`
             : "",
         },
         friend: {
-          ...friend.friend,
-          avatar: friend.friend?.avatar
-            ? `http://localhost:8080${friend.friend.avatar}`
+          ...friend.receiver,
+          avatar: friend.receiver?.avatar
+            ? `http://localhost:8080${friend.receiver.avatar}`
             : "",
         },
       }));
-      setFriends(formattedData);
+      setFriends(formattedData as unknown as Friend[]);
       setError(null);
     } catch (error) {
       if (error instanceof Error) {
@@ -92,7 +93,7 @@ const FriendList: React.FC = () => {
     if (!selectedFriend) return;
 
     try {
-      await friendshipService.unfriend(selectedFriend.id);
+      await friendshipService.removeFriend(selectedFriend.id);
       // Cập nhật lại danh sách
       setFriends(friends.filter((friend) => friend.id !== selectedFriend.id));
       setOpenDialog(false);
@@ -174,7 +175,7 @@ const FriendList: React.FC = () => {
                     color="text.secondary"
                     sx={{ mb: 2 }}
                   >
-                    Đã kết bạn từ {new Date(friend.since).toLocaleString()}
+                    Đã kết bạn từ {new Date(friend.createdAt).toLocaleString()}
                   </Typography>
                   <Button
                     variant="outlined"

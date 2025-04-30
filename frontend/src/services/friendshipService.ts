@@ -1,9 +1,16 @@
 import axios from "axios";
 import { api } from "../configs/api";
+import { Friendship } from "../types/friendship";
+import { User } from "../types/user";
+
+interface FriendshipStatus {
+  status: string;
+  friendshipId: number | null;
+}
 
 class FriendshipService {
   // Gửi lời mời kết bạn
-  async sendFriendRequest(email: string) {
+  async sendFriendRequest(email: string): Promise<Friendship> {
     try {
       const response = await api.post(`/friendships/request`, {
         receiverEmail: email,
@@ -26,26 +33,17 @@ class FriendshipService {
     }
   }
 
-  // Hủy lời mời kết bạn
-  async cancelFriendRequest(receiverEmail: string) {
+  // Hủy lời mời kết bạn đã gửi
+  async cancelFriendRequest(email: string): Promise<void> {
     try {
-      const response = await api.delete(`/friendships/request`, {
-        data: {
-          receiverEmail: receiverEmail,
-        },
+      await api.delete(`/friendships/request`, {
+        data: { receiverEmail: email }
       });
-
-      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 404) {
-          throw new Error("Không tìm thấy người dùng");
-        }
         if (error.response?.status === 401) {
-          throw new Error("Bạn cần đăng nhập để thực hiện thao tác này");
-        }
-        if (error.response?.status === 403) {
-          throw new Error("Bạn không có quyền hủy lời mời này");
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         }
         throw new Error(
           error.response?.data?.message || "Không thể hủy lời mời kết bạn"
@@ -56,36 +54,15 @@ class FriendshipService {
   }
 
   // Chấp nhận lời mời kết bạn
-  async acceptFriendRequest(friendshipId: number) {
+  async acceptFriendRequest(friendshipId: number): Promise<Friendship> {
     try {
-      const response = await api.post(`/friendships/accept/${friendshipId}`, null, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      // Kiểm tra nếu response có dữ liệu thì trả về dữ liệu đó
-      if (response.data) {
-        return response.data;
-      }
-
-      throw new Error(
-        response.data.message || "Không thể chấp nhận lời mời kết bạn"
-      );
+      const response = await api.post(`/friendships/accept/${friendshipId}`);
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 404) {
-          throw new Error("Không tìm thấy lời mời kết bạn");
-        }
         if (error.response?.status === 401) {
           localStorage.removeItem("accessToken");
           throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
-        }
-        if (error.response?.status === 400) {
-          throw new Error("Lời mời kết bạn không hợp lệ hoặc đã bị hủy");
-        }
-        if (error.response?.status === 403) {
-          throw new Error("Bạn không có quyền thực hiện thao tác này");
         }
         throw new Error(
           error.response?.data?.message || "Không thể chấp nhận lời mời kết bạn"
@@ -96,42 +73,15 @@ class FriendshipService {
   }
 
   // Từ chối lời mời kết bạn
-  async rejectFriendRequest(friendshipId: number, currentUserId: number) {
+  async rejectFriendRequest(friendshipId: number): Promise<Friendship> {
     try {
-      // Lấy danh sách lời mời đã gửi
-      const sentRequests = await this.getSentRequests(currentUserId);
-      const request = sentRequests.find(
-        (r: { id: number; receiver: { email: string } }) =>
-          r.id === friendshipId
-      );
-
-      if (!request) {
-        throw new Error("Không tìm thấy lời mời kết bạn");
-      }
-
-      const response = await api.delete(`/friendships/request`, {
-        data: {
-          receiverEmail: request.receiver.email,
-        },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await api.post(`/friendships/reject/${friendshipId}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 404) {
-          throw new Error("Không tìm thấy lời mời kết bạn");
-        }
         if (error.response?.status === 401) {
           localStorage.removeItem("accessToken");
           throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
-        }
-        if (error.response?.status === 400) {
-          throw new Error("Lời mời kết bạn không hợp lệ hoặc đã bị hủy");
-        }
-        if (error.response?.status === 403) {
-          throw new Error("Bạn không có quyền thực hiện thao tác này");
         }
         throw new Error(
           error.response?.data?.message || "Không thể từ chối lời mời kết bạn"
@@ -141,100 +91,186 @@ class FriendshipService {
     }
   }
 
-  // Xóa bạn bè (unfriend)
-  async unfriend(friendshipId: number) {
+  // Chặn người dùng
+  async blockUser(userId: number): Promise<Friendship> {
     try {
-      const response = await api.put(`/friendships/${friendshipId}/active`, null, {
-        params: { active: false },
-      });
+      const response = await api.post(`/friendships/block/${userId}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
         throw new Error(
-          error.response?.data?.message || "Không thể xóa bạn bè"
+          error.response?.data?.message || "Không thể chặn người dùng"
         );
       }
-      throw new Error("Đã xảy ra lỗi khi xóa bạn bè");
+      throw new Error("Đã xảy ra lỗi khi chặn người dùng");
     }
   }
 
-  // Lấy danh sách lời mời kết bạn đang chờ
-  async getPendingRequests(userId: number) {
+  // Bỏ chặn người dùng
+  async unblockUser(userId: number): Promise<void> {
     try {
-      const response = await api.get(`/friendships/pending/${userId}`);
-      return response.data;
+      await api.post(`/friendships/unblock/${userId}`);
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
         throw new Error(
-          error.response?.data?.message ||
-            "Không thể tải danh sách lời mời đang chờ"
+          error.response?.data?.message || "Không thể bỏ chặn người dùng"
         );
       }
-      throw new Error("Đã xảy ra lỗi khi tải danh sách lời mời đang chờ");
+      throw new Error("Đã xảy ra lỗi khi bỏ chặn người dùng");
     }
   }
 
-  // Lấy danh sách bạn bè
-  async getFriends(userId: number) {
+  // Lấy danh sách lời mời kết bạn đã nhận
+  async getPendingFriendRequests(): Promise<Friendship[]> {
     try {
-      const response = await api.get(`/friendships/${userId}`);
+      const response = await api.get(`/friendships/pending`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
         throw new Error(
-          error.response?.data?.message || "Không thể tải danh sách bạn bè"
+          error.response?.data?.message || "Không thể lấy danh sách lời mời kết bạn"
         );
       }
-      throw new Error("Đã xảy ra lỗi khi tải danh sách bạn bè");
-    }
-  }
-
-  // Thêm bạn bè
-  async addFriend(userId1: number, userId2: number) {
-    const response = await api.post(`/friends/${userId1}/${userId2}`);
-    return response.data;
-  }
-
-  // Xóa bạn bè
-  async removeFriend(userId1: number, userId2: number) {
-    await api.delete(`/friends/${userId1}/${userId2}`);
-  }
-
-  // Kiểm tra xem hai người có phải là bạn bè không
-  async areFriends(userId1: number, userId2: number) {
-    const response = await api.get(`/friends/check/${userId1}/${userId2}`);
-    return response.data;
-  }
-
-  // Lấy danh sách người dùng gợi ý kết bạn
-  async getSuggestedUsers(userId: number) {
-    try {
-      const response = await api.get(`/friends/suggestions/${userId}`);
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(
-          error.response?.data?.message ||
-            "Không thể tải danh sách gợi ý kết bạn"
-        );
-      }
-      throw new Error("Đã xảy ra lỗi khi tải danh sách gợi ý kết bạn");
+      throw new Error("Đã xảy ra lỗi khi lấy danh sách lời mời kết bạn");
     }
   }
 
   // Lấy danh sách lời mời kết bạn đã gửi
-  async getSentRequests(userId: number) {
+  async getSentFriendRequests(): Promise<Friendship[]> {
     try {
-      const response = await api.get(`/friendships/sent/${userId}`);
+      const response = await api.get(`/friendships/sent`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
         throw new Error(
-          error.response?.data?.message ||
-            "Không thể tải danh sách lời mời đã gửi"
+          error.response?.data?.message || "Không thể lấy danh sách lời mời đã gửi"
         );
       }
-      throw new Error("Đã xảy ra lỗi khi tải danh sách lời mời đã gửi");
+      throw new Error("Đã xảy ra lỗi khi lấy danh sách lời mời đã gửi");
+    }
+  }
+
+  // Lấy danh sách bạn bè
+  async getFriends(): Promise<Friendship[]> {
+    try {
+      const response = await api.get(`/friendships/friends`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
+        throw new Error(
+          error.response?.data?.message || "Không thể lấy danh sách bạn bè"
+        );
+      }
+      throw new Error("Đã xảy ra lỗi khi lấy danh sách bạn bè");
+    }
+  }
+
+  // Lấy danh sách người dùng đã chặn
+  async getBlockedUsers(): Promise<Friendship[]> {
+    try {
+      const response = await api.get(`/friendships/blocked`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
+        throw new Error(
+          error.response?.data?.message || "Không thể lấy danh sách người dùng đã chặn"
+        );
+      }
+      throw new Error("Đã xảy ra lỗi khi lấy danh sách người dùng đã chặn");
+    }
+  }
+
+  // Lấy danh sách gợi ý kết bạn
+  async getFriendSuggestions(): Promise<User[]> {
+    try {
+      const response = await api.get(`/friendships/suggestions`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
+        throw new Error(
+          error.response?.data?.message || "Không thể lấy danh sách gợi ý kết bạn"
+        );
+      }
+      throw new Error("Đã xảy ra lỗi khi lấy danh sách gợi ý kết bạn");
+    }
+  }
+
+  // Kiểm tra trạng thái kết bạn với một người dùng khác
+  async getFriendshipStatus(userId: number): Promise<FriendshipStatus> {
+    try {
+      const response = await api.get(`/friendships/status/${userId}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
+        throw new Error(
+          error.response?.data?.message || "Không thể kiểm tra trạng thái kết bạn"
+        );
+      }
+      throw new Error("Đã xảy ra lỗi khi kiểm tra trạng thái kết bạn");
+    }
+  }
+
+  // Hủy kết bạn
+  async removeFriend(friendshipId: number): Promise<void> {
+    try {
+      await api.delete(`/friendships/${friendshipId}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
+        throw new Error(
+          error.response?.data?.message || "Không thể hủy kết bạn"
+        );
+      }
+      throw new Error("Đã xảy ra lỗi khi hủy kết bạn");
+    }
+  }
+
+  // Kiểm tra xem có phải bạn bè hay không
+  async areFriends(otherUserId: number): Promise<boolean> {
+    try {
+      const status = await this.getFriendshipStatus(otherUserId);
+      return status.status === 'ACCEPTED';
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        localStorage.removeItem("accessToken");
+        throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+      }
+      return false;
     }
   }
 }
