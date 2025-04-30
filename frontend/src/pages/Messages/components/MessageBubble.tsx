@@ -27,21 +27,46 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const renderAttachment = () => {
     if (!message.fileUrl) return null;
 
-    const handleFileClick = (e: React.MouseEvent) => {
+    const handleFileClick = async (e: React.MouseEvent) => {
       e.preventDefault();
       if (message.fileUrl) {
-        const url = message.fileUrl.startsWith('http')
-          ? message.fileUrl
-          : `http://${message.fileUrl}`;
+        try {
+          const token = localStorage.getItem('accessToken');
+          if (!token) {
+            console.error('No access token found');
+            return;
+          }
 
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.download = message.fileName || 'file';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+          // Gọi API endpoint mới để tải file
+          const response = await fetch(`http://localhost:8080/api/chat/download?fileUrl=${encodeURIComponent(message.fileUrl)}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Download failed');
+          }
+
+          // Lấy blob từ response
+          const blob = await response.blob();
+
+          // Tạo URL tạm thời cho blob
+          const url = window.URL.createObjectURL(blob);
+
+          // Tạo thẻ a để tải file
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = message.fileName || 'file';
+          document.body.appendChild(link);
+          link.click();
+
+          // Cleanup
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error('Error downloading file:', error);
+        }
       }
     };
 
@@ -52,16 +77,21 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             component="img"
             src={message.fileUrl}
             alt={message.fileName || 'Image'}
-            onClick={handleFileClick}
             sx={{
               maxWidth: '100%',
               maxHeight: '300px',
-              cursor: 'pointer',
               borderRadius: 1,
               mt: 1,
+              objectFit: 'contain',
+              cursor: 'pointer',
               '&:hover': {
                 opacity: 0.9
               }
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              // Mở ảnh trong tab mới khi click
+              window.open(message.fileUrl, '_blank');
             }}
           />
         );

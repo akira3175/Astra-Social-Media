@@ -12,8 +12,16 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.io.InputStream;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -197,6 +205,53 @@ public class ChatController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<byte[]> downloadFile(@RequestParam String fileUrl) {
+        try {
+            // Tạo URL connection để tải file từ Cloudinary
+            URL url = new URL(fileUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            // Thêm headers cho Cloudinary
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+            connection.setRequestProperty("Accept", "*/*");
+
+            // Xóa token từ URL nếu có
+            String cleanUrl = fileUrl.split("\\?")[0];
+            if (!cleanUrl.equals(fileUrl)) {
+                url = new URL(cleanUrl);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+                connection.setRequestProperty("Accept", "*/*");
+            }
+
+            // Đọc dữ liệu từ connection
+            try (InputStream inputStream = connection.getInputStream()) {
+                byte[] fileContent = inputStream.readAllBytes();
+
+                // Lấy tên file từ URL
+                String fileName = cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1);
+                fileName = URLDecoder.decode(fileName, Charset.forName("UTF-8").toString());
+
+                // Xác định Content-Type dựa vào phần mở rộng của file
+                String contentType = URLConnection.guessContentTypeFromName(fileName);
+                if (contentType == null) {
+                    contentType = "application/octet-stream";
+                }
+
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                        .body(fileContent);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

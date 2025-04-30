@@ -33,7 +33,7 @@ public class ChatMessage {
     @Column(name = "sender_avatar")
     private String senderAvatar;
 
-    @Column(name = "file_url")
+    @Column(name = "file_url", length = 1000)
     private String fileUrl;
 
     @Column(name = "file_type")

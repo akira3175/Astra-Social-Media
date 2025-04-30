@@ -191,6 +191,9 @@ const ActionButton = styled(IconButton)(({ theme }) => ({
     },
 }))
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://astrasocial.netlify.app';
+
 const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentUserId, onSelectUser }) => {
     const [messages, setMessages] = useState<Message[]>([])
     const [allMessages, setAllMessages] = useState<Message[]>([])
@@ -215,10 +218,31 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [hasNewMessages, setHasNewMessages] = useState(false)
+    const [shouldScroll, setShouldScroll] = useState(true)
+
+    // Thêm hàm scrollToBottom
+    const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+        }
+    }
 
     const getFileUrl = (fileUrl: string) => {
         if (!fileUrl) return '';
-        return fileUrl.startsWith('http') ? fileUrl : `http://localhost:8080${fileUrl}`;
+
+        // Nếu là URL Cloudinary
+        if (fileUrl.includes('cloudinary.com')) {
+            // Nếu là file PDF hoặc file khác không phải ảnh, thay thế /image/ bằng /raw/
+            if (fileUrl.includes('/image/') && !fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                fileUrl = fileUrl.replace('/image/', '/raw/');
+            }
+            const token = localStorage.getItem('accessToken');
+            return `${fileUrl}?token=${token}`;
+        }
+
+        // Nếu là URL local
+        return fileUrl.startsWith('http') ? fileUrl : `${API_URL}${fileUrl}`;
     };
 
     // Thêm hàm format thời gian
@@ -288,12 +312,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
         }
     }
 
-    const scrollToBottom = () => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-        }
-    };
-
     // Hàm để tải thêm tin nhắn khi cuộn lên
     const loadMoreMessages = () => {
         if (isLoadingMore || !hasMoreMessages) return;
@@ -344,8 +362,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
         }
 
         setIsLoading(true)
+        setShouldScroll(true) // Reset shouldScroll khi load tin nhắn mới
 
-        fetch(`http://localhost:8080/api/chat/messages/${currentUserId}/${receiverId}`, {
+        fetch(`${API_URL}/api/chat/messages/${currentUserId}/${receiverId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -463,7 +482,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
             }
 
             // Tạo kết nối mới với cấu hình đúng
-            const socket = new SockJS(`http://localhost:8080/ws`)
+            const socket = new SockJS(`${API_URL}/ws`)
 
             // Cấu hình STOMP client đúng cách
             const stompClient = Stomp.over(socket);
@@ -502,6 +521,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
                                 }
 
                                 const newMessages = [...prev, data];
+                                setHasNewMessages(true)
                                 return newMessages.sort((a, b) =>
                                     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
                                 );
@@ -519,6 +539,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
 
                                 return [...prev, data];
                             });
+
+                            // Cuộn xuống tin nhắn mới nhất
+                            scrollToBottom()
                         }
                     } catch (error) {
                         console.error('Error parsing private message:', error);
@@ -544,6 +567,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
                                 }
 
                                 const newMessages = [...prev, data];
+                                setHasNewMessages(true)
                                 return newMessages.sort((a, b) =>
                                     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
                                 );
@@ -561,6 +585,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
 
                                 return [...prev, data];
                             });
+
+                            // Cuộn xuống tin nhắn mới nhất
+                            scrollToBottom()
                         }
                     } catch (error) {
                         console.error('Error parsing public message:', error);
@@ -657,7 +684,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
         formData.append('file', file);
 
         try {
-            const response = await fetch(`http://localhost:8080/api/chat/upload`, {
+            const response = await fetch(`${API_URL}/api/chat/upload`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -762,12 +789,11 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
 
     // Thêm useEffect để scroll xuống cuối khi có tin nhắn mới
     useEffect(() => {
-        if (messagesEndRef.current) {
-            setTimeout(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-            }, 100)
+        if (messages.length > 0 && hasNewMessages) {
+            scrollToBottom()
+            setHasNewMessages(false)
         }
-    }, [messages])
+    }, [messages, hasNewMessages])
 
     // Thêm hàm load danh sách người dùng đã chat
     const loadChatUsers = () => {
@@ -778,7 +804,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
             return
         }
 
-        fetch(`http://localhost:8080/api/chat/users/${currentUserId}`, {
+        fetch(`${API_URL}/api/chat/users/${currentUserId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -880,6 +906,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
 
                         // Nếu là tin nhắn mới, thêm vào danh sách
                         const newMessages = [...prev, data];
+                        setHasNewMessages(true)
                         return newMessages.sort((a, b) =>
                             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
                         );
@@ -912,6 +939,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
                             }
 
                             const newMessages = [...prev, data];
+                            setHasNewMessages(true)
                             return newMessages.sort((a, b) =>
                                 new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
                             );
@@ -949,7 +977,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
         if (!token) return;
 
         try {
-            const response = await fetch(`http://localhost:8080/api/chat/read-all/${currentUserId}/${receiverId}`, {
+            const response = await fetch(`${API_URL}/api/chat/read-all/${currentUserId}/${receiverId}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1000,6 +1028,27 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
             };
         }
     }, [messageListRef.current]);
+
+    // Thêm hàm truncateFileName
+    const truncateFileName = (fileName: string, maxLength: number = 15) => {
+        if (fileName.length <= maxLength) return fileName;
+        const extension = fileName.split('.').pop();
+        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+        const truncatedName = nameWithoutExt.substring(0, maxLength - 3) + '...';
+        return `${truncatedName}.${extension}`;
+    };
+
+    // Thêm useEffect để xử lý cuộn
+    useEffect(() => {
+        if (shouldScroll && messages.length > 0) {
+            setTimeout(() => {
+                if (messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+                }
+                setShouldScroll(false) // Đánh dấu đã cuộn xong
+            }, 100)
+        }
+    }, [messages, shouldScroll])
 
     if (!isOpen) return null
 
@@ -1118,7 +1167,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentU
                                                     >
                                                         <AttachFile />
                                                         <Typography variant="body2">
-                                                            {message.fileName}
+                                                            {message.fileName ? truncateFileName(message.fileName) : 'File đính kèm'}
                                                         </Typography>
                                                         <a
                                                             href={getFileUrl(message.fileUrl)}

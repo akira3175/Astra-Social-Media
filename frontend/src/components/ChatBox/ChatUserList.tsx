@@ -25,6 +25,9 @@ const StyledListItem = styled(ListItemButton)(({ theme }) => ({
     },
 }));
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://astrasocial.netlify.app';
+
 const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser }) => {
     const [users, setUsers] = useState<ChatUser[]>([]);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -37,7 +40,7 @@ const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser
             return;
         }
 
-        fetch(`http://localhost:8080/api/chat/users/${currentUserId}`, {
+        fetch(`${API_URL}/api/chat/users/${currentUserId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -103,7 +106,7 @@ const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser
                         <ListItemAvatar>
                             <Avatar
                                 alt={user.name}
-                                src={user.avatar ? `http://localhost:8080${user.avatar}` : undefined}
+                                src={user.avatar ? `${API_URL}${user.avatar}` : undefined}
                                 sx={{
                                     width: 40,
                                     height: 40,

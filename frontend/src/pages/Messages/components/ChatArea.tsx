@@ -139,12 +139,29 @@ interface ChatAreaProps {
   onEmojiClick: (emoji: any) => string
   toggleEmojiPicker: () => void
   isUploading: boolean
+  truncateFileName: (fileName: string, maxLength?: number) => string
 }
 
 type FileType = 'image' | 'video' | 'document' | 'file';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://astrasocial.netlify.app';
+
 const getFileUrl = (fileUrl: string) => {
-  return fileUrl.startsWith('http') ? fileUrl : `http://localhost:8080${fileUrl}`;
+  if (!fileUrl) return '';
+
+  // Nếu là URL Cloudinary
+  if (fileUrl.includes('cloudinary.com')) {
+    // Nếu là file ảnh, giữ nguyên URL
+    if (fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+      return fileUrl;
+    }
+    // Nếu là file khác, chuyển về endpoint download của backend
+    return `${API_URL}/api/chat/download?fileUrl=${encodeURIComponent(fileUrl)}`;
+  }
+
+  // Nếu là URL local
+  return fileUrl.startsWith('http') ? fileUrl : `${API_URL}${fileUrl}`;
 };
 
 const ChatArea: React.FC<ChatAreaProps> = ({
@@ -157,7 +174,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   showEmojiPicker,
   onEmojiClick,
   toggleEmojiPicker,
-  isUploading
+  isUploading,
+  truncateFileName
 }) => {
   const theme = useTheme();
   const messageInputRef = useRef<HTMLInputElement>(null)
@@ -169,6 +187,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   useEffect(() => {
     if (messages && messages.length > 0) {
       setLocalMessages(messages)
+      // Cuộn xuống khi có tin nhắn mới
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+      }
     }
   }, [messages])
 
@@ -185,31 +207,47 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         throw new Error('No access token found');
       }
 
-      const response = await fetch('http://localhost:8080/api/chat/upload', {
+      const response = await fetch(`${API_URL}/api/chat/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formData
+        body: formData,
+        credentials: 'include'
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Upload error response:', errorData);
-        throw new Error(errorData.message || `Upload failed with status ${response.status}`);
-      }
 
       const data = await response.json();
       console.log('Upload response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.message || `Upload failed with status ${response.status}`);
+      }
 
       if (!data.data || !data.data.fileUrl) {
         throw new Error('Invalid response format');
       }
 
-      return data.data.fileUrl;
+      // Xử lý URL file trước khi trả về
+      const fileUrl = data.data.fileUrl;
+
+      // Xác định loại file dựa vào extension
+      const extension = file.name.split('.').pop()?.toLowerCase() || '';
+      let fileType: 'image' | 'video' | 'document' | 'file';
+
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+        fileType = 'image';
+      } else if (['mp4', 'webm', 'mov'].includes(extension)) {
+        fileType = 'video';
+      } else if (['pdf', 'doc', 'docx', 'txt'].includes(extension)) {
+        fileType = 'document';
+      } else {
+        fileType = 'file';
+      }
+
+      return { fileUrl, fileType };
     } catch (error) {
       console.error('Error uploading file:', error);
-      return null;
+      throw error;
     } finally {
       setIsUploadingFile(false);
     }
@@ -225,21 +263,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       const file = fileInputRef.current.files[0];
       console.log('Selected file:', file);
 
-      const uploadedUrl = await handleFileUpload(file);
-      if (uploadedUrl) {
-        fileUrl = uploadedUrl;
-
-        const extension = file.name.split('.').pop()?.toLowerCase() || '';
-        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
-          fileType = 'image';
-        } else if (['mp4', 'webm', 'mov'].includes(extension)) {
-          fileType = 'video';
-        } else if (['pdf', 'doc', 'docx', 'txt'].includes(extension)) {
-          fileType = 'document';
-        } else {
-          fileType = 'file';
+      try {
+        const uploadResult = await handleFileUpload(file);
+        if (uploadResult) {
+          fileUrl = uploadResult.fileUrl;
+          fileType = uploadResult.fileType;
+          fileName = file.name;
         }
-        fileName = file.name;
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        return;
       }
     }
 
@@ -273,15 +306,17 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   };
 
   const handleEmojiSelect = (emoji: any) => {
+    const emojiText = onEmojiClick(emoji)
     if (messageInputRef.current) {
-      messageInputRef.current.value = (messageInputRef.current.value || "") + emoji.native
+      const start = messageInputRef.current.selectionStart || 0
+      const end = messageInputRef.current.selectionEnd || 0
+      const text = messageInputRef.current.value
+      const newText = text.substring(0, start) + emojiText + text.substring(end)
+      messageInputRef.current.value = newText
+      messageInputRef.current.focus()
+      messageInputRef.current.setSelectionRange(start + emojiText.length, start + emojiText.length)
     }
-    toggleEmojiPicker()
   }
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
 
   if (!conversation) {
     return (
@@ -453,14 +488,28 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     {message.fileUrl && (
                       <Box sx={{ mt: 1 }}>
                         {message.fileType === 'image' ? (
-                          <img
-                            src={getFileUrl(message.fileUrl)}
+                          <Box
+                            component="img"
+                            src={message.fileUrl}
                             alt={message.fileName || 'Uploaded image'}
-                            style={{
+                            sx={{
                               maxWidth: '200px',
                               maxHeight: '200px',
                               borderRadius: '8px',
-                              display: 'block'
+                              objectFit: 'contain',
+                              cursor: 'pointer',
+                              '&:hover': {
+                                opacity: 0.9
+                              }
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              window.open(message.fileUrl, '_blank');
+                            }}
+                            onError={(e) => {
+                              console.error('Error loading image:', e);
+                              const target = e.target as HTMLImageElement;
+                              target.src = '/placeholder-image.png';
                             }}
                           />
                         ) : (
@@ -476,18 +525,53 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                           >
                             <AttachFile />
                             <Typography variant="body2">
-                              {message.fileName}
+                              {message.fileName ? truncateFileName(message.fileName) : 'File đính kèm'}
                             </Typography>
                             <a
                               href={getFileUrl(message.fileUrl)}
                               download={message.fileName}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.preventDefault();
-                                const fileUrl = message.fileUrl;
-                                if (typeof fileUrl === 'string') {
-                                  window.open(getFileUrl(fileUrl), '_blank', 'noopener,noreferrer');
+                                if (!message.fileUrl) return;
+                                const fileUrl = getFileUrl(message.fileUrl);
+                                if (fileUrl) {
+                                  try {
+                                    const token = localStorage.getItem('accessToken');
+                                    if (!token) {
+                                      console.error('No access token found');
+                                      return;
+                                    }
+
+                                    // Gọi API endpoint mới để tải file
+                                    const response = await fetch(`${API_URL}/api/chat/download?fileUrl=${encodeURIComponent(fileUrl)}`, {
+                                      headers: {
+                                        'Authorization': `Bearer ${token}`
+                                      }
+                                    });
+
+                                    if (!response.ok) {
+                                      throw new Error('Download failed');
+                                    }
+
+                                    // Lấy blob từ response
+                                    const blob = await response.blob();
+
+                                    // Tạo URL tạm thời cho blob
+                                    const url = window.URL.createObjectURL(blob);
+
+                                    // Tạo thẻ a để tải file
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = message.fileName || 'file';
+                                    document.body.appendChild(link);
+                                    link.click();
+
+                                    // Cleanup
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                  } catch (error) {
+                                    console.error('Error downloading file:', error);
+                                  }
                                 }
                               }}
                               style={{
@@ -528,6 +612,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           borderTop: "1px solid",
           borderColor: "divider",
           bgcolor: "background.paper",
+          position: 'relative'
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -608,11 +693,25 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
         {/* Emoji picker */}
         {showEmojiPicker && (
-          <Box sx={{ position: 'absolute', bottom: '100%', right: 0, mb: 1 }}>
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: '100%',
+              left: 0,
+              zIndex: 1000,
+              mb: 1,
+              boxShadow: 3,
+              borderRadius: 1
+            }}
+          >
             <Picker
               data={data}
               onEmojiSelect={handleEmojiSelect}
-              theme="light"
+              theme={theme.palette.mode}
+              set="native"
+              previewPosition="none"
+              skinTonePosition="none"
+              autoFocus={true}
             />
           </Box>
         )}

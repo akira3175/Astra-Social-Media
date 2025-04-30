@@ -42,6 +42,25 @@ const MessagesPage: React.FC = () => {
   const maxReconnectAttempts = 10
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [users, setUsers] = useState<any[]>([])
+  const [hasNewMessages, setHasNewMessages] = useState(false)
+  const [isFirstLoad, setIsFirstLoad] = useState(true)
+  const [shouldScroll, setShouldScroll] = useState(true)
+
+  // Thêm hàm truncateFileName
+  const truncateFileName = (fileName: string, maxLength: number = 15) => {
+    if (fileName.length <= maxLength) return fileName;
+    const extension = fileName.split('.').pop();
+    const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+    const truncatedName = nameWithoutExt.substring(0, maxLength - 3) + '...';
+    return `${truncatedName}.${extension}`;
+  };
+
+  // Thêm hàm scrollToBottom
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
 
   // Chọn cuộc trò chuyện đầu tiên khi trang được tải
   useEffect(() => {
@@ -49,184 +68,6 @@ const MessagesPage: React.FC = () => {
       handleSelectConversation(conversations[0])
     }
   }, [conversations])
-
-  // Cuộn xuống tin nhắn mới nhất
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  // Kết nối WebSocket
-  const connectWebSocket = () => {
-    if (isConnecting || !currentUser) return
-
-    setIsConnecting(true)
-    const token = localStorage.getItem('accessToken')
-    const socket = new SockJS('http://localhost:8080/ws')
-    const stompClient = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: {
-        Authorization: `Bearer ${token}`
-      },
-      debug: (str: string) => {
-        console.log(str)
-      },
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-    })
-
-    stompClient.activate()
-    stompClient.onConnect = () => {
-      console.log('Connected to WebSocket')
-      setWs(stompClient)
-      setIsConnecting(false)
-      reconnectAttempts.current = 0
-
-      // Subscribe vào private channel
-      stompClient.subscribe(`/user/${currentUser.id}/queue/messages`, (message) => {
-        try {
-          const data = JSON.parse(message.body)
-          console.log("Received private message:", data)
-
-          // Kiểm tra xem tin nhắn đã tồn tại chưa
-          if (messages.some(m => m.id === data.id)) {
-            return
-          }
-
-          // Nếu là tin nhắn mới, thêm vào danh sách
-          const newMessage = {
-            id: data.id,
-            text: data.content || data.text || '',
-            timestamp: data.timestamp,
-            senderId: Number(data.senderId),
-            isRead: false,
-            conversationId: data.conversationId,
-            receiverId: data.receiverId,
-            ...(data.fileUrl && {
-              fileUrl: data.fileUrl,
-              fileType: data.fileType,
-              fileName: data.fileName
-            })
-          }
-
-          setMessages(prev => [...prev, newMessage].sort((a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          ))
-
-          // Cập nhật lastMessage trong conversations
-          setConversations(prev => prev.map(conv => {
-            if (conv.id === data.conversationId) {
-              return {
-                ...conv,
-                lastMessage: {
-                  id: data.id,
-                  text: data.content || data.text || '',
-                  timestamp: data.timestamp,
-                  isRead: false,
-                  senderId: Number(data.senderId)
-                },
-                unreadCount: conv.id === selectedConversation?.id ? 0 : conv.unreadCount + 1
-              }
-            }
-            return conv
-          }))
-
-          // Cuộn xuống tin nhắn mới nhất
-          if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
-          }
-        } catch (error) {
-          console.error('Error parsing private message:', error)
-        }
-      })
-
-      // Subscribe vào public channel
-      stompClient.subscribe('/topic/public', (message) => {
-        try {
-          const data = JSON.parse(message.body)
-          console.log("Received public message:", data)
-
-          // Chỉ xử lý tin nhắn liên quan đến người dùng hiện tại
-          if (data.senderId === currentUser.id || data.receiverId === currentUser.id) {
-            // Kiểm tra xem tin nhắn đã tồn tại chưa
-            if (messages.some(m => m.id === data.id)) {
-              return
-            }
-
-            const newMessage = {
-              id: data.id,
-              text: data.content || data.text || '',
-              timestamp: data.timestamp,
-              senderId: Number(data.senderId),
-              isRead: false,
-              conversationId: data.conversationId,
-              receiverId: data.receiverId,
-              ...(data.fileUrl && {
-                fileUrl: data.fileUrl,
-                fileType: data.fileType,
-                fileName: data.fileName
-              })
-            }
-
-            setMessages(prev => [...prev, newMessage].sort((a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-            ))
-
-            // Cập nhật lastMessage trong conversations
-            setConversations(prev => prev.map(conv => {
-              if (conv.id === data.conversationId) {
-                return {
-                  ...conv,
-                  lastMessage: {
-                    id: data.id,
-                    text: data.content || data.text || '',
-                    timestamp: data.timestamp,
-                    isRead: false,
-                    senderId: Number(data.senderId)
-                  },
-                  unreadCount: conv.id === selectedConversation?.id ? 0 : conv.unreadCount + 1
-                }
-              }
-              return conv
-            }))
-
-            // Cuộn xuống tin nhắn mới nhất
-            if (messagesEndRef.current) {
-              messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
-            }
-          }
-        } catch (error) {
-          console.error('Error parsing public message:', error)
-        }
-      })
-    }
-
-    stompClient.onStompError = (error) => {
-      console.error('WebSocket connection error:', error)
-      setIsConnecting(false)
-      handleReconnect()
-    }
-  }
-
-  // Xử lý kết nối lại
-  const handleReconnect = () => {
-    if (reconnectAttempts.current < maxReconnectAttempts) {
-      reconnectAttempts.current++
-      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000)
-
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
-      }
-
-      reconnectTimeoutRef.current = setTimeout(() => {
-        console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})`)
-        connectWebSocket()
-      }, delay)
-    } else {
-      console.error('Max reconnection attempts reached')
-      setIsConnecting(false)
-    }
-  }
 
   // Thêm hàm loadMessages
   const loadMessages = async () => {
@@ -246,19 +87,6 @@ const MessagesPage: React.FC = () => {
       console.error('Error loading messages:', error)
     }
   }
-
-  // Thêm useEffect để tự động cập nhật tin nhắn mỗi 10 giây
-  useEffect(() => {
-    if (selectedConversation) {
-      const intervalId = setInterval(() => {
-        loadMessages()
-      }, 10000) // 10 giây
-
-      return () => {
-        clearInterval(intervalId)
-      }
-    }
-  }, [selectedConversation])
 
   // Format thời gian
   const formatTime = (timestamp: string) => {
@@ -352,61 +180,43 @@ const MessagesPage: React.FC = () => {
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation)
     setShowMobileChat(true)
-
-    // Load tin nhắn từ API
-    const token = localStorage.getItem('accessToken')
-    if (!token || !currentUser?.id) {
-      console.error('No access token or current user ID found')
-      return
-    }
-
-    fetch(`http://localhost:8080/api/chat/messages/${currentUser.id}/${conversation.user.id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error('Failed to fetch messages')
-        }
-        return res.json()
-      })
-      .then(data => {
-        console.log('Fetched messages:', data)
-        // Chuyển đổi dữ liệu tin nhắn
-        const formattedMessages = data.map((msg: any) => ({
-          id: msg.id,
-          text: msg.content || msg.text || '',
-          timestamp: msg.timestamp,
-          senderId: Number(msg.senderId),
-          isRead: msg.read || false,
-          fileUrl: msg.fileUrl,
-          fileType: msg.fileType,
-          fileName: msg.fileName
-        }))
-        setMessages(formattedMessages)
-        // Đánh dấu tin nhắn đã đọc
-        markMessagesAsRead(conversation.id)
-      })
-      .catch(error => {
-        console.error('Error fetching messages:', error)
-        setMessages([])
-      })
+    setIsFirstLoad(false)
+    setShouldScroll(true)
   }
+
+  // Thêm useEffect để theo dõi selectedConversation
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages()
+    }
+  }, [selectedConversation])
 
   const handleBackToList = () => {
     setShowMobileChat(false)
   }
 
-  // Gửi tin nhắn
+  // Thêm hàm getFileUrl
+  const getFileUrl = (fileUrl: string) => {
+    if (!fileUrl) return '';
+
+    // Nếu là URL Cloudinary
+    if (fileUrl.includes('cloudinary.com')) {
+      const token = localStorage.getItem('accessToken');
+      return `${fileUrl}?token=${token}`;
+    }
+
+    // Nếu là URL local
+    return fileUrl.startsWith('http') ? fileUrl : `http://localhost:8080${fileUrl}`;
+  };
+
+  // Sửa lại hàm handleSendMessage
   const handleSendMessage = async (text: string, fileUrl?: string, fileType?: 'image' | 'video' | 'document' | 'file', fileName?: string) => {
     if (!selectedConversation || !ws) return;
 
     // Xử lý URL file
     let processedFileUrl = fileUrl;
-    if (fileUrl && !fileUrl.startsWith('http')) {
-      processedFileUrl = `http://${fileUrl}`;
+    if (fileUrl) {
+      processedFileUrl = getFileUrl(fileUrl);
     }
 
     const message: Message = {
@@ -439,7 +249,7 @@ const MessagesPage: React.FC = () => {
         ...message,
         content: text,
         type: fileType || 'text',
-        fileUrl: processedFileUrl // Gửi URL đã xử lý
+        fileUrl: processedFileUrl
       })
     });
   };
@@ -515,6 +325,194 @@ const MessagesPage: React.FC = () => {
     }
   }, [currentUser])
 
+  // Kết nối WebSocket
+  const connectWebSocket = () => {
+    if (isConnecting || !currentUser) return
+
+    setIsConnecting(true)
+    const token = localStorage.getItem('accessToken')
+    const socket = new SockJS('http://localhost:8080/ws')
+    const stompClient = new Client({
+      webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${token}`
+      },
+      debug: (str: string) => {
+        console.log(str)
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    })
+
+    stompClient.activate()
+    stompClient.onConnect = () => {
+      console.log('Connected to WebSocket')
+      setWs(stompClient)
+      setIsConnecting(false)
+      reconnectAttempts.current = 0
+
+      // Subscribe vào private channel
+      stompClient.subscribe(`/user/${currentUser.id}/queue/messages`, (message) => {
+        try {
+          const data = JSON.parse(message.body)
+          console.log("Received private message:", data)
+
+          // Kiểm tra xem tin nhắn đã tồn tại chưa
+          if (messages.some(m => m.id === data.id)) {
+            return
+          }
+
+          // Nếu là tin nhắn mới, thêm vào danh sách
+          const newMessage = {
+            id: data.id,
+            text: data.content || data.text || '',
+            timestamp: data.timestamp,
+            senderId: Number(data.senderId),
+            isRead: false,
+            conversationId: data.conversationId,
+            receiverId: data.receiverId,
+            ...(data.fileUrl && {
+              fileUrl: data.fileUrl,
+              fileType: data.fileType,
+              fileName: data.fileName
+            })
+          }
+
+          setMessages(prev => [...prev, newMessage].sort((a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          ))
+
+          // Cập nhật lastMessage trong conversations
+          setConversations(prev => prev.map(conv => {
+            if (conv.id === data.conversationId) {
+              return {
+                ...conv,
+                lastMessage: {
+                  id: data.id,
+                  text: data.content || data.text || '',
+                  timestamp: data.timestamp,
+                  isRead: false,
+                  senderId: Number(data.senderId)
+                },
+                unreadCount: conv.id === selectedConversation?.id ? 0 : conv.unreadCount + 1
+              }
+            }
+            return conv
+          }))
+        } catch (error) {
+          console.error('Error parsing private message:', error)
+        }
+      })
+
+      // Subscribe vào public channel
+      stompClient.subscribe('/topic/public', (message) => {
+        try {
+          const data = JSON.parse(message.body)
+          console.log("Received public message:", data)
+
+          // Chỉ xử lý tin nhắn liên quan đến người dùng hiện tại
+          if (data.senderId === currentUser.id || data.receiverId === currentUser.id) {
+            // Kiểm tra xem tin nhắn đã tồn tại chưa
+            if (messages.some(m => m.id === data.id)) {
+              return
+            }
+
+            const newMessage = {
+              id: data.id,
+              text: data.content || data.text || '',
+              timestamp: data.timestamp,
+              senderId: Number(data.senderId),
+              isRead: false,
+              conversationId: data.conversationId,
+              receiverId: data.receiverId,
+              ...(data.fileUrl && {
+                fileUrl: data.fileUrl,
+                fileType: data.fileType,
+                fileName: data.fileName
+              })
+            }
+
+            setMessages(prev => [...prev, newMessage].sort((a, b) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            ))
+
+            // Cập nhật lastMessage trong conversations
+            setConversations(prev => prev.map(conv => {
+              if (conv.id === data.conversationId) {
+                return {
+                  ...conv,
+                  lastMessage: {
+                    id: data.id,
+                    text: data.content || data.text || '',
+                    timestamp: data.timestamp,
+                    isRead: false,
+                    senderId: Number(data.senderId)
+                  },
+                  unreadCount: conv.id === selectedConversation?.id ? 0 : conv.unreadCount + 1
+                }
+              }
+              return conv
+            }))
+          }
+        } catch (error) {
+          console.error('Error parsing public message:', error)
+        }
+      })
+    }
+
+    stompClient.onStompError = (error) => {
+      console.error('WebSocket connection error:', error)
+      setIsConnecting(false)
+      handleReconnect()
+    }
+  }
+
+  // Xử lý kết nối lại
+  const handleReconnect = () => {
+    if (reconnectAttempts.current < maxReconnectAttempts) {
+      reconnectAttempts.current++
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000)
+
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})`)
+        connectWebSocket()
+      }, delay)
+    } else {
+      console.error('Max reconnection attempts reached')
+      setIsConnecting(false)
+    }
+  }
+
+  // Thêm useEffect để tự động cập nhật tin nhắn mỗi 10 giây
+  useEffect(() => {
+    if (selectedConversation) {
+      const intervalId = setInterval(() => {
+        loadMessages()
+      }, 10000) // 10 giây
+
+      return () => {
+        clearInterval(intervalId)
+      }
+    }
+  }, [selectedConversation])
+
+  // Thêm useEffect để xử lý cuộn
+  useEffect(() => {
+    if (shouldScroll && messages.length > 0) {
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+        }
+        setShouldScroll(false)
+      }, 100)
+    }
+  }, [messages, shouldScroll])
+
   return (
     <BasePage>
       <Box
@@ -575,6 +573,7 @@ const MessagesPage: React.FC = () => {
                   onEmojiClick={handleEmojiClick}
                   toggleEmojiPicker={toggleEmojiPicker}
                   isUploading={isUploading}
+                  truncateFileName={truncateFileName}
                 />
               ) : (
                 <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
