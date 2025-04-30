@@ -5,7 +5,7 @@ class FriendshipService {
   // Gửi lời mời kết bạn
   async sendFriendRequest(email: string) {
     try {
-      const response = await api.post(`/friends/request`, {
+      const response = await api.post(`/friendships/request`, {
         receiverEmail: email,
       });
       return response.data;
@@ -27,16 +27,26 @@ class FriendshipService {
   }
 
   // Hủy lời mời kết bạn
-  async cancelFriendRequest(email: string) {
+  async cancelFriendRequest(receiverEmail: string) {
     try {
-      const response = await api.delete(`/friends/request`, {
+      const response = await api.delete(`/friendships/request`, {
         data: {
-          receiverEmail: email,
+          receiverEmail: receiverEmail,
         },
       });
+
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          throw new Error("Không tìm thấy người dùng");
+        }
+        if (error.response?.status === 401) {
+          throw new Error("Bạn cần đăng nhập để thực hiện thao tác này");
+        }
+        if (error.response?.status === 403) {
+          throw new Error("Bạn không có quyền hủy lời mời này");
+        }
         throw new Error(
           error.response?.data?.message || "Không thể hủy lời mời kết bạn"
         );
@@ -48,7 +58,7 @@ class FriendshipService {
   // Chấp nhận lời mời kết bạn
   async acceptFriendRequest(friendshipId: number) {
     try {
-      const response = await api.post(`/friends/accept/${friendshipId}`, null, {
+      const response = await api.post(`/friendships/accept/${friendshipId}`, null, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -99,7 +109,7 @@ class FriendshipService {
         throw new Error("Không tìm thấy lời mời kết bạn");
       }
 
-      const response = await api.delete(`/friends/request`, {
+      const response = await api.delete(`/friendships/request`, {
         data: {
           receiverEmail: request.receiver.email,
         },
@@ -134,7 +144,7 @@ class FriendshipService {
   // Xóa bạn bè (unfriend)
   async unfriend(friendshipId: number) {
     try {
-      const response = await api.put(`/friends/${friendshipId}/active`, null, {
+      const response = await api.put(`/friendships/${friendshipId}/active`, null, {
         params: { active: false },
       });
       return response.data;
@@ -151,7 +161,7 @@ class FriendshipService {
   // Lấy danh sách lời mời kết bạn đang chờ
   async getPendingRequests(userId: number) {
     try {
-      const response = await api.get(`/friends/pending/${userId}`);
+      const response = await api.get(`/friendships/pending/${userId}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -181,39 +191,25 @@ class FriendshipService {
 
   // Thêm bạn bè
   async addFriend(userId1: number, userId2: number) {
-    try {
-      const response = await api.post(`/friendships/${userId1}/${userId2}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post(`/friends/${userId1}/${userId2}`);
+    return response.data;
   }
 
   // Xóa bạn bè
   async removeFriend(userId1: number, userId2: number) {
-    try {
-      await api.delete(`/friendships/${userId1}/${userId2}`);
-    } catch (error) {
-      throw error;
-    }
+    await api.delete(`/friends/${userId1}/${userId2}`);
   }
 
   // Kiểm tra xem hai người có phải là bạn bè không
   async areFriends(userId1: number, userId2: number) {
-    try {
-      const response = await api.get(
-        `/friendships/check/${userId1}/${userId2}`
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.get(`/friends/check/${userId1}/${userId2}`);
+    return response.data;
   }
 
   // Lấy danh sách người dùng gợi ý kết bạn
   async getSuggestedUsers(userId: number) {
     try {
-      const response = await api.get(`/friendships/suggestions/${userId}`);
+      const response = await api.get(`/friends/suggestions/${userId}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -229,7 +225,7 @@ class FriendshipService {
   // Lấy danh sách lời mời kết bạn đã gửi
   async getSentRequests(userId: number) {
     try {
-      const response = await api.get(`/friends/sent/${userId}`);
+      const response = await api.get(`/friendships/sent/${userId}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {

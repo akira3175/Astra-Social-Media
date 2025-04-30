@@ -59,13 +59,13 @@ const FriendList: React.FC = () => {
         ...friend,
         user: {
           ...friend.user,
-          avatar: friend.user.avatar
+          avatar: friend.user?.avatar
             ? `http://localhost:8080${friend.user.avatar}`
             : "",
         },
         friend: {
           ...friend.friend,
-          avatar: friend.friend.avatar
+          avatar: friend.friend?.avatar
             ? `http://localhost:8080${friend.friend.avatar}`
             : "",
         },

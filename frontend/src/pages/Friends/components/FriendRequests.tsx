@@ -17,30 +17,23 @@ import { Link } from "react-router-dom";
 import type { FriendRequest } from "../../../types/friendship";
 
 const FriendRequests: React.FC = () => {
-  // State quản lý danh sách lời mời kết bạn
   const [requests, setRequests] = useState<FriendRequest[]>([]);
-  // State quản lý trạng thái loading
   const [loading, setLoading] = useState(true);
-  // State quản lý thông báo lỗi
   const [error, setError] = useState<string | null>(null);
-  // Lấy thông tin người dùng hiện tại
   const { currentUser } = useCurrentUser();
 
-  // Load danh sách lời mời kết bạn khi component được mount hoặc currentUser thay đổi
   useEffect(() => {
     if (currentUser?.id) {
       loadFriendRequests();
     }
   }, [currentUser?.id]);
 
-  // Hàm load danh sách lời mời kết bạn từ API
   const loadFriendRequests = async () => {
     try {
       setLoading(true);
       const data = await friendshipService.getPendingRequests(currentUser!.id);
       console.log("Dữ liệu lời mời kết bạn:", data);
 
-      // Format dữ liệu và lọc chỉ những lời mời có trạng thái PENDING
       const formattedData = data
         .filter((request: FriendRequest) => request.status === "PENDING")
         .map((request: FriendRequest) => {
@@ -50,9 +43,7 @@ const FriendRequests: React.FC = () => {
 
           return {
             ...request,
-            // Sử dụng user1 làm thông tin người gửi
             sender: request.user1,
-            // Thêm base URL vào trước avatar URL
             user1: {
               ...request.user1,
               avatar: request.user1.avatar

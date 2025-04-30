@@ -35,7 +35,7 @@ const FriendSuggest: React.FC = () => {
     try {
       setLoading(true);
       const data = await friendshipService.getSuggestedUsers(currentUser!.id);
-      const formattedData = data.map((user: any) => ({
+      const formattedData = data.map((user: User) => ({
         ...user,
         avatar: user.avatar ? `http://localhost:8080${user.avatar}` : "",
       }));

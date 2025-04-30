@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/friendships")
+@RequestMapping("/api/friends")
 @RequiredArgsConstructor
 public class FriendController {
     private final FriendService friendService;
