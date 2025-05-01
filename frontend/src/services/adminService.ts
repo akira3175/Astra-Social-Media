@@ -288,6 +288,7 @@ export const adminLogin = async ({
     
     tokenService.setAccessToken(accessToken);
     tokenService.setRefreshToken(refreshToken);
+    localStorage.setItem("adminToken",accessToken)
     setAuthHeader(accessToken);
 
 
