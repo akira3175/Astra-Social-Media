@@ -10,7 +10,7 @@ useEffect(() => {
         try {
             const response = await api.get<ApiResponse<Post[]>>(`/admin/posts/getAllPost`, {
             });
-            console.log(response);
+            console.log(response.data.data[0]);
             
             return response.data.data;
           } catch (error) {

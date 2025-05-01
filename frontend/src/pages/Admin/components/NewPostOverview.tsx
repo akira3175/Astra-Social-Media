@@ -42,7 +42,7 @@ const NewPostOverview = ({
             {posts.length >0 && posts.map((post) => (
               <ListItem key={post.id} disablePadding sx={{ mb: 2 }}>
                 <ListItemText
-                  primary={post.title}
+                  primary={post.content}
                   secondary={
                     <Box
                       sx={{
@@ -62,7 +62,7 @@ const NewPostOverview = ({
                             color: "text.secondary",
                           }}
                         />
-                        <Typography variant="caption">{post.author}</Typography>
+                        <Typography variant="caption">{post.user}</Typography>
                       </Box>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <AccessTime
