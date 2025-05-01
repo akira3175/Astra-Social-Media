@@ -54,6 +54,7 @@ public class SecurityConfig {
                                                                 "/queue/**",
                                                                 "/app/**",
                                                                 "/user/**",
+                                                                "api/gemini/**",
                                                                 "/api/admin/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
