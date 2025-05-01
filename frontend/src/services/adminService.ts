@@ -1,4 +1,5 @@
 import { api } from "../configs/api";
+import { setAuthHeader } from "./authService";
 import { tokenService } from "./tokenService";
 
 // API Response type
@@ -232,6 +233,18 @@ export const getComments = async (pagination?: PaginationParams): Promise<Commen
   }
 };
 
+export const getAllUserLoginToday = async (pagination?: PaginationParams): Promise<User[]> => {
+  try {
+    const response = await api.get<ApiResponse<User[]>>(`/admin/users/getUserLoginToday`, {
+      params: pagination
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    throw new Error("Failed to fetch user");
+  }
+};
+
 export const getCommentsAt = async (params: DateRangeParams & PaginationParams): Promise<Comment[]> => {
   try {
     const response = await api.get<ApiResponse<Comment[]>>(`/admin/comments/getAllCommentAt`, {
@@ -258,25 +271,6 @@ export const deleteComment = async (commentId: number): Promise<void> => {
   }
 };
 
-export const getReports = async (): Promise<Report[]> => {
-  try {
-    const response = await api.get(`/admin/reports`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching reports:", error);
-    throw error;
-  }
-};
-
-export const resolveReport = async (reportId: number): Promise<void> => {
-  try {
-    await api.put(`/admin/reports/${reportId}/resolve`);
-  } catch (error) {
-    console.error("Error resolving report:", error);
-    throw error;
-  }
-};
-
 export const adminLogin = async ({
   email,
   password,
@@ -294,6 +288,8 @@ export const adminLogin = async ({
     
     tokenService.setAccessToken(accessToken);
     tokenService.setRefreshToken(refreshToken);
+    localStorage.setItem("adminToken",accessToken)
+    setAuthHeader(accessToken);
 
 
     return { accessToken, refreshToken };

@@ -15,11 +15,10 @@ import {
 import {
   Comment,
   Post,
-  Report,
   User,
 } from "../../../services/adminService";
 
-export const TopGeneralOverview = ({users,posts,isLoading,comments,reports}:{users:User[], posts:Post[], isLoading:boolean, comments:Comment[], reports:Report[]}) => {
+export const TopGeneralOverview = ({users,posts,isLoading,comments,reports}:{users:User[], posts:Post[], isLoading:boolean, comments:Comment[], reports:User[]}) => {
   
     
   // Dữ liệu mẫu

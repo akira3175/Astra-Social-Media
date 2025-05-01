@@ -6,8 +6,8 @@ import { useState, useEffect } from "react";
 import {
   getUsers,
   getPosts,
+  getAllUserLoginToday,
   getComments,
-  getReports,
   Post,
   User,
   Comment,
@@ -21,7 +21,7 @@ const DashboardPage: React.FC = () => {
   const [isLoading, setLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reports, setReports] = useState<User[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,11 +29,11 @@ const DashboardPage: React.FC = () => {
         const usersData = await getUsers();
         const postsData = await getPosts();
         const commentsData = await getComments();
-        const reportsData = await getReports();
+        const latestLogins = await getAllUserLoginToday() ;
         setUsers(usersData);
         setPosts(postsData);
         setComments(commentsData);
-        setReports(reportsData);
+        setReports(latestLogins);
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
