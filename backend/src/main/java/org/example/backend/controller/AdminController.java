@@ -60,7 +60,7 @@ public class AdminController {
 
         Map<String, String> tokens = userService.login(email, password);
         User user = userService.getUserInfo(email);
-        if (!user.getIsSuperUser()) {
+        if (!user.getIsStaff()) {
             return ResponseEntity.status(401).body(ApiResponse.builder()
                 .status(401)
                 .message("You are not Admin")
