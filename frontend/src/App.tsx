@@ -34,6 +34,7 @@ import ChatBubble from "./components/AIChatBox/ChatBubble";
 import OTPVerificationPage from "./pages/Auth/OTPVerificationPage";
 import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/Auth/ResetPasswordPage";
+import TestPage from "./pages/test/TestPage";
 
 const theme = createTheme({
   breakpoints: {
@@ -118,6 +119,7 @@ const AppContent: React.FC = () => {
           <Route path="/profile-setup" element={<ProfileSetupPage />} />
           <Route path="/otp-verification" element={<OTPVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/test" element={<TestPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
