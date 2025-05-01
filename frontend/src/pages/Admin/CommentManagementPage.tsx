@@ -50,7 +50,7 @@ const CommentManagementPage: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await getComments() // Fetch all comments for now
+      const response = await getComments({ page: 0, size: 100 }) // Fetch all comments for now
       console.log(response);
       
       setComments(response)
