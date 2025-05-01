@@ -39,7 +39,7 @@ const AdminLoginPage: React.FC = () => {
     try {
       await adminLogin({ email: username, password })
       navigate("/admin/dashboard")
-    } catch (error) {
+    } catch {
       setError("Tên đăng nhập hoặc mật khẩu không đúng")
     } finally {
       setIsLoading(false)
