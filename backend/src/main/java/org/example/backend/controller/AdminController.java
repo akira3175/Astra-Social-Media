@@ -3,6 +3,8 @@ package org.example.backend.controller;
 import org.springframework.web.bind.annotation.RestController;
 import org.example.backend.security.JwtUtil;
 import org.example.backend.security.RequireAdmin;
+
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -301,17 +303,17 @@ public class AdminController {
                 .build());
     }
 
-    @RequireAdmin
-    @GetMapping("/comments/getAllComment")
-    public ResponseEntity<ApiResponse<Object>> getAllComment() {
-        List<Comment> comments = commentService.getAllComments();
-        return ResponseEntity.ok().body(ApiResponse.builder()
-                .status(200)
-                .message("Success")
-                .data(comments)
-                .timestamp(System.currentTimeMillis())
-                .build());
-    }
+    // @RequireAdmin
+    // @GetMapping("/comments/getAllComment")
+    // public ResponseEntity<ApiResponse<Object>> getAllComment() {
+    //     List<Comment> comments = commentService.getAllComments();
+    //     return ResponseEntity.ok().body(ApiResponse.builder()
+    //             .status(200)
+    //             .message("Success")
+    //             .data(comments)
+    //             .timestamp(System.currentTimeMillis())
+    //             .build());
+    // }
 
     @RequireAdmin
     @GetMapping("/comments/getAllCommentAt")
@@ -321,14 +323,20 @@ public class AdminController {
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
 
-            List<Comment> filteredComments = commentService.getAllComments().stream()
-                .filter(comment -> comment.getCreatedAt().after(startDate) && comment.getCreatedAt().before(endDate))
+            List<Post> posts = postService.getAllPosts();
+            List<PostSummaryDTO> filteredPosts = posts.stream()
+                .map(this::convertToSummaryDTO)
+                .filter(post -> post.getComments().stream()
+                    .anyMatch(comment -> {
+                        Date commentDate = comment.getCreatedAt();
+                        return commentDate.after(startDate) && commentDate.before(endDate);
+                    }))
                 .collect(Collectors.toList());
 
             return ResponseEntity.ok().body(ApiResponse.builder()
                     .status(200)
                     .message("Success")
-                    .data(filteredComments)
+                    .data(filteredPosts)
                     .timestamp(System.currentTimeMillis())
                     .build());
         } catch (ParseException e) {
@@ -353,4 +361,86 @@ public class AdminController {
                 .build());
     }
 
+    private CustomUserDTO convertUser(User user) {
+        CustomUserDTO dto = new CustomUserDTO();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setAvatar(user.getAvatar());
+        return dto;
+    }
+    
+
+    private PostSummaryDTO convertToSummaryDTO(Post post) {
+        PostSummaryDTO dto = new PostSummaryDTO();
+        dto.setIdPost(post.getId());
+        dto.setUserPost(convertUser(post.getUser()));
+        dto.setComments(post.getComments().stream()
+            .filter(c -> c.getParentComment() == null)
+            .map(this::convertComment)
+            .collect(Collectors.toList()));
+        return dto;
+    }
+    
+    private CommentDTO convertComment(Comment comment) {
+        CommentDTO dto = new CommentDTO();
+        dto.setCreatedAt(comment.getCreatedAt());
+        dto.setUpdatedAt(comment.getUpdatedAt());
+        dto.setIdComment(comment.getId());
+        dto.setContent(comment.getContent());
+        dto.setUserComment(convertUser(comment.getUser()));
+        dto.setReplies(comment.getReplies().stream()
+            .map(this::convertComment)
+            .collect(Collectors.toList()));
+        return dto;
+    }
+
+
+    @RequireAdmin
+    @GetMapping("/comments/getAllComment")
+    public ResponseEntity<ApiResponse<Object>> getAllComment() {
+        List<Post> posts = postService.getAllPosts();
+        List<PostSummaryDTO> simplifiedPosts = posts.stream()
+                .filter(c -> c.getComments().size() > 0)
+                .map(this::convertToSummaryDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(simplifiedPosts)
+                .timestamp(System.currentTimeMillis())
+                .build());
+    }
+
+    
+
 }
+
+// PostSummaryDTO.java
+@Data
+class PostSummaryDTO {
+    private Long idPost;
+    private CustomUserDTO userPost;
+    private List<CommentDTO> comments;
+}
+
+// CommentDTO.java
+@Data
+class CommentDTO {
+    private Long idComment;
+    private String content;
+    private CustomUserDTO userComment;
+    private List<CommentDTO> replies;
+    private Date createdAt;
+    private Date updatedAt;
+}
+
+@Data
+class CustomUserDTO {
+    private Long id;
+    private String name;
+    private String email;
+    private String avatar;
+}
+
