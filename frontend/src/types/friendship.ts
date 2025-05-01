@@ -2,36 +2,14 @@ import { User } from "./user";
 
 export type FriendStatus = "friend" | "request" | "suggestion" | "sent";
 
-export interface SuggestedUser {
-    id: number
-    name: string
-    avatar: string
-    mutualFriends: number
-}
 
-export interface Request {
+export interface Friendship {
     id: number;
     status: string;
-    createdAt: string;
+    createdAt: number[];
+    acceptedAt: number[];
     active: boolean;
-    user1: User;
-    user2: User;
+    user: User;
 }
 
-export interface FriendRequest {
-    id: number;
-    status: string;
-    createdAt: string;
-    active: boolean;
-    user1: User;
-    user2: User;
-}
 
-export interface SentRequest {
-    id: number;
-    status: string;
-    createdAt: string;
-    active: boolean;
-    user1: User;
-    user2: User;
-}

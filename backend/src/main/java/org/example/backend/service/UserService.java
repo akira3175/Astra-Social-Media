@@ -230,44 +230,44 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
-    public List<Map<String, Object>> getSuggestedUsers(Long currentUserId) {
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new RuntimeException("Current user not found"));
-
-        return userRepository.findTop6ByOrderByMutualFriendsDesc().stream()
-                .filter(user -> !user.getId().equals(currentUserId))
-                .map(user -> {
-                    Map<String, Object> userMap = new HashMap<>();
-                    userMap.put("id", user.getId());
-                    userMap.put("name", user.getLastName() + user.getFirstName());
-                    userMap.put("email", user.getEmail());
-                    userMap.put("avatar", user.getAvatar());
-                    userMap.put("mutualFriends", user.getMutualFriends() != null ? user.getMutualFriends() : 0);
-                    userMap.put("status", null);
-
-                    // Tìm friendship giữa currentUser và user
-                    Optional<Friendship> friendship = friendshipRepository.findByUser1AndUser2(currentUser, user);
-                    if (friendship.isEmpty()) {
-                        friendship = friendshipRepository.findByUser1AndUser2(user, currentUser);
-                    }
-
-                    if (friendship.isPresent()) {
-                        System.out.println(
-                                "Found friendship for user " + user.getFirstName() + ": " + friendship.get().getId());
-                        userMap.put("friendshipStatus", friendship.get().getStatus().name());
-                        userMap.put("isUser1", friendship.get().getUser1().getId().equals(currentUserId));
-                        userMap.put("friendshipId", friendship.get().getId());
-                    } else {
-                        System.out.println("No friendship found for user " + user.getFirstName());
-                        userMap.put("friendshipStatus", null);
-                        userMap.put("isUser1", null);
-                        userMap.put("friendshipId", null);
-                    }
-
-                    return userMap;
-                })
-                .collect(Collectors.toList());
-    }
+//    public List<Map<String, Object>> getSuggestedUsers(Long currentUserId) {
+//        User currentUser = userRepository.findById(currentUserId)
+//                .orElseThrow(() -> new RuntimeException("Current user not found"));
+//
+//        return userRepository.findTop6ByOrderByMutualFriendsDesc().stream()
+//                .filter(user -> !user.getId().equals(currentUserId))
+//                .map(user -> {
+//                    Map<String, Object> userMap = new HashMap<>();
+//                    userMap.put("id", user.getId());
+//                    userMap.put("name", user.getLastName() + user.getFirstName());
+//                    userMap.put("email", user.getEmail());
+//                    userMap.put("avatar", user.getAvatar());
+//                    userMap.put("mutualFriends", user.getMutualFriends() != null ? user.getMutualFriends() : 0);
+//                    userMap.put("status", null);
+//
+//                    // Tìm friendship giữa currentUser và user
+//                    Optional<Friendship> friendship = friendshipRepository.findByUser1AndUser2(currentUser, user);
+//                    if (friendship.isEmpty()) {
+//                        friendship = friendshipRepository.findByUser1AndUser2(user, currentUser);
+//                    }
+//
+//                    if (friendship.isPresent()) {
+//                        System.out.println(
+//                                "Found friendship for user " + user.getFirstName() + ": " + friendship.get().getId());
+//                        userMap.put("friendshipStatus", friendship.get().getStatus().name());
+//                        userMap.put("isUser1", friendship.get().getRequester().getId().equals(currentUserId));
+//                        userMap.put("friendshipId", friendship.get().getId());
+//                    } else {
+//                        System.out.println("No friendship found for user " + user.getFirstName());
+//                        userMap.put("friendshipStatus", null);
+//                        userMap.put("isUser1", null);
+//                        userMap.put("friendshipId", null);
+//                    }
+//
+//                    return userMap;
+//                })
+//                .collect(Collectors.toList());
+//    }
 
     public List<User> getFriendsList(String userId) {
         try {
@@ -276,6 +276,12 @@ public class UserService {
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid user ID format");
         }
+    }
+
+    public List<String> getAllUsersEmails() {
+        return userRepository.findAll().stream()
+                .map(User::getEmail)
+                .collect(Collectors.toList());
     }
 
     public List<String> getFriendsEmails(String email) {

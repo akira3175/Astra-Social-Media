@@ -18,7 +18,9 @@ import { User } from "../../../types/user";
 
 const FriendSuggest: React.FC = () => {
   const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
+  const [pendingRequests, setPendingRequests] = useState<Set<string>>(
+    new Set()
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useCurrentUser();
@@ -32,7 +34,7 @@ const FriendSuggest: React.FC = () => {
   const loadSuggestedUsers = async () => {
     try {
       setLoading(true);
-      const data = await friendshipService.getSuggestedUsers(currentUser!.id);
+      const data = await friendshipService.getFriendSuggestions();
       setSuggestedUsers(data);
       setError(null);
     } catch (error) {
@@ -50,8 +52,7 @@ const FriendSuggest: React.FC = () => {
   const handleSendRequest = async (email: string) => {
     try {
       await friendshipService.sendFriendRequest(email);
-      // Thêm email vào danh sách chờ thay vì xóa khỏi danh sách gợi ý
-      setPendingRequests(prev => new Set(prev).add(email));
+      setPendingRequests((prev) => new Set(prev).add(email));
       alert("Đã gửi lời mời kết bạn thành công!");
     } catch (error) {
       if (error instanceof Error) {
@@ -64,10 +65,8 @@ const FriendSuggest: React.FC = () => {
 
   const handleCancelRequest = async (email: string) => {
     try {
-      // Giả sử bạn có API để hủy yêu cầu kết bạn
       await friendshipService.cancelFriendRequest(email);
-      // Xóa email khỏi danh sách chờ
-      setPendingRequests(prev => {
+      setPendingRequests((prev) => {
         const newSet = new Set(prev);
         newSet.delete(email);
         return newSet;
@@ -123,7 +122,7 @@ const FriendSuggest: React.FC = () => {
         <Grid container spacing={3}>
           {suggestedUsers.map((user) => {
             const isPending = pendingRequests.has(user.email);
-            
+
             return (
               <Grid item xs={12} sm={6} md={4} lg={3} key={user.id}>
                 <Card>

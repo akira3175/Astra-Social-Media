@@ -13,10 +13,10 @@ import { PersonRemove } from "@mui/icons-material";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
 import friendshipService from "../../../services/friendshipService";
 import { Link } from "react-router-dom";
-import { Request } from "../../../types/friendship";
+import { Friendship } from "../../../types/friendship";
 
 const FriendSent: React.FC = () => {
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [requests, setRequests] = useState<Friendship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useCurrentUser();
@@ -30,8 +30,8 @@ const FriendSent: React.FC = () => {
   const loadSentRequests = async () => {
     try {
       setLoading(true);
-      const data = await friendshipService.getSentRequests(currentUser!.id);
-      setRequests(data);
+      const data = await friendshipService.getSentFriendRequests();
+      setRequests(data as unknown as Friendship[]);
       setError(null);
     } catch (error) {
       console.error("Lỗi khi tải danh sách lời mời đã gửi:", error);
@@ -47,8 +47,22 @@ const FriendSent: React.FC = () => {
 
   const handleCancelRequest = async (requestId: number) => {
     try {
-      await friendshipService.rejectFriendRequest(requestId);
-      setRequests(requests.filter((request) => request.id !== requestId));
+      if (!currentUser?.id) {
+        throw new Error("Không tìm thấy thông tin người dùng");
+      }
+
+      // Tìm request cần hủy
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) {
+        throw new Error("Không tìm thấy lời mời kết bạn");
+      }
+
+      // Gọi API hủy lời mời
+      await friendshipService.cancelFriendRequest(request.user.email);
+
+      // Cập nhật lại danh sách
+      setRequests(requests.filter((r) => r.id !== requestId));
+      alert("Đã hủy lời mời kết bạn thành công!");
     } catch (error) {
       console.error("Lỗi khi hủy lời mời:", error);
       if (error instanceof Error) {
@@ -91,18 +105,18 @@ const FriendSent: React.FC = () => {
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                 <Avatar
-                  src={request.user2.avatar || ""}
-                  alt={request.user2.name}
+                  src={request.user.avatar || ""}
+                  alt={`${request.user.firstName} ${request.user.lastName}`}
                   sx={{ width: 56, height: 56, mr: 2 }}
                 >
-                  {request.user2.firstName?.charAt(0)}
-                  {request.user2.lastName?.charAt(0)}
+                  {request.user.firstName?.charAt(0)}
+                  {request.user.lastName?.charAt(0)}
                 </Avatar>
                 <Box>
                   <Typography
                     variant="h6"
                     component={Link}
-                    to={`/profile/${request.user2.email}`}
+                    to={`/profile/${request.user.email}`}
                     sx={{
                       textDecoration: "none",
                       color: "inherit",
@@ -111,14 +125,14 @@ const FriendSent: React.FC = () => {
                       },
                     }}
                   >
-                    {request.user2.name}
+                    {`${request.user.lastName} ${request.user.firstName}`}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {request.user2.email}
+                    {request.user.email}
                   </Typography>
-                  {request.user2.mutualFriends !== null && (
+                  {request.user.mutualFriends !== undefined && (
                     <Typography variant="body2" color="text.secondary">
-                      {request.user2.mutualFriends} bạn chung
+                      {request.user.mutualFriends} bạn chung
                     </Typography>
                   )}
                 </Box>

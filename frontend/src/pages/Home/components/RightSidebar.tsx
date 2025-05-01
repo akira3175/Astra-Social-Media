@@ -2,7 +2,6 @@ import type React from "react";
 import {
   Avatar,
   Box,
-  Button,
   Divider,
   List,
   ListItem,
@@ -12,28 +11,28 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useCurrentUser } from "../../../contexts/currentUserContext";
+import friendshipService from "../../../services/friendshipService";
 
-interface User {
+interface Friend {
   id: number;
-  name: string;
-  avatar: string;
-  mutualFriends: number;
-  friendshipStatus?: string;
-  isUser1?: boolean;
-  friendshipId?: number;
-}
-
-interface SuggestedUserResponse {
-  id: number;
-  name: string;
-  avatar: string;
-  mutualFriends: number;
-  friendshipStatus?: string;
-  isUser1?: boolean;
-  friendshipId?: number;
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar: string;
+  };
+  friend: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar: string;
+  };
+  since: string;
 }
 
 interface RightSidebarProps {
@@ -55,77 +54,25 @@ const TRENDING_TOPICS = [
 ];
 
 const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
-  const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const { currentUser } = useCurrentUser();
 
   useEffect(() => {
-    const fetchSuggestedUsers = async () => {
+    const fetchFriends = async () => {
       if (!currentUser?.id) {
         console.log("No current user ID found");
         return;
       }
 
       try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-          console.error("No access token found");
-          return;
-        }
-
-        console.log("Fetching suggested users for user ID:", currentUser.id);
-        console.log("Using token:", token);
-
-        const response = await axios.get<SuggestedUserResponse[]>(
-          `http://localhost:8080/api/users/suggestions?currentUserId=${currentUser.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        console.log("API Response status:", response.status);
-        console.log("API Response data:", response.data);
-
-        if (!response.data || !Array.isArray(response.data)) {
-          console.error("Invalid response format:", response.data);
-          return;
-        }
-
-        if (response.data.length === 0) {
-          console.log("No suggested users found");
-          return;
-        }
-
-        setSuggestedUsers(
-          response.data.map((user) => {
-            console.log("Processing user:", user);
-            return {
-              id: user.id,
-              name: user.name,
-              avatar: user.avatar || "",
-              mutualFriends: user.mutualFriends || 0,
-              friendshipStatus: user.friendshipStatus,
-              isUser1: user.isUser1,
-              friendshipId: user.friendshipId,
-            };
-          })
-        );
+        const data = await friendshipService.getFriends();
+        setFriends(data as unknown as Friend[]);
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          console.error("Error details:", {
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            message: error.message,
-          });
-        } else {
-          console.error("Unknown error:", error);
-        }
+        console.error("Error fetching friends:", error);
       }
     };
 
-    fetchSuggestedUsers();
+    fetchFriends();
   }, [currentUser?.id]);
 
   return (
@@ -137,65 +84,89 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
         boxShadow: "0 2px 12px rgba(0, 0, 0, 0.08)",
       }}
     >
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Gợi ý kết bạn
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+        Bạn bè
       </Typography>
       <List disablePadding>
-        {suggestedUsers.map((user) => (
-          <ListItem
-            key={user.id}
-            secondaryAction={
-              <Button
-                variant="outlined"
-                size="small"
-                sx={{
-                  borderColor: "#4f46e5",
-                  color: "#4f46e5",
-                  "&:hover": {
-                    borderColor: "#4338ca",
-                    bgcolor: "rgba(79, 70, 229, 0.05)",
-                  },
-                  textTransform: "none",
-                }}
-              >
-                Kết bạn
-              </Button>
-            }
-            disablePadding
-            sx={{ mb: 2 }}
-          >
-            <ListItemAvatar sx={{ minWidth: "42px" }}>
-              <Avatar src={user.avatar} />
-            </ListItemAvatar>
-            <ListItemText
-              primary={user.name}
-              secondary={`${user.mutualFriends} bạn chung`}
+        {friends.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            Không có bạn bè
+          </Typography>
+        ) : (
+          friends.map((friend) => {
+            const friendUser =
+              friend.user.id === currentUser?.id ? friend.friend : friend.user;
+          return (
+            <Link to={`/profile/${friendUser.email}`}>
+            <ListItem
+              key={friend.id}
+              disablePadding
               sx={{
-                "& span": {
-                  display: "block",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                mb: 2,
+                p: 1,
+                borderRadius: 1,
+                "&:hover": {
+                  bgcolor: "rgba(0, 0, 0, 0.04)",
                 },
-                maxWidth: "91px",
               }}
-            />
-          </ListItem>
-        ))}
+            >
+              <ListItemAvatar sx={{ minWidth: "48px" }}>
+                <Avatar
+                  src={friendUser.avatar || ""}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    border: "2px solid #e0e0e0",
+                    bgcolor: "#e0e0e0",
+                  }}
+                >
+                  {!friendUser.avatar &&
+                    `${friendUser.firstName.charAt(
+                      0
+                    )}${friendUser.lastName.charAt(0)}`}
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 500,
+                      color: "#1a1a1a",
+                    }}
+                  >
+                    {`${friendUser.firstName} ${friendUser.lastName}`}
+                  </Typography>
+                }
+                sx={{
+                  ml: 1,
+                  "& span": {
+                    display: "block",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  },
+                }}
+              />
+            </ListItem>
+            </Link>
+            );
+          })
+        )}
       </List>
       <Divider sx={{ my: 2 }} />
       <Typography variant="h6" sx={{ mb: 2 }}>
-        Xu hướng
-      </Typography>
-      <List disablePadding>
-        {TRENDING_TOPICS.map((tag, index) => (
-          <ListItem key={index} disablePadding sx={{ mb: 1 }}>
-            <ListItemButton sx={{ borderRadius: 1 }}>
-              <ListItemText primary={tag} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+         Xu hướng
+       </Typography>
+       <List disablePadding>
+         {TRENDING_TOPICS.map((tag, index) => (
+           <ListItem key={index} disablePadding sx={{ mb: 1 }}>
+             <ListItemButton sx={{ borderRadius: 1 }}>
+               <ListItemText primary={tag} />
+             </ListItemButton>
+           </ListItem>
+         ))}
+       </List>
       <Box sx={{ mt: 3 }}>
         <Typography variant="caption" color="text.secondary">
           © 2025 AstraSocial
