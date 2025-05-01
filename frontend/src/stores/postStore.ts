@@ -47,6 +47,9 @@ interface PostState {
   fetchNextPage: () => Promise<void>;
 
   fetchPost: (postId: number) => Promise<void>;
+
+  updateComment: (postId: number, commentId: number, content: string) => Promise<void>;
+  deleteComment: (postId: number, commentId: number) => Promise<void>;
 }
 
 const addReplyToCommentTree = (comments: Comment[], newReply: Comment, parentId: number): Comment[] => {
@@ -425,6 +428,51 @@ export const usePostStore = create<PostState>((set, get) => ({
       });
     }
   },
+
+  updateComment: async (postId: number, commentId: number, content: string) => {
+    try {
+      const updatedComment = await CommentService.updateComment(commentId, content);
+      
+      set((state) => ({
+        commentDataByPostId: {
+          ...state.commentDataByPostId,
+          [postId]: {
+            ...state.commentDataByPostId[postId]!,
+            comments: updateCommentInTree(
+              state.commentDataByPostId[postId]!.comments,
+              updatedComment
+            )
+          }
+        }
+      }));
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      throw error;
+    }
+  },
+
+  deleteComment: async (postId: number, commentId: number) => {
+    try {
+      await CommentService.deleteComment(commentId);
+      
+      set((state) => ({
+        commentDataByPostId: {
+          ...state.commentDataByPostId,
+          [postId]: {
+            ...state.commentDataByPostId[postId]!,
+            comments: removeCommentFromTree(
+              state.commentDataByPostId[postId]!.comments,
+              commentId
+            ),
+            totalCount: (state.commentDataByPostId[postId]?.totalCount || 0) - 1
+          }
+        }
+      }));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
+  },
 }));
 
 // Helper function to update a comment in the nested tree structure
@@ -444,4 +492,15 @@ const updateCommentInTree = (comments: Comment[], updatedComment: Comment): Comm
       replies: [] 
     };
   });
+};
+
+// Helper function to remove comment from tree
+const removeCommentFromTree = (comments: Comment[], commentIdToRemove: number): Comment[] => {
+  return comments.filter(comment => comment.id !== commentIdToRemove)
+    .map(comment => ({
+      ...comment,
+      replies: comment.replies 
+        ? removeCommentFromTree(comment.replies, commentIdToRemove)
+        : []
+    }));
 };

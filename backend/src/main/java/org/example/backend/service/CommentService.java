@@ -12,9 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Date;
 
 @Service
 public class CommentService {
+
+    private static final long EDIT_TIME_LIMIT_MINUTES = 30;
 
     @Autowired
     private CommentRepository commentRepository;
@@ -93,11 +96,58 @@ public class CommentService {
         return comment;
     }
 
-    public Comment updateComment(Long id, String newContent) {
-        return commentRepository.findById(id).map(comment -> {
-            comment.setContent(newContent);
-            return commentRepository.save(comment);
-        }).orElseThrow(() -> new RuntimeException("Comment not found"));
+    @Transactional
+    public Comment updateComment(Long id, String email, String newContent) {
+        // Kiểm tra input
+        if (id == null || email == null || newContent == null) {
+            throw new IllegalArgumentException("Invalid input parameters");
+        }
+
+        Comment existingComment = commentRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+
+        User currentUser = getCurrentUser(email);
+        
+        // Kiểm tra quyền sửa comment
+        if (!existingComment.getUser().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("You don't have permission to update this comment");
+        }
+
+        // Chỉ kiểm tra thời gian khi comment đã được sửa trước đó
+        if (existingComment.getUpdatedAt() != null) {
+            long currentTime = System.currentTimeMillis();
+            long lastEditTime = existingComment.getUpdatedAt().getTime();
+            long timeDifferenceMinutes = (currentTime - lastEditTime) / (60 * 1000);
+
+            if (timeDifferenceMinutes < EDIT_TIME_LIMIT_MINUTES) {
+                throw new RuntimeException(
+                    String.format("Phải đợi %d phút sau lần sửa trước để có thể sửa lại", 
+                    EDIT_TIME_LIMIT_MINUTES)
+                );
+            }
+        }
+
+        existingComment.setContent(newContent.trim());
+        existingComment.setUpdatedAt(new Date());
+        return commentRepository.save(existingComment);
+    }
+
+    @Transactional
+    public void softDeleteComment(Long id, String email) {
+        Comment comment = commentRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+
+        User currentUser = getCurrentUser(email);
+        
+        // Kiểm tra quyền xóa comment
+        if (!comment.getUser().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("You don't have permission to delete this comment");
+        }
+
+        // Thực hiện xóa mềm
+        comment.setDeleted(true);
+        comment.setDeletedAt(new Date());
+        commentRepository.save(comment);
     }
 
     public void deleteComment(Long id) {
