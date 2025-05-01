@@ -50,7 +50,6 @@ export interface Post {
 export interface Comment {
   id: number;
   content: string;
-  post: Post;
   user: User;
   parentComment?: Comment;
   replies: Comment[];
@@ -69,6 +68,12 @@ export interface Like {
   post?: Post;
   comment?: Comment;
   createdAt: string;
+}
+
+// CommentListResponse interface
+export interface CommentListResponse {
+  comments: Comment[];
+  totalCount: number;
 }
 
 // Admin stats interface
@@ -188,7 +193,7 @@ export const getPosts = async (pagination?: PaginationParams): Promise<Post[]> =
     const response = await api.get<ApiResponse<Post[]>>(`/admin/posts/getAllPost`, {
       params: pagination
     });
-    return response.data.data;
+    return response.data.data
   } catch (error) {
     console.error("Error fetching posts:", error);
     throw new Error("Failed to fetch posts");
@@ -230,6 +235,16 @@ export const getComments = async (pagination?: PaginationParams): Promise<Commen
   } catch (error) {
     console.error("Error fetching comments:", error);
     throw new Error("Failed to fetch comments");
+  }
+};
+
+export const getCommentsByPost = async (postId: number): Promise<CommentListResponse> => {
+  try {
+    const response = await api.get<ApiResponse<CommentListResponse>>(`/admin/comments/getCommentsByPost/${postId}`);
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching comments by post:", error);
+    throw new Error("Failed to fetch comments for post");
   }
 };
 

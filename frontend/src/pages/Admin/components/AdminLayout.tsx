@@ -281,7 +281,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </Collapse>
 
           {/* Cài đặt */}
-          <ListItem disablePadding>
+          {/* <ListItem disablePadding>
             <ListItemButton
               component={RouterLink}
               to="/admin/settings"
@@ -307,7 +307,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               </ListItemIcon>
               <ListItemText primary="Cài đặt" />
             </ListItemButton>
-          </ListItem>
+          </ListItem> */}
         </List>
       </Box>
       <Divider />

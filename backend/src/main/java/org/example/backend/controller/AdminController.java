@@ -239,19 +239,11 @@ public class AdminController {
     @RequireAdmin
     @GetMapping("/posts/getAllPost")
     public ResponseEntity<ApiResponse<Object>> getAllPost() {
-        List<User> users = userService.getAllUsers();
-
-        List<Map<Long, List<Post>>> ListUserPost = new ArrayList<>();
-
-        for (User user : users) {
-            Map<Long, List<Post>> userPost = new HashMap<>();
-            userPost.put(user.getId(), postService.getPostsByUserId(user.getId()));
-            ListUserPost.add(userPost);
-        }
+        List<Post> posts = postService.getAllPosts();
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
-                .data(ListUserPost)
+                .data(posts)
                 .timestamp(System.currentTimeMillis())
                 .build());
     }

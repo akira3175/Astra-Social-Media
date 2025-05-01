@@ -44,12 +44,15 @@ const CommentManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch comments data
+
+  useEffect(() => {
   const fetchComments = async () => {
     try {
       setLoading(true)
       setError(null)
       const response = await getComments({ page: 0, size: 100 }) // Fetch all comments for now
+      console.log(response);
+      
       setComments(response)
       setFilteredComments(response)
     } catch (err) {
@@ -60,8 +63,6 @@ const CommentManagementPage: React.FC = () => {
     }
   }
 
-  // Load comments on component mount
-  useEffect(() => {
     fetchComments()
   }, [])
 
@@ -331,7 +332,7 @@ const CommentManagementPage: React.FC = () => {
                   <strong>ID:</strong> {selectedComment.id}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Bài viết ID:</strong> {selectedComment.post.id}
+                  <strong>Bài viết ID:</strong> {selectedComment.id}
                 </Typography>
                 <Typography variant="body2">
                   <strong>Lượt thích:</strong> {selectedComment.likeCount}
