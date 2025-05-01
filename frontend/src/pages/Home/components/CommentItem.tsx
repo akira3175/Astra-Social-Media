@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Avatar, Box, Typography, Button, TextField, Link, IconButton, CircularProgress } from '@mui/material';
-import { Favorite, FavoriteBorder, Image, Close as CloseIcon } from '@mui/icons-material';
+import { Avatar, Box, Typography, Button, TextField, Link, IconButton, CircularProgress, Menu, MenuItem, ListItemIcon, ListItemText, Alert } from '@mui/material';
+import { Favorite, FavoriteBorder, Image, Close as CloseIcon, MoreVert, Edit, Delete } from '@mui/icons-material';
 import { Comment } from '../../../types/comment';
 import { usePostStore } from '../../../stores/postStore';
 import { uploadToCloudinary } from '../../../utils/uploadUtils';
 import ExpandableText from '../../../components/ExpandableText';
 import { getImageUrl } from '../../../utils/imageUtils';
+import { useCurrentUser } from '../../../contexts/currentUserContext';
 interface CommentItemProps {
   comment: Comment;
   postId: number;
@@ -32,8 +33,8 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { likeComment, unlikeComment, addComment } = usePostStore();
-
+  const { likeComment, unlikeComment, addComment, updateComment, deleteComment } = usePostStore();
+  const { currentUser } = useCurrentUser();
   // Thêm state optimistic update
   const [optimisticUpdate, setOptimisticUpdate] = useState<{
     isLiked?: boolean;
@@ -111,6 +112,65 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
   const maxIndentLevel = 3;
   const currentIndent = Math.min(level, maxIndentLevel) * 20;
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+  const [showEditTimer, setShowEditTimer] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Tính thời gian giới hạn chỉnh sửa
+  const hasBeenEdited = comment.updatedAt !== null;
+  const lastEditTime = hasBeenEdited ? new Date(comment.updatedAt).getTime() : 0;
+  const now = new Date().getTime();
+  const diffMinutes = hasBeenEdited ? Math.floor((now - lastEditTime) / (1000 * 60)) : 0;
+  const remainingMinutes = hasBeenEdited ? Math.max(30 - diffMinutes, 0) : 0;
+
+  const handleEditClick = () => {
+    // Nếu comment chưa từng được sửa hoặc đã đủ 30 phút từ lần sửa trước
+    if (!hasBeenEdited || remainingMinutes === 0) {
+      setIsEditing(true);
+      setEditContent(comment.content);
+    } else {
+      // Hiển thị thông báo thời gian còn lại
+      setShowEditTimer(true);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      setIsUpdating(true);
+      await updateComment(postId, comment.id, editContent);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating comment:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm('Bạn có chắc chắn muốn xóa bình luận này?');
+    if (confirmed) {
+      try {
+        await deleteComment(postId, comment.id);
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+      }
+    }
+  };
+
+  // Add menu options for edit and delete
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
+  
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
   return (
     <Box sx={{ pl: `${currentIndent}px`, mb: 2 }}>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
@@ -120,58 +180,127 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, level = 0 })
           sx={{ width: 32, height: 32, mt: 0.5 }}
         />
         <Box sx={{ flexGrow: 1 }}>
-          <Box
-            sx={{
-              backgroundColor: 'grey.100',
-              borderRadius: '12px',
-              p: 1.5,
-              maxWidth: '100%',
-              textAlign: 'left',
-              position: 'relative',
-            }}
-          >
-            <Typography 
-              variant="subtitle2" 
-              sx={{ 
-                fontWeight: 'bold', 
-                mr: 1, 
-                display: 'block',  // Changed from inline to block
-                mb: 0.5  // Add margin bottom for spacing
+          {isEditing ? (
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                fullWidth
+                multiline
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                variant="outlined"
+                size="small"
+                disabled={isUpdating}
+              />
+              <Box sx={{ mt: 1, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                <Button 
+                  size="small" 
+                  onClick={() => setIsEditing(false)}
+                  disabled={isUpdating}
+                >
+                  Hủy
+                </Button>
+                <Button 
+                  size="small" 
+                  variant="contained" 
+                  onClick={handleSaveEdit}
+                  disabled={!editContent.trim() || isUpdating}
+                >
+                  {isUpdating ? <CircularProgress size={20} /> : 'Lưu'}
+                </Button>
+              </Box>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                backgroundColor: 'grey.100',
+                borderRadius: '12px',
+                p: 1.5,
+                maxWidth: '100%',
+                textAlign: 'left',
+                position: 'relative',
               }}
             >
-              {/* Hiển thị đầy đủ tên thay vì username */}
-              {`${comment.user.firstName} ${comment.user.lastName}`}
-            </Typography>
-            <ExpandableText text={comment.content} maxLines={2} />
-
-            {/* Thêm phần hiển thị ảnh của comment */}
-            {comment.images && comment.images.length > 0 && (
-              <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                {comment.images.map((image, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      width: 200,
-                      height: 200,
-                      position: 'relative',
-                      borderRadius: 1,
-                      overflow: 'hidden'
-                    }}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                  {`${comment.user.firstName} ${comment.user.lastName}`}
+                </Typography>
+                {comment.user.email === currentUser?.email && (
+                  <IconButton
+                    size="small"
+                    onClick={handleMenuClick}
+                    sx={{ padding: 0.5 }}
                   >
-                    <img
-                      src={image.url}
-                      alt={`Comment image ${index + 1}`}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover'
-                      }}
-                    />
-                  </Box>
-                ))}
+                    <MoreVert fontSize="small" />
+                  </IconButton>
+                )}
               </Box>
-            )}
-          </Box>
+              <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+              >
+                <MenuItem onClick={() => {
+                  handleClose();
+                  handleEditClick();
+                }}>
+                  <ListItemIcon>
+                    <Edit fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Chỉnh sửa</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={() => {
+                  handleClose();
+                  handleDelete();
+                }}>
+                  <ListItemIcon>
+                    <Delete fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Xóa</ListItemText>
+                </MenuItem>
+              </Menu>
+              
+              {/* Show edit timer warning */}
+              {showEditTimer && remainingMinutes > 0 && (
+                <Alert 
+                  severity="info" 
+                  onClose={() => setShowEditTimer(false)}
+                  sx={{ mt: 1, mb: 1 }}
+                >
+                  Bạn cần đợi {remainingMinutes} phút nữa để có thể sửa bình luận này
+                </Alert>
+              )}
+
+              <ExpandableText text={comment.content} maxLines={2} />
+
+              {/* Thêm phần hiển thị ảnh của comment */}
+              {comment.images && comment.images.length > 0 && (
+                <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {comment.images.map((image, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        width: 200,
+                        height: 200,
+                        position: 'relative',
+                        borderRadius: 1,
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <img
+                        src={image.url}
+                        alt={`Comment image ${index + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          )}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, ml: 0.5 }}>
             <IconButton
               size="small"

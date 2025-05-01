@@ -86,6 +86,36 @@ const CommentService = {
       console.error('Error unliking comment:', error);
       throw error;
     }
+  },
+
+  updateComment: async (commentId: number, content: string): Promise<Comment> => {
+    try {
+      const response = await api.put<ApiResponse<Comment>>(
+        `/comments/${commentId}`,
+        { content }
+      );
+      
+      if (response.data.status === 200) {
+        return response.data.data;
+      }
+      throw new Error(response.data.message || 'Failed to update comment');
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      throw error;
+    }
+  },
+
+  deleteComment: async (commentId: number): Promise<void> => {
+    try {
+      const response = await api.delete<ApiResponse<void>>(`/comments/${commentId}`);
+      
+      if (response.data.status !== 200) {
+        throw new Error(response.data.message || 'Failed to delete comment');
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
   }
 };
 
