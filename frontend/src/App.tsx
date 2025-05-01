@@ -9,7 +9,6 @@ import { isAuthenticated } from "./services/authService"
 import NotFound from "./pages/Status/NotFound";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
-import AdminPage from "./pages/Admin/AdminPage";
 import SearchPage from "./pages/Search/SearchPage";
 import AdminLoginPage from "./pages/Admin/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
@@ -111,7 +110,6 @@ const AppContent: React.FC = () => {
       <CssBaseline />
       <Router>
         <Routes>
-          <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/login" element={<LoginPage />}></Route>

@@ -62,7 +62,7 @@ const NewPostOverview = ({
                             color: "text.secondary",
                           }}
                         />
-                        <Typography variant="caption">{post.user}</Typography>
+                        <Typography variant="caption">{post.user.firstName} {post.user.lastName}</Typography>
                       </Box>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <AccessTime
@@ -73,7 +73,7 @@ const NewPostOverview = ({
                             color: "text.secondary",
                           }}
                         />
-                        <Typography variant="caption">{post.date}</Typography>
+                        <Typography variant="caption">{new Date(post.createdAt).toLocaleString()}</Typography>
                       </Box>
 
                       <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -86,7 +86,7 @@ const NewPostOverview = ({
                           }}
                         />
                         <Typography variant="caption">
-                          {post.likesCount}
+                          {post.likeCount}
                         </Typography>
                       </Box>
                     </Box>

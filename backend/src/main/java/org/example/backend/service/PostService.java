@@ -123,6 +123,10 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
     }
 
+    public List<Post> getAllPosts() {
+        return postRepository.findAll();
+    }
+
     // No changes needed in this file, the method is already there
 
     @Transactional

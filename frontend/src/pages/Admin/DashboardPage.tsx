@@ -31,7 +31,7 @@ const DashboardPage: React.FC = () => {
         const commentsData = await getComments();
         const latestLogins = await getAllUserLoginToday() ;
         setUsers(usersData);
-        setPosts(postsData);
+        setPosts(postsData);  
         setComments(commentsData);
         setReports(latestLogins);
       } catch (error) {

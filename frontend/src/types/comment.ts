@@ -15,3 +15,8 @@ export interface Comment {
   parentId: number | null; 
   replies: Comment[]; 
 }
+
+export interface CommentListResponse {
+  comments: Comment[];
+  totalCount: number;
+}
