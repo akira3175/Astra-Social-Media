@@ -29,6 +29,7 @@ import org.example.backend.repository.PostRepository;
 import org.example.backend.repository.CommentRepository;
 import org.example.backend.repository.UserRepository;
 import org.example.backend.entity.Comment;
+import org.example.backend.entity.Image;
 import org.example.backend.entity.Like;
 import org.example.backend.service.UserService;
 import org.example.backend.service.CommentService;
@@ -398,6 +399,7 @@ public class AdminController {
     
     private CommentDTO convertComment(Comment comment) {
         CommentDTO dto = new CommentDTO();
+        dto.setImages(comment.getImages());
         dto.setLikes(comment.getLikes());
         dto.setCreatedAt(comment.getCreatedAt());
         dto.setUpdatedAt(comment.getUpdatedAt());
@@ -445,6 +447,7 @@ class PostSummaryDTO {
 class CommentDTO {
     private Long idComment;
     private String content;
+    private List<Image> images;
     private List<Like> likes;
     private CustomUserDTO userComment;
     private List<CommentDTO> replies;
