@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import type { Post } from "../types/post";
 import type { ApiResponse } from "../types/apiResponse";
 import { tokenService } from "./tokenService";

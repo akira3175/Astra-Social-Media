@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { getComments, PostComment, Comment } from '../../services/adminService';
+import { searchUsers } from '../../services/authService';
+import { api } from '../../configs/api';
+import { AxiosResponse } from 'axios';
+import { User } from '../../types/user';
+import { tokenService } from '../../services/tokenService';
 
 interface FlattenedComment extends Comment {
   parentId: number | null; // ID of the parent comment or post
@@ -12,8 +17,23 @@ const TestPage = () => {
   useEffect(() => {
     async function fetchComments() {
       try {
-        const response = await getComments();
+        const response = await searchUsers({key:"1"});
+        console.log(response);
+        
+        //   const token = tokenService.getAccessToken();
+        
+        // const response = await api.get<AxiosResponse<User[]>>(
+        //   `/users/search?keyword=1`,
+        //   {
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //       Authorization: `Bearer ${token}`,
+        //     },
+        //   }
+        // );
 
+        // console.log(response.data.content);
+        
        
       } catch (error) {
         console.error('Error fetching comments:', error);
