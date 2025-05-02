@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { getComments, PostComment, Comment } from '../../services/adminService';
-import { searchUsers } from '../../services/authService';
+import { getAllUser, searchUsers } from '../../services/authService';
 import { api } from '../../configs/api';
 import { AxiosResponse } from 'axios';
 import { User } from '../../types/user';
 import { tokenService } from '../../services/tokenService';
+import { getAllPosts } from '../../services/PostService';
 
 interface FlattenedComment extends Comment {
   parentId: number | null; // ID of the parent comment or post
@@ -17,7 +18,7 @@ const TestPage = () => {
   useEffect(() => {
     async function fetchComments() {
       try {
-        const response = await searchUsers({key:"1"});
+        const response = await getAllPosts();
         console.log(response);
         
         //   const token = tokenService.getAccessToken();

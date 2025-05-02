@@ -86,10 +86,10 @@ export const getAllUser =async ():Promise<User[]> =>{
 
   try {
    const response = await api.get<AxiosResponse<User[]>>("/users/all")
-   return response.data.data
+   return response.data as unknown as User []
   } catch (error) {
+    console.error(error)
     throw new Error("Failed to get User");
-console.error(error)
   }
 
 }
