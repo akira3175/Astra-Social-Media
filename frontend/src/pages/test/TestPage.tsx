@@ -1,23 +1,39 @@
-import React, { useEffect, useState } from 'react'
-import { getComments, getPosts, getUsers, Post, User } from '../../services/adminService'
-import { ApiResponse } from '../../types/apiResponse';
-import { api } from '../../configs/api';
+import React, { useEffect, useState } from 'react';
+import { getComments, PostComment, Comment } from '../../services/adminService';
 
-const TestPage = () => {
-    const [posts,setPosts] = useState<Post[]>([])
-useEffect(() => {
-    async function fetchPosts() {
-        const getpost =await getComments()
-        console.log(getpost);
-        
-    }
-    fetchPosts();
-}, []);
-  return (
-    <div>
-        {posts.length}
-    </div>
-  )
+interface FlattenedComment extends Comment {
+  parentId: number | null; // ID of the parent comment or post
+  postId: number; // ID of the post
 }
 
-export default TestPage
+const TestPage = () => {
+  const [comments, setComments] = useState<FlattenedComment[]>([]);
+
+  useEffect(() => {
+    async function fetchComments() {
+      try {
+        const response = await getComments();
+
+       
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      }
+    }
+    fetchComments();
+  }, []);
+
+  return (
+    <div>
+      {comments.length} comments loaded.
+      <ul>
+        {comments.map((comment) => (
+          <li key={comment.idComment}>
+            {comment.content} (Post ID: {comment.postId}, Parent ID: {comment.parentId})
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default TestPage;

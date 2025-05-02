@@ -28,12 +28,32 @@ const NewUserOveriew = ({
     )
     .slice(0, 4);
 
-  const getDaysAgo = (dateString: string): number => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  };
+    const getTimeAgo = (dateString: string): string => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+    
+      const minutes = Math.floor(diffTime / (1000 * 60));
+      const hours = Math.floor(diffTime / (1000 * 60 * 60));
+      const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const weeks = Math.floor(days / 7);
+      const months = Math.floor(days / 30); // Approximation
+      const years = Math.floor(days / 365); // Approximation
+    
+      if (minutes < 60) {
+        return `${minutes} phút trước`;
+      } else if (hours < 24) {
+        return `${hours} giờ trước`;
+      } else if (days < 7) {
+        return `${days} ngày trước`;
+      } else if (weeks < 4) {
+        return `${weeks} tuần trước`;
+      } else if (months < 12) {
+        return `${months} tháng trước`;
+      } else {
+        return `${years} năm trước`;
+      }
+    };
 
   return (
     <Grid item xs={12} md={6} lg={4}>
@@ -62,11 +82,11 @@ const NewUserOveriew = ({
                 top4NewUsers.map((user) => (
                   <ListItem key={user.id} disablePadding sx={{ mb: 2 }}>
                     <ListItemAvatar>
-                      <Avatar src={user.avatar} alt={user.firstName} />
+                      <Avatar src={user.avatar ||""} alt={user.firstName} />
                     </ListItemAvatar>
                     <ListItemText
                       primary={user.firstName + " " + user.lastName}
-                      secondary={`${getDaysAgo(user.dateJoined)} ngày trước`}
+                      secondary={`${getTimeAgo(user.dateJoined)}`}
                       primaryTypographyProps={{ fontWeight: 500 }}
                     />
                   </ListItem>

@@ -8,19 +8,17 @@ import {
   Divider,
   LinearProgress,
 } from "@mui/material";
-import { Comment, Post, Report, User } from "../../../services/adminService";
+import { Comment, Post, User } from "../../../services/adminService";
 
 const WeeklyOverview = ({
   users,
   isLoading,
   posts,
-  reports,
   comments,
 }: {
   users: User[];
   isLoading: boolean;
   posts: Post[];
-  reports: Report[];
   comments: Comment[];
 }) => {
   // Helper function to check if a date is within the past week
@@ -34,14 +32,11 @@ const WeeklyOverview = ({
 
   // Use the helper function for filtering
   const userPastWeek = users.filter((user) =>
-    isWithinPastWeek(user.dateJoined)
+    isWithinPastWeek(new Date(user.dateJoined))
   );
-  const postPastWeek = posts.filter((post) => isWithinPastWeek(post.createdAt));
+  const postPastWeek = posts.filter((post) => isWithinPastWeek(new Date(post.createdAt)));
   const commentPastWeek = comments.filter((comment) =>
-    isWithinPastWeek(comment.date)
-  );
-  const reportPastWeek = reports.filter((report) =>
-    isWithinPastWeek(report.date)
+    isWithinPastWeek(new Date(comment.createdAt))
   );
   const ACTIVITY_STATS = [
     {
@@ -61,12 +56,6 @@ const WeeklyOverview = ({
       value: commentPastWeek.length,
       total: comments.length,
       color: "#16a34a",
-    },
-    {
-      label: "Báo cáo",
-      value: reportPastWeek.length,
-      total: reports.length,
-      color: "#dc2626",
     },
   ];
   return (
@@ -96,7 +85,7 @@ const WeeklyOverview = ({
                   >
                     <Typography variant="body2">{activity.label}</Typography>
                     <Typography variant="body2" fontWeight={500}>
-                      {activity.value}%
+                      {activity.value}
                     </Typography>
                   </Box>
                   <LinearProgress

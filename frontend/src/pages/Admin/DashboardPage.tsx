@@ -29,9 +29,9 @@ const DashboardPage: React.FC = () => {
         const usersData = await getUsers();
         const postsData = await getPosts();
         const commentsData = await getComments();
-        const latestLogins = await getAllUserLoginToday() ;
+        const latestLogins = await getAllUserLoginToday();
         setUsers(usersData);
-        setPosts(postsData);  
+        setPosts(postsData);
         setComments(commentsData);
         setReports(latestLogins);
       } catch (error) {
@@ -75,7 +75,6 @@ const DashboardPage: React.FC = () => {
           users={users}
           isLoading={isLoading}
           posts={posts}
-          reports={reports}
           comments={comments}
         />
       </Grid>

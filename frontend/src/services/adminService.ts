@@ -32,7 +32,7 @@ export interface User {
 export interface Post {
   id: number;
   content: string;
-  images: Array<{id: number; url: string}>;
+  images: Array<{ id: number; url: string }>;
   user: User;
   createdAt: string;
   updatedAt: string | null;
@@ -46,19 +46,32 @@ export interface Post {
   totalCommentCount: number;
 }
 
+export interface PostComment {
+  idPost: number;
+  userPost: UserComment;
+  comments: Comment[];
+}
+
+export interface UserComment {
+  id: number;
+  name: string;
+  avatar: string | null;
+  email: string;
+}
+
 // Comment interface matching backend Comment entity
 export interface Comment {
-  id: number;
+  idComment: number;
   content: string;
-  user: User;
-  parentComment?: Comment;
+  userComment: UserComment;
   replies: Comment[];
-  createdAt: string;
-  updatedAt: string | null;
-  likes: Like[];
-  images: Array<{id: number; url: string}>;
-  likedByCurrentUser: boolean;
-  likeCount: number;
+  createdAt: number;
+  updatedAt: number | null;
+}
+
+export interface FlattenedComment extends Comment {
+  parentId: number | null; // ID of the parent comment or post
+  postId: number; // ID of the post
 }
 
 // Like interface
@@ -100,7 +113,7 @@ interface PaginationParams {
 // Date range interface
 interface DateRangeParams {
   start: string; // Format: dd-MM-yyyy
-  end: string;   // Format: dd-MM-yyyy
+  end: string; // Format: dd-MM-yyyy
 }
 
 // API calls
@@ -114,26 +127,35 @@ export const getAdminStats = async (): Promise<AdminStats> => {
   }
 };
 
-export const getAdminStatsAt = async (params: DateRangeParams): Promise<AdminStats> => {
+export const getAdminStatsAt = async (
+  params: DateRangeParams
+): Promise<AdminStats> => {
   try {
     const response = await api.get<ApiResponse<AdminStats>>(`/admin/statsAt`, {
       params: {
         start: params.start,
-        end: params.end
-      }
+        end: params.end,
+      },
     });
     return response.data.data;
   } catch (error) {
     console.error("Error fetching admin stats at date range:", error);
-    throw new Error("Failed to fetch admin statistics for the specified date range");
+    throw new Error(
+      "Failed to fetch admin statistics for the specified date range"
+    );
   }
 };
 
-export const getUsers = async (pagination?: PaginationParams): Promise<User[]> => {
+export const getUsers = async (
+  pagination?: PaginationParams
+): Promise<User[]> => {
   try {
-    const response = await api.get<ApiResponse<User[]>>(`/admin/users/getAllUser`, {
-      params: pagination
-    });
+    const response = await api.get<ApiResponse<User[]>>(
+      `/admin/users/getAllUser`,
+      {
+        params: pagination,
+      }
+    );
     return response.data.data;
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -141,16 +163,21 @@ export const getUsers = async (pagination?: PaginationParams): Promise<User[]> =
   }
 };
 
-export const getUsersAt = async (params: DateRangeParams & PaginationParams): Promise<User[]> => {
+export const getUsersAt = async (
+  params: DateRangeParams & PaginationParams
+): Promise<User[]> => {
   try {
-    const response = await api.get<ApiResponse<User[]>>(`/admin/users/getAllUserAt`, {
-      params: {
-        start: params.start,
-        end: params.end,
-        page: params.page,
-        size: params.size
+    const response = await api.get<ApiResponse<User[]>>(
+      `/admin/users/getAllUserAt`,
+      {
+        params: {
+          start: params.start,
+          end: params.end,
+          page: params.page,
+          size: params.size,
+        },
       }
-    });
+    );
     return response.data.data;
   } catch (error) {
     console.error("Error fetching users at date range:", error);
@@ -158,11 +185,16 @@ export const getUsersAt = async (params: DateRangeParams & PaginationParams): Pr
   }
 };
 
-export const getUsersLoginToday = async (pagination?: PaginationParams): Promise<User[]> => {
+export const getUsersLoginToday = async (
+  pagination?: PaginationParams
+): Promise<User[]> => {
   try {
-    const response = await api.get<ApiResponse<User[]>>(`/admin/users/getUserLoginToday`, {
-      params: pagination
-    });
+    const response = await api.get<ApiResponse<User[]>>(
+      `/admin/users/getUserLoginToday`,
+      {
+        params: pagination,
+      }
+    );
     return response.data.data;
   } catch (error) {
     console.error("Error fetching users logged in today:", error);
@@ -188,28 +220,38 @@ export const unbanUser = async (userId: number): Promise<void> => {
   }
 };
 
-export const getPosts = async (pagination?: PaginationParams): Promise<Post[]> => {
+export const getPosts = async (
+  pagination?: PaginationParams
+): Promise<Post[]> => {
   try {
-    const response = await api.get<ApiResponse<Post[]>>(`/admin/posts/getAllPost`, {
-      params: pagination
-    });
-    return response.data.data
+    const response = await api.get<ApiResponse<Post[]>>(
+      `/admin/posts/getAllPost`,
+      {
+        params: pagination,
+      }
+    );
+    return response.data.data;
   } catch (error) {
     console.error("Error fetching posts:", error);
     throw new Error("Failed to fetch posts");
   }
 };
 
-export const getPostsAt = async (params: DateRangeParams & PaginationParams): Promise<Post[]> => {
+export const getPostsAt = async (
+  params: DateRangeParams & PaginationParams
+): Promise<Post[]> => {
   try {
-    const response = await api.get<ApiResponse<Post[]>>(`/admin/posts/getAllPostAt`, {
-      params: {
-        start: params.start,
-        end: params.end,
-        page: params.page,
-        size: params.size
+    const response = await api.get<ApiResponse<Post[]>>(
+      `/admin/posts/getAllPostAt`,
+      {
+        params: {
+          start: params.start,
+          end: params.end,
+          page: params.page,
+          size: params.size,
+        },
       }
-    });
+    );
     return response.data.data;
   } catch (error) {
     console.error("Error fetching posts at date range:", error);
@@ -226,21 +268,56 @@ export const lockPost = async (postId: number): Promise<void> => {
   }
 };
 
-export const getComments = async (pagination?: PaginationParams): Promise<Comment[]> => {
+export const getComments = async (
+  pagination?: PaginationParams
+): Promise<FlattenedComment[]> => {
   try {
-    const response = await api.get<ApiResponse<Comment[]>>(`/admin/comments/getAllComment`, {
-      params: pagination
-    });
-    return response.data.data;
+    const response = await api.get<ApiResponse<PostComment[]>>(
+      `/admin/comments/getAllComment`,
+      {
+        params: pagination,
+      }
+    );
+
+    const data:PostComment[] = response.data.data
+
+  // Recursive function to flatten comments and replies
+        const flattenComments = (
+          comments: Comment[],
+          postId: number,
+          parentId: number | null = null
+        ): FlattenedComment[] => {
+          return comments.flatMap((comment) => [
+            {
+              ...comment,
+              parentId,
+              postId,
+            },
+            ...flattenComments(comment.replies, postId, comment.idComment),
+          ]);
+        };
+
+        // Flatten all comments from all posts
+        const flattenedComments = data.flatMap((postComment) =>
+          flattenComments(postComment.comments, postComment.idPost)
+        );
+
+
+
+    return flattenedComments;
   } catch (error) {
     console.error("Error fetching comments:", error);
     throw new Error("Failed to fetch comments");
   }
 };
 
-export const getCommentsByPost = async (postId: number): Promise<CommentListResponse> => {
+export const getCommentsByPost = async (
+  postId: number
+): Promise<CommentListResponse> => {
   try {
-    const response = await api.get<ApiResponse<CommentListResponse>>(`/admin/comments/getCommentsByPost/${postId}`);
+    const response = await api.get<ApiResponse<CommentListResponse>>(
+      `/admin/comments/getCommentsByPost/${postId}`
+    );
     return response.data.data;
   } catch (error) {
     console.error("Error fetching comments by post:", error);
@@ -248,11 +325,16 @@ export const getCommentsByPost = async (postId: number): Promise<CommentListResp
   }
 };
 
-export const getAllUserLoginToday = async (pagination?: PaginationParams): Promise<User[]> => {
+export const getAllUserLoginToday = async (
+  pagination?: PaginationParams
+): Promise<User[]> => {
   try {
-    const response = await api.get<ApiResponse<User[]>>(`/admin/users/getUserLoginToday`, {
-      params: pagination
-    });
+    const response = await api.get<ApiResponse<User[]>>(
+      `/admin/users/getUserLoginToday`,
+      {
+        params: pagination,
+      }
+    );
     return response.data.data;
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -260,16 +342,21 @@ export const getAllUserLoginToday = async (pagination?: PaginationParams): Promi
   }
 };
 
-export const getCommentsAt = async (params: DateRangeParams & PaginationParams): Promise<Comment[]> => {
+export const getCommentsAt = async (
+  params: DateRangeParams & PaginationParams
+): Promise<Comment[]> => {
   try {
-    const response = await api.get<ApiResponse<Comment[]>>(`/admin/comments/getAllCommentAt`, {
-      params: {
-        start: params.start,
-        end: params.end,
-        page: params.page,
-        size: params.size
+    const response = await api.get<ApiResponse<Comment[]>>(
+      `/admin/comments/getAllCommentAt`,
+      {
+        params: {
+          start: params.start,
+          end: params.end,
+          page: params.page,
+          size: params.size,
+        },
       }
-    });
+    );
     return response.data.data;
   } catch (error) {
     console.error("Error fetching comments at date range:", error);
@@ -300,12 +387,11 @@ export const adminLogin = async ({
     });
 
     const { accessToken, refreshToken } = response.data.data;
-    
+
     tokenService.setAccessToken(accessToken);
     tokenService.setRefreshToken(refreshToken);
-    localStorage.setItem("adminToken",accessToken)
+    localStorage.setItem("adminToken", accessToken);
     setAuthHeader(accessToken);
-
 
     return { accessToken, refreshToken };
   } catch (error) {
@@ -314,11 +400,16 @@ export const adminLogin = async ({
   }
 };
 
-export const refreshAdminToken = async (refreshToken: string): Promise<{ accessToken: string }> => {
+export const refreshAdminToken = async (
+  refreshToken: string
+): Promise<{ accessToken: string }> => {
   try {
-    const response = await api.post<ApiResponse<{ accessToken: string }>>(`/admin/login/refresh`, {
-      refreshToken,
-    });
+    const response = await api.post<ApiResponse<{ accessToken: string }>>(
+      `/admin/login/refresh`,
+      {
+        refreshToken,
+      }
+    );
     return response.data.data;
   } catch (error) {
     console.error("Error refreshing admin token:", error);
