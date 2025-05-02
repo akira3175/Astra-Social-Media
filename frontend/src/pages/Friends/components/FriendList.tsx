@@ -23,9 +23,7 @@ const FriendList: React.FC = () => {
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFriend, setSelectedFriend] = useState<Friendship | null>(
-    null
-  );
+  const [selectedFriend, setSelectedFriend] = useState<Friendship | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const { currentUser } = useCurrentUser();
 

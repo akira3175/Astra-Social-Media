@@ -81,7 +81,7 @@ public class FriendshipService {
                 .orElseThrow(() -> new EntityNotFoundException("Người nhận không tồn tại"));
 
         Friendship friendship = friendshipRepository.findByRequesterAndReceiverAndStatus(
-                        requester, receiver, Friendship.FriendshipStatus.PENDING)
+                requester, receiver, Friendship.FriendshipStatus.PENDING)
                 .orElseThrow(() -> new FriendshipException("Không tìm thấy lời mời kết bạn"));
 
         friendshipRepository.delete(friendship);
@@ -105,7 +105,7 @@ public class FriendshipService {
         }
 
         friendship.setStatus(Friendship.FriendshipStatus.ACCEPTED);
-        friendship.setAcceptedAt(LocalDateTime.now());  
+        friendship.setAcceptedAt(LocalDateTime.now());
         return friendshipRepository.save(friendship);
     }
 
@@ -171,7 +171,7 @@ public class FriendshipService {
                 .orElseThrow(() -> new EntityNotFoundException("Người dùng bị chặn không tồn tại"));
 
         Friendship friendship = friendshipRepository.findByRequesterAndReceiverAndStatus(
-                        blocker, blockee, Friendship.FriendshipStatus.BLOCKED)
+                blocker, blockee, Friendship.FriendshipStatus.BLOCKED)
                 .orElseThrow(() -> new FriendshipException("Không tìm thấy người dùng bị chặn"));
 
         friendshipRepository.delete(friendship);
@@ -195,17 +195,17 @@ public class FriendshipService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại"));
 
-        List<Friendship> friends = new ArrayList<>();
+        // Tìm tất cả bạn bè từ cả hai hướng (người dùng là người gửi hoặc người nhận)
+        List<Friendship> friends = friendshipRepository.findByRequesterIdOrReceiverId(userId, userId)
+                .stream()
+                .filter(friendship -> friendship.getStatus() == Friendship.FriendshipStatus.ACCEPTED &&
+                        friendship.isActive())
+                .collect(Collectors.toList());
 
-        // Find friendships where user is requester and friendship is accepted
-        List<Friendship> asRequester = friendshipRepository.findByRequesterAndStatusAndActive(
-                user, Friendship.FriendshipStatus.ACCEPTED, true);
-        friends.addAll(asRequester);
-
-        // Find friendships where user is receiver and friendship is accepted
-        List<Friendship> asReceiver = friendshipRepository.findByReceiverAndStatusAndActive(
-                user, Friendship.FriendshipStatus.ACCEPTED, true);
-        friends.addAll(asReceiver);
+        // Debug log
+        System.out.println("User " + userId + " has " + friends.size() + " friends");
+        friends.forEach(f -> System.out.println("Friend: " +
+                (f.getRequester().getId().equals(userId) ? f.getReceiver().getId() : f.getRequester().getId())));
 
         return friends;
     }
@@ -276,7 +276,8 @@ public class FriendshipService {
                 .collect(Collectors.toSet());
 
         // Get users who blocked current user
-        List<Friendship> blockedBy = friendshipRepository.findByReceiverAndStatus(currentUser, Friendship.FriendshipStatus.BLOCKED);
+        List<Friendship> blockedBy = friendshipRepository.findByReceiverAndStatus(currentUser,
+                Friendship.FriendshipStatus.BLOCKED);
         Set<Long> blockedByIds = blockedBy.stream()
                 .map(blocked -> blocked.getRequester().getId())
                 .collect(Collectors.toSet());
@@ -351,5 +352,18 @@ public class FriendshipService {
         }
 
         return result;
+    }
+
+    public User getOtherUserInFriendship(Long friendshipId, Long userId) {
+        Friendship friendship = friendshipRepository.findById(friendshipId)
+                .orElseThrow(() -> new RuntimeException("Friendship not found"));
+
+        if (friendship.getRequester().getId().equals(userId)) {
+            return friendship.getReceiver();
+        } else if (friendship.getReceiver().getId().equals(userId)) {
+            return friendship.getRequester();
+        } else {
+            throw new RuntimeException("User is not part of this friendship");
+        }
     }
 }

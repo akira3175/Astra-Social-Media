@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.example.backend.dto.CreateCommentRequest;
+import org.example.backend.dto.UpdateCommentRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,28 +93,42 @@ public class CommentController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Comment>> updateComment(
             @PathVariable Long id,
-            @RequestParam("content") String newContent) {
-
-        Comment updatedComment = commentService.updateComment(id, newContent);
-        ApiResponse<Comment> response = ApiResponse.<Comment>builder()
-                .status(HttpStatus.OK.value())
-                .message("Cập nhật bình luận thành công")
-                .data(updatedComment)
-                .timestamp(System.currentTimeMillis())
-                .build();
-        return ResponseEntity.ok(response);
+            @RequestBody UpdateCommentRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        try {
+            Comment updatedComment = commentService.updateComment(id, email, request.getContent());
+            
+            ApiResponse<Comment> response = ApiResponse.<Comment>builder()
+                    .status(HttpStatus.OK.value())
+                    .message("Cập nhật bình luận thành công")
+                    .data(updatedComment)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            ApiResponse<Comment> response = ApiResponse.<Comment>builder()
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .message(e.getMessage())
+                    .data(null)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long id) {
-        commentService.deleteComment(id);
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        commentService.softDeleteComment(id, email);
+        
         ApiResponse<Void> response = ApiResponse.<Void>builder()
-                .status(HttpStatus.NO_CONTENT.value())
-                .message("Xóa bình luận thành công")
+                .status(HttpStatus.OK.value())
+                .message("Đã xóa bình luận")
                 .data(null)
                 .timestamp(System.currentTimeMillis())
                 .build();
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/post/{postId}")

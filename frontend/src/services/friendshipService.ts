@@ -37,7 +37,7 @@ class FriendshipService {
   async cancelFriendRequest(email: string): Promise<void> {
     try {
       await api.delete(`/friendships/request`, {
-        data: { receiverEmail: email }
+        data: { receiverEmail: email },
       });
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -140,7 +140,8 @@ class FriendshipService {
           throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         }
         throw new Error(
-          error.response?.data?.message || "Không thể lấy danh sách lời mời kết bạn"
+          error.response?.data?.message ||
+            "Không thể lấy danh sách lời mời kết bạn"
         );
       }
       throw new Error("Đã xảy ra lỗi khi lấy danh sách lời mời kết bạn");
@@ -159,7 +160,8 @@ class FriendshipService {
           throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         }
         throw new Error(
-          error.response?.data?.message || "Không thể lấy danh sách lời mời đã gửi"
+          error.response?.data?.message ||
+            "Không thể lấy danh sách lời mời đã gửi"
         );
       }
       throw new Error("Đã xảy ra lỗi khi lấy danh sách lời mời đã gửi");
@@ -197,7 +199,8 @@ class FriendshipService {
           throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         }
         throw new Error(
-          error.response?.data?.message || "Không thể lấy danh sách người dùng đã chặn"
+          error.response?.data?.message ||
+            "Không thể lấy danh sách người dùng đã chặn"
         );
       }
       throw new Error("Đã xảy ra lỗi khi lấy danh sách người dùng đã chặn");
@@ -216,7 +219,8 @@ class FriendshipService {
           throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         }
         throw new Error(
-          error.response?.data?.message || "Không thể lấy danh sách gợi ý kết bạn"
+          error.response?.data?.message ||
+            "Không thể lấy danh sách gợi ý kết bạn"
         );
       }
       throw new Error("Đã xảy ra lỗi khi lấy danh sách gợi ý kết bạn");
@@ -235,7 +239,8 @@ class FriendshipService {
           throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         }
         throw new Error(
-          error.response?.data?.message || "Không thể kiểm tra trạng thái kết bạn"
+          error.response?.data?.message ||
+            "Không thể kiểm tra trạng thái kết bạn"
         );
       }
       throw new Error("Đã xảy ra lỗi khi kiểm tra trạng thái kết bạn");
@@ -264,13 +269,120 @@ class FriendshipService {
   async areFriends(otherUserId: number): Promise<boolean> {
     try {
       const status = await this.getFriendshipStatus(otherUserId);
-      return status.status === 'ACCEPTED';
+      return status.status === "ACCEPTED";
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         localStorage.removeItem("accessToken");
         throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
       }
       return false;
+    }
+  }
+
+  // Lấy danh sách bạn bè theo email
+  async getFriendsByEmail(email: string): Promise<Friendship[]> {
+    try {
+      // Đầu tiên lấy userId từ email
+      const userResponse = await api.get(
+        `/users/email/${encodeURIComponent(email)}`
+      );
+      const userId = userResponse.data.id;
+      console.log("User ID from email:", userId); // Debug log
+
+      // Lấy danh sách bạn bè theo userId với status ACCEPTED
+      const response = await api.get(
+        `/friendships/user/${userId}/friends?status=ACCEPTED`
+      );
+      console.log("Friends API response:", response.data); // Debug log
+
+      // Lọc và map lại dữ liệu để lấy thông tin người bạn
+      const friends = response.data.map((friendship: Friendship) => {
+        // Nếu user trong friendship là người đang xem, lấy người còn lại
+        if (friendship.user.id === userId) {
+          // Lấy ID của người bạn từ friendship
+          const friendId = friendship.receiver.id;
+          // Gọi API để lấy thông tin người bạn
+          return api.get(`/users/${friendId}`).then((friendResponse) => ({
+            ...friendship,
+            user: friendResponse.data,
+          }));
+        }
+        return Promise.resolve(friendship);
+      });
+
+      // Đợi tất cả các promise hoàn thành
+      return Promise.all(friends);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
+        if (error.response?.status === 404) {
+          throw new Error("Không tìm thấy người dùng");
+        }
+        throw new Error(
+          error.response?.data?.message || "Không thể lấy danh sách bạn bè"
+        );
+      }
+      throw new Error("Đã xảy ra lỗi khi lấy danh sách bạn bè");
+    }
+  }
+
+  // Lấy danh sách bạn bè theo userId
+  async getFriendsByUserId(userId: number): Promise<Friendship[]> {
+    try {
+      // Thêm tham số status để chỉ lấy bạn bè đã chấp nhận
+      const response = await api.get(
+        `/friendships/user/${userId}/friends?status=ACCEPTED`
+      );
+      console.log("Friends API response:", response.data); // Debug log
+
+      // Lọc và map lại dữ liệu để lấy thông tin người bạn
+      const friends = response.data.map((friendship: Friendship) => {
+        console.log("Processing friendship:", friendship); // Debug log
+
+        // Kiểm tra xem friendship có requester và receiver không
+        const friendId =
+          friendship.requester?.id === userId
+            ? friendship.receiver?.id
+            : friendship.requester?.id;
+
+        if (!friendId) {
+          console.error(
+            "Không tìm thấy ID người bạn trong friendship:",
+            friendship
+          );
+          return Promise.resolve(friendship);
+        }
+
+        console.log("Getting friend info for ID:", friendId); // Debug log
+        // Gọi API để lấy thông tin người bạn
+        return api.get(`/users/${friendId}`).then((friendResponse) => {
+          console.log("Friend info response:", friendResponse.data); // Debug log
+          return {
+            ...friendship,
+            user: friendResponse.data,
+          };
+        });
+      });
+
+      // Đợi tất cả các promise hoàn thành
+      return Promise.all(friends);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          throw new Error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
+        if (error.response?.status === 404) {
+          throw new Error("Không tìm thấy người dùng");
+        }
+        throw new Error(
+          error.response?.data?.message || "Không thể lấy danh sách bạn bè"
+        );
+      }
+      throw new Error("Đã xảy ra lỗi khi lấy danh sách bạn bè");
     }
   }
 }
