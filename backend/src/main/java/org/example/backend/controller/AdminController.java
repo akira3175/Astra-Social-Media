@@ -1,6 +1,9 @@
 package org.example.backend.controller;
 
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.example.backend.security.JwtUtil;
 import org.example.backend.security.RequireAdmin;
 
@@ -169,14 +172,27 @@ public class AdminController {
 
     @RequireAdmin
     @GetMapping("/users/getAllUser")
-    public ResponseEntity<ApiResponse<Object>> getAllUser() {
-        List<User> users = userService.getAllUsers().stream().filter(user -> user.getIsStaff() != true).collect(Collectors.toList());
+    public ResponseEntity<ApiResponse<Object>> getAllUser(HttpServletRequest request) {
+        List<User> users = userService.getAllUsers().stream()
+            .filter(user -> user.getIsStaff() != true)
+            .map(user -> addDomainToImage(user, request))
+            .collect(Collectors.toList());
+        
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
                 .data(users)
                 .timestamp(System.currentTimeMillis())
                 .build());
+    }
+
+    private User addDomainToImage(User user, HttpServletRequest request) {
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
+        user.setBackground(
+                (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
+                        : null);
+        return user;
     }
 
     @RequireAdmin
