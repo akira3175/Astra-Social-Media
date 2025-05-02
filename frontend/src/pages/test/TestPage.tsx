@@ -6,6 +6,7 @@ import { AxiosResponse } from 'axios';
 import { User } from '../../types/user';
 import { tokenService } from '../../services/tokenService';
 import { getAllPosts } from '../../services/PostService';
+import { useCurrentUser } from '../../contexts/currentUserContext';
 
 interface FlattenedComment extends Comment {
   parentId: number | null; // ID of the parent comment or post
@@ -14,6 +15,9 @@ interface FlattenedComment extends Comment {
 
 const TestPage = () => {
   const [comments, setComments] = useState<FlattenedComment[]>([]);
+  const { currentUser } = useCurrentUser()
+console.log(currentUser);
+
 
   useEffect(() => {
     async function fetchComments() {

@@ -17,6 +17,7 @@ import {
   Grid,
 } from "@mui/material";
 import { Person, Article, FilterAlt } from "@mui/icons-material";
+
 import { useLocation } from "react-router-dom";
 import BasePage from "../Base/BasePage";
 import UserList from "./components/UserList";
@@ -35,6 +36,7 @@ const SEARCH_FILTERS = [
 const SearchPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+
   const location = useLocation();
   const [activeFilter, setActiveFilter] = useState("all"); // all, people, posts, etc.
   const [isLoading, setIsLoading] = useState(true);
@@ -227,7 +229,7 @@ const SearchPage: React.FC = () => {
                       ? [{ id: post.id, url: post.images[0].url }]
                       : [],
                   createdAt: post.createdAt,
-                  updatedAt: null,
+                  updatedAt: post.createdAt,
                   user: {
                     id: post.user.id,
                     firstName: post.user.name.split(" ")[0],
@@ -236,11 +238,11 @@ const SearchPage: React.FC = () => {
                     email: post.user.email,
                   },
                   likesCount: post.likesCount,
-                  liked: false,
+                  liked: post.liked,
                   commentsCount: post.commentsCount,
-                  saved: false,
-                  originalPost: undefined,
-                  isDeleted: false,
+                  saved: post.saved,
+                  originalPost: post.originalPost,
+                  isDeleted: post.deleted,
                 }))}
                 isLoading={false}
               />
