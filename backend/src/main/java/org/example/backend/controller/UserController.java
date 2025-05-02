@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -220,8 +221,11 @@ public class UserController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
+    public ResponseEntity<List<User>> getAllUsers(HttpServletRequest request) {
+        List<User> users = userService.getAllUsers().stream()
+                .map(user -> addDomainToImage(user, request))
+                .collect(Collectors.toList());
+
         return ResponseEntity.ok(users);
     }
 
