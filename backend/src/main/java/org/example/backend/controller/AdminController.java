@@ -230,7 +230,7 @@ public class AdminController {
     @RequireAdmin
     @GetMapping("/users/getUserLoginToday")
     public ResponseEntity<ApiResponse<Object>> getUserLoginToday() {
-        List<User> users = userService.getAllUsers().stream().filter(user -> user.getLastLogin().isAfter(LocalDateTime.now().minusDays(1))).collect(Collectors.toList());
+        List<User> users = userService.getAllUsers().stream().filter(user -> user.getLastLogin() != null && user.getLastLogin().isAfter(LocalDateTime.now().minusDays(1))).collect(Collectors.toList());
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
