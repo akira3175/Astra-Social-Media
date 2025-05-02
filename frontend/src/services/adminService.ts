@@ -62,6 +62,7 @@ export interface UserComment {
 // Comment interface matching backend Comment entity
 export interface Comment {
   idComment: number;
+  likes:Like[]
   content: string;
   userComment: UserComment;
   replies: Comment[];

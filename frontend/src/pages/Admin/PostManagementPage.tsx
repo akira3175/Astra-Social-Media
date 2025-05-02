@@ -384,7 +384,7 @@ const PostManagementPage: React.FC = () => {
                                 }}
                               />
                               <Typography variant="body2">
-                                {post.likeCount}
+                                {post.likes.length}
                               </Typography>
                             </Box>
                           </Tooltip>
@@ -399,7 +399,7 @@ const PostManagementPage: React.FC = () => {
                                 }}
                               />
                               <Typography variant="body2">
-                                {post.totalCommentCount}
+                                {post.comments.length}
                               </Typography>
                             </Box>
                           </Tooltip>

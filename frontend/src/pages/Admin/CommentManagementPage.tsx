@@ -225,7 +225,7 @@ const CommentManagementPage: React.FC = () => {
                   <TableCell>Người dùng</TableCell>
                   <TableCell>Bài viết</TableCell>
                   <TableCell>Ngày tạo</TableCell>
-                  {/* <TableCell>Lượt thích</TableCell> */}
+                  <TableCell>Lượt thích</TableCell>
                   <TableCell>Thao tác</TableCell>
                 </TableRow>
               </TableHead>
@@ -265,7 +265,7 @@ const CommentManagementPage: React.FC = () => {
                         </Typography>
                       </TableCell>
                       <TableCell>{formatDate(comment.createdAt)}</TableCell>
-                      {/* <TableCell>{comment.likeCount}</TableCell> */}
+                      <TableCell>{comment.likes.length}</TableCell>
                       <TableCell>
                         <Tooltip title="Xem chi tiết">
                           <IconButton
@@ -389,10 +389,10 @@ const CommentManagementPage: React.FC = () => {
                 <Typography variant="body2">
                   <strong>Bài viết ID:</strong> {selectedComment.idComment}
                 </Typography>
-                {/* <Typography variant="body2">
-                  <strong>Lượt thích:</strong> {selectedComment.likeCount}
+                <Typography variant="body2">
+                  <strong>Lượt thích:</strong> {selectedComment.likes.length}
                 </Typography>
-              */}
+             
                 {selectedComment.parentId && (
                   <Typography variant="body2">
                     <strong>Bình luận cha:</strong> {selectedComment.parentId}
