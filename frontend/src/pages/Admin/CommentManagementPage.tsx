@@ -26,6 +26,7 @@ import {
   Alert,
   InputAdornment,
   CircularProgress,
+  Grid,
 } from "@mui/material";
 import { Delete, Search, Visibility } from "@mui/icons-material";
 import AdminLayout from "./components/AdminLayout";
@@ -59,8 +60,12 @@ const CommentManagementPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getComments({ page: 0, size: 100 }); // Fetch all comments for now
-        setFilteredComments(response);
+        const response = await getComments({ page: 0, size: 100 }); // Fetch all comments
+        const sorted = response.sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setComments(sorted); // Update the full comments list
+        setFilteredComments(sorted); // Initialize filtered comments
       } catch (err) {
         setError("Không thể tải danh sách bình luận. Vui lòng thử lại sau.");
         console.error("Error fetching comments:", err);
@@ -75,8 +80,10 @@ const CommentManagementPage: React.FC = () => {
   // Filter comments when search query changes
   useEffect(() => {
     if (searchQuery.trim() === "") {
+      // Reset filteredComments to the full comments list
       setFilteredComments(comments);
     } else {
+      // Filter comments based on the search query
       const filtered = comments.filter(
         (comment) =>
           comment.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -87,9 +94,8 @@ const CommentManagementPage: React.FC = () => {
       );
       setFilteredComments(filtered);
     }
-    setPage(0);
+    setPage(0); // Reset to the first page
   }, [searchQuery, comments]);
-
   // Handle page change
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -106,12 +112,12 @@ const CommentManagementPage: React.FC = () => {
     if (selectedComment) {
       try {
         await deleteComment(selectedComment.idComment);
-  
+
         // Refetch comments from the API to ensure the state is up-to-date
         const updatedComments = await getComments({ page: 0, size: 100 });
         setComments(updatedComments);
         setFilteredComments(updatedComments);
-  
+
         setNotification({
           type: "success",
           message: "Đã xóa bình luận thành công",
@@ -392,13 +398,42 @@ const CommentManagementPage: React.FC = () => {
                 <Typography variant="body2">
                   <strong>Lượt thích:</strong> {selectedComment.likes.length}
                 </Typography>
-             
+
                 {selectedComment.parentId && (
                   <Typography variant="body2">
                     <strong>Bình luận cha:</strong> {selectedComment.parentId}
                   </Typography>
                 )}
               </Box>
+
+              {/* Grid for images */}
+              <Typography variant="subtitle2" gutterBottom>
+                Hình ảnh
+              </Typography>
+              <Grid container spacing={2}>
+                {selectedComment.images &&
+                  selectedComment.images.map((image, index) => (
+                    <Grid item xs={12} sm={6} md={4} key={index}>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 1,
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          height: 150,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <img
+                          src={image.url}
+                          alt={`Comment Image ${index + 1}`}
+                          style={{ maxWidth: "100%", maxHeight: "100%" }}
+                        />
+                      </Paper>
+                    </Grid>
+                  ))}
+              </Grid>
             </Box>
           )}
         </DialogContent>

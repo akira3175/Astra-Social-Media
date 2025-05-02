@@ -62,8 +62,9 @@ export interface UserComment {
 // Comment interface matching backend Comment entity
 export interface Comment {
   idComment: number;
-  likes:Like[]
+  likes: Like[];
   content: string;
+  images: {id:number,url:string}[];
   userComment: UserComment;
   replies: Comment[];
   createdAt: number;
@@ -280,30 +281,28 @@ export const getComments = async (
       }
     );
 
-    const data:PostComment[] = response.data.data
+    const data: PostComment[] = response.data.data;
 
-  // Recursive function to flatten comments and replies
-        const flattenComments = (
-          comments: Comment[],
-          postId: number,
-          parentId: number | null = null
-        ): FlattenedComment[] => {
-          return comments.flatMap((comment) => [
-            {
-              ...comment,
-              parentId,
-              postId,
-            },
-            ...flattenComments(comment.replies, postId, comment.idComment),
-          ]);
-        };
+    // Recursive function to flatten comments and replies
+    const flattenComments = (
+      comments: Comment[],
+      postId: number,
+      parentId: number | null = null
+    ): FlattenedComment[] => {
+      return comments.flatMap((comment) => [
+        {
+          ...comment,
+          parentId,
+          postId,
+        },
+        ...flattenComments(comment.replies, postId, comment.idComment),
+      ]);
+    };
 
-        // Flatten all comments from all posts
-        const flattenedComments = data.flatMap((postComment) =>
-          flattenComments(postComment.comments, postComment.idPost)
-        );
-
-
+    // Flatten all comments from all posts
+    const flattenedComments = data.flatMap((postComment) =>
+      flattenComments(postComment.comments, postComment.idPost)
+    );
 
     return flattenedComments;
   } catch (error) {

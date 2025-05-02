@@ -29,7 +29,6 @@ import {
   People,
   Article,
   Comment,
-  Settings,
   Logout,
   ChevronLeft,
   AccountCircle,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getComments, PostComment, Comment } from '../../services/adminService';
+import { getComments, PostComment, Comment, getUsers } from '../../services/adminService';
 import { getAllUser, searchUsers } from '../../services/authService';
 import { api } from '../../configs/api';
 import { AxiosResponse } from 'axios';
@@ -16,14 +16,17 @@ interface FlattenedComment extends Comment {
 const TestPage = () => {
   const [comments, setComments] = useState<FlattenedComment[]>([]);
   const { currentUser } = useCurrentUser()
+  console.log(currentUser);
+  
 console.log(currentUser);
 
 
   useEffect(() => {
     async function fetchComments() {
       try {
-        const response = await getAllPosts();
-        console.log(response);
+        const response = await getUsers();
+
+        console.log(response[0].avatar);
         
         //   const token = tokenService.getAccessToken();
         

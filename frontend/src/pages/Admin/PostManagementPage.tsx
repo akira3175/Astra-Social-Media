@@ -67,8 +67,11 @@ const PostManagementPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const response = await getPosts({ page: 0, size: 100 }); // Fetch all posts for now
-      setPosts(response);
-      setFilteredPosts(response);
+      const sorted = response.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setPosts(sorted);
+      setFilteredPosts(sorted);
     } catch (err) {
       setError("Không thể tải danh sách bài viết. Vui lòng thử lại sau.");
       console.error("Error fetching posts:", err);
@@ -603,7 +606,7 @@ const PostManagementPage: React.FC = () => {
                       <Box>
                         <ThumbUp color="primary" />
                         <Typography variant="h6">
-                          {selectedPost.likeCount}
+                          {selectedPost.likes.length}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Lượt thích
@@ -612,7 +615,7 @@ const PostManagementPage: React.FC = () => {
                       <Box>
                         <Comment color="primary" />
                         <Typography variant="h6">
-                          {selectedPost.totalCommentCount}
+                          {selectedPost.comments.length}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Bình luận
@@ -695,6 +698,7 @@ const PostManagementPage: React.FC = () => {
                   </Paper>
                 </Grid>
               </Grid>
+              
             </Box>
           )}
         </DialogContent>
