@@ -188,22 +188,29 @@ public class AdminController {
 
     private User addDomainToImage(User user, HttpServletRequest request) {
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
-        user.setBackground(
-                (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
-                        : null);
+        
+        if (user.getAvatar() != null && !user.getAvatar().isEmpty() && !user.getAvatar().startsWith("http")) {
+            user.setAvatar(baseUrl + user.getAvatar());
+        }
+        
+        if (user.getBackground() != null && !user.getBackground().isEmpty() && !user.getBackground().startsWith("http")) {
+            user.setBackground(baseUrl + user.getBackground());
+        }
+        
         return user;
     }
 
     @RequireAdmin
     @GetMapping("/users/getAllUserAt")
-    public ResponseEntity<ApiResponse<Object>> getAllNewUser(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr) {
+    public ResponseEntity<ApiResponse<Object>> getAllNewUser(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr, HttpServletRequest request) {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
 
-            List<User> users = userService.getAllUsers().stream().filter(user -> Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).after(startDate) && Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).before(endDate) && user.getIsStaff() != true).collect(Collectors.toList());
+            List<User> users = userService.getAllUsers().stream()
+            .map(user -> addDomainToImage(user, request))
+            .filter(user -> Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).after(startDate) && Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).before(endDate) && user.getIsStaff() != true).collect(Collectors.toList());
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
@@ -258,8 +265,14 @@ public class AdminController {
     // Post
     @RequireAdmin
     @GetMapping("/posts/getAllPost")
-    public ResponseEntity<ApiResponse<Object>> getAllPost() {
-        List<Post> posts = postService.getAllPosts();
+    public ResponseEntity<ApiResponse<Object>> getAllPost(HttpServletRequest request) {
+        List<Post> posts = postService.getAllPosts().stream()
+            .map(post -> {
+                post.setUser(addDomainToImage(post.getUser(), request));
+                return post;
+            })
+            .collect(Collectors.toList());
+        
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
@@ -271,7 +284,7 @@ public class AdminController {
 
     @RequireAdmin
     @GetMapping("/posts/getAllPostAt")
-    public ResponseEntity<ApiResponse<Object>> getAllPostAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr) {
+    public ResponseEntity<ApiResponse<Object>> getAllPostAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr, HttpServletRequest request) {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
             Date startDate = dateFormat.parse(startDateStr);
@@ -284,6 +297,10 @@ public class AdminController {
                 List<Post> filteredPosts = postService.getPostsByUserId(user.getId())
                     .stream()
                     .filter(post -> post.getCreatedAt().after(startDate) && post.getCreatedAt().before(endDate))
+                    .map(post -> {
+                        post.setUser(addDomainToImage(post.getUser(), request));
+                        return post;
+                    })
                     .collect(Collectors.toList());
                 
                 if (!filteredPosts.isEmpty()) {
@@ -348,7 +365,7 @@ public class AdminController {
 
     @RequireAdmin
     @GetMapping("/comments/getAllCommentAt")
-    public ResponseEntity<ApiResponse<Object>> getAllCommentAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr) {
+    public ResponseEntity<ApiResponse<Object>> getAllCommentAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr, HttpServletRequest request) {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
             Date startDate = dateFormat.parse(startDateStr);
@@ -356,6 +373,10 @@ public class AdminController {
 
             List<Post> posts = postService.getAllPosts();
             List<PostSummaryDTO> filteredPosts = posts.stream()
+            .map(post -> {
+                post.setUser(addDomainToImage(post.getUser(), request));
+                return post;
+            })
                 .map(this::convertToSummaryDTO)
                 .filter(post -> post.getComments().stream()
                     .anyMatch(comment -> {
@@ -431,10 +452,14 @@ public class AdminController {
 
     @RequireAdmin
     @GetMapping("/comments/getAllComment")
-    public ResponseEntity<ApiResponse<Object>> getAllComment() {
+    public ResponseEntity<ApiResponse<Object>> getAllComment(HttpServletRequest request) {
         List<Post> posts = postService.getAllPosts();
         List<PostSummaryDTO> simplifiedPosts = posts.stream()
                 .filter(c -> c.getComments().size() > 0)
+                .map(post -> {
+                    post.setUser(addDomainToImage(post.getUser(), request));
+                    return post;
+                })
                 .map(this::convertToSummaryDTO)
                 .collect(Collectors.toList());
 
