@@ -1,15 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Box, List, ListItemAvatar, ListItemText, Avatar, Typography, Divider, ListItemButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
-
-interface ChatUser {
-    id: string;
-    name: string;
-    avatar?: string;
-    lastMessage?: string;
-    lastMessageTime?: string;
-    unreadCount?: number;
-}
+import { ChatUser } from '../../types/message';
+import MessageService from '../../services/messageService';
 
 interface ChatUserListProps {
     currentUserId: string;
@@ -25,57 +18,14 @@ const StyledListItem = styled(ListItemButton)(({ theme }) => ({
     },
 }));
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://astrasocial.netlify.app';
-
 const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser }) => {
     const [users, setUsers] = useState<ChatUser[]>([]);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
     const loadUsers = () => {
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
-            console.log('User not logged in, redirecting to login page');
-            window.location.href = '/login';
-            return;
-        }
-
-        fetch(`${API_URL}/api/chat/users/${currentUserId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include'
-        })
-            .then(res => {
-                if (!res.ok) {
-                    if (res.status === 401) {
-                        localStorage.removeItem('accessToken');
-                        window.location.href = '/login';
-                        return;
-                    }
-                    if (res.status === 400) {
-                        throw new Error('Invalid request');
-                    }
-                    if (res.status === 404) {
-                        setUsers([]);
-                        return;
-                    }
-                    throw new Error(`Network response was not ok: ${res.status}`);
-                }
-                return res.json();
-            })
-            .then(data => {
-                if (data) {
-                    console.log("Loaded chat users:", data);
-                    setUsers(data);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching chat users:', error);
-                setUsers([]);
-            });
+        MessageService.getChatUsers().then((users: ChatUser[]) => {
+            setUsers(users);
+        });
     };
 
     useEffect(() => {
@@ -100,13 +50,13 @@ const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser
                 {users.map((user) => (
                     <StyledListItem
                         key={user.id}
-                        selected={selectedUserId === user.id}
-                        onClick={() => handleUserClick(user.id)}
+                        selected={selectedUserId === user.id.toString()}
+                        onClick={() => handleUserClick(user.id.toString())}
                     >
                         <ListItemAvatar>
                             <Avatar
                                 alt={user.name}
-                                src={user.avatar ? `${API_URL}${user.avatar}` : undefined}
+                                src={user.avatar ? `${user.avatar}` : undefined}
                                 sx={{
                                     width: 40,
                                     height: 40,

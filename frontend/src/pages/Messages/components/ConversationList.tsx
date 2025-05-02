@@ -19,7 +19,7 @@ import {
   alpha,
 } from "@mui/material"
 import { Search, Edit, MoreVert } from "@mui/icons-material"
-import type { Conversation } from "../../../types/message"
+import type { ChatUser, Conversation } from "../../../types/message"
 import { useCurrentUser } from "../../../contexts/currentUserContext"
 
 interface ConversationListProps {
@@ -114,7 +114,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
 
   // Kết hợp danh sách cuộc trò chuyện với danh sách người dùng
   const combinedConversations = conversations.map(conversation => {
-    const user = users.find(u => u.id === conversation.user.id.toString());
+    const user = users.find(u => u.id === conversation.user.id);
     return {
       ...conversation,
       user: {

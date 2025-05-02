@@ -28,8 +28,9 @@ import { Client } from '@stomp/stompjs'
 import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data'
 import { styled } from "@mui/material/styles"
+import { Message } from "../../../types/message"
 
-const MessageItem = styled(ListItem)(({ theme }) => ({
+const MessageItem = styled(ListItem)(({ }) => ({
   display: "flex",
   flexDirection: "column",
   padding: "4px 8px",
@@ -48,19 +49,6 @@ const MessageItem = styled(ListItem)(({ theme }) => ({
     },
   },
 }));
-
-interface Message {
-  id: string;
-  senderId: string;
-  receiverId: string;
-  content: string;
-  timestamp: string;
-  senderAvatar?: string;
-  senderName: string;
-  fileUrl?: string;
-  fileType?: string;
-  fileName?: string;
-}
 
 const formatTime = (timestamp: string | number[]) => {
   try {
@@ -144,8 +132,7 @@ interface ChatAreaProps {
 
 type FileType = 'image' | 'video' | 'document' | 'file';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://astrasocial.netlify.app';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const getFileUrl = (fileUrl: string) => {
   if (!fileUrl) return '';

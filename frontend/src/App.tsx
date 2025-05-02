@@ -34,6 +34,7 @@ import ChatBubble from "./components/AIChatBox/ChatBubble";
 import OTPVerificationPage from "./pages/Auth/OTPVerificationPage";
 import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/Auth/ResetPasswordPage";
+import BasePage from "./pages/Base/BasePage";
 
 const theme = createTheme({
   breakpoints: {
@@ -208,6 +209,11 @@ const AppContent: React.FC = () => {
               }
             />
           {/* Các route khác có thể thêm vào đây */}
+          <Route path="*" element={
+            <BasePage>
+              <NotFound />
+            </BasePage>} 
+          />
         </Routes>
         {isAuthenticated() && <ChatBubble />}
       </Router>

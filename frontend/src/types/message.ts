@@ -11,6 +11,7 @@ export interface ChatUser {
   registeredDate: string
   lastActive: string
   isOnline: boolean
+  [key: string]: any
 }
 
 export interface Message {
@@ -24,6 +25,7 @@ export interface Message {
   hasAttachment?: boolean
   attachmentType?: 'image' | 'video' | 'document' | 'file'
   fileName?: string
+  [key: string]: any
 }
 
 export interface LastMessage {

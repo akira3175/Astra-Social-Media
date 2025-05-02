@@ -192,7 +192,6 @@ const ActionButton = styled(IconButton)(({ theme }) => ({
 }))
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://astrasocial.netlify.app';
 
 const ChatBox: React.FC<ChatBoxProps> = ({ isOpen, onClose, receiverId, currentUserId, onSelectUser }) => {
     const [messages, setMessages] = useState<Message[]>([])
