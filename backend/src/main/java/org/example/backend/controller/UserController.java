@@ -1,5 +1,6 @@
 package org.example.backend.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.dto.RegisterWithOtpRequest;
 import org.example.backend.elasticsearch.document.UserDocument;
@@ -8,6 +9,7 @@ import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.security.JwtUtil;
 import org.example.backend.service.OtpService;
 import org.example.backend.service.UserService;
+import org.example.backend.util.ImageUtils;
 import org.example.backend.websocket.WebSocketEventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -16,13 +18,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -115,10 +116,8 @@ public class UserController {
 
         User user = optionalUser.get();
 
-        // 🔥 Thêm domain vào avatar và background nếu có
-        addDomainToImage(user, request);
+        ImageUtils.addDomainToImage(user, request);
 
-        // 🔥 Tạo response từ user
         User response = user.toBuilder().build();
 
         return ResponseEntity.ok(response);
@@ -126,22 +125,12 @@ public class UserController {
 
     @GetMapping("/info")
     public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String token, HttpServletRequest request) {
-        // Extract email từ token
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
-
-        // Lấy Optional<User> từ userService
         Optional<User> optionalUser = userService.getUserByEmail(email);
-
-        // Kiểm tra và lấy User từ Optional (hoặc ném lỗi nếu không tìm thấy)
         User user = optionalUser.orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Thêm domain vào avatar và background
-        user = addDomainToImage(user, request);
-
-        // Trả về response có đường dẫn đầy đủ
+        user = ImageUtils.addDomainToImage(user, request);
         User response = user.toBuilder()
                 .build();
-
         return ResponseEntity.ok(response);
     }
 
@@ -156,7 +145,7 @@ public class UserController {
             HttpServletRequest request) {
 
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
-        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        String baseUrl = ImageUtils.getBaseUrl(request);
 
         try {
             User updatedUser = userService.updateUser(email, firstName, lastName, avatar, background, bio);
@@ -199,8 +188,9 @@ public class UserController {
         User userCurrent = userService.getUserInfo(email);
 
         Page<UserDocument> users = userService.searchUsers(keyword, isStaff, isActive, page, size, userCurrent);
-        return users.map(user -> addDomainToImage(user, request));
+        return users.map(user -> ImageUtils.addDomainToImage(user, request));
     }
+
 
     private User addDomainToImage(User user, HttpServletRequest request) {
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
@@ -250,17 +240,5 @@ public class UserController {
     public ResponseEntity<?> checkEmail(@RequestParam String email) {
         boolean exists = userService.isEmailExist(email);
         return ResponseEntity.ok(Collections.singletonMap("exists", exists));
-    }
-
-    @GetMapping("/suggestions")
-    public ResponseEntity<List<Map<String, Object>>> getSuggestedUsers(@RequestParam Long currentUserId) {
-        List<Map<String, Object>> suggestedUsers = userService.getSuggestedUsers(currentUserId);
-        return ResponseEntity.ok(suggestedUsers);
-    }
-
-    @GetMapping("/{userId}/friends")
-    public ResponseEntity<?> getFriendsList(@PathVariable String userId) {
-        List<User> friends = userService.getFriendsList(userId);
-        return ResponseEntity.ok(friends);
     }
 }

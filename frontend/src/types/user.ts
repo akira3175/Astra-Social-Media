@@ -11,7 +11,21 @@ export interface User {
     registeredDate?: string;
     lastActive?: string;
     bio?: string;
+    isStaff?: boolean;
+    isSuperUser?: boolean;
+    isActive?: boolean;
+    dateJoined?: string;
+    lastLogin?: string;
     [key: string]: any;
+}
+
+export interface TokenPair {
+    accessToken: string;
+    refreshToken: string;
+}
+  
+export interface RefreshResponse {
+    accessToken: string;
 }
 
 export interface RegisterCredentials {

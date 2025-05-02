@@ -1,4 +1,4 @@
-import type React from "react"
+import type React from "react";
 import {
   Box,
   Card,
@@ -12,31 +12,41 @@ import {
   Tooltip,
   Chip,
   Divider,
-} from "@mui/material"
-import { PersonAdd, PersonRemove, MoreVert, Block, Chat, CheckCircle, Cancel, Person } from "@mui/icons-material"
-import { useState } from "react"
-import { Link } from "react-router-dom"
-
-export type FriendStatus = "friend" | "request" | "suggestion" | "sent"
+} from "@mui/material";
+import {
+  PersonAdd,
+  PersonRemove,
+  MoreVert,
+  Block,
+  Chat,
+  CheckCircle,
+  Cancel,
+  Person,
+} from "@mui/icons-material";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import type { FriendStatus } from "../../../types/friendship";
 
 export interface FriendCardProps {
-  id: number
-  name: string
-  avatar: string
-  email: string
-  mutualFriends?: number
-  status: FriendStatus
-  onAccept?: (id: number) => void
-  onReject?: (id: number) => void
-  onAdd?: (id: number) => void
-  onRemove?: (id: number) => void
-  onBlock?: (id: number) => void
-  onMessage?: (id: number) => void
+  id: number;
+  firstName: string;
+  lastName: string;
+  avatar: string;
+  email: string;
+  mutualFriends?: number;
+  status: FriendStatus;
+  onAccept?: (id: number) => void;
+  onReject?: (id: number) => void;
+  onAdd?: (id: number) => void;
+  onRemove?: (id: number) => void;
+  onBlock?: (id: number) => void;
+  onMessage?: (id: number) => void;
 }
 
 const FriendCard: React.FC<FriendCardProps> = ({
   id,
-  name,
+  firstName,
+  lastName,
   avatar,
   email,
   mutualFriends = 0,
@@ -48,48 +58,66 @@ const FriendCard: React.FC<FriendCardProps> = ({
   onBlock,
   onMessage,
 }) => {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const open = Boolean(anchorEl)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
+    setAnchorEl(event.currentTarget);
+  };
 
   const handleCloseMenu = () => {
-    setAnchorEl(null)
-  }
+    setAnchorEl(null);
+  };
 
-  const handleAction = (action: "accept" | "reject" | "add" | "remove" | "block" | "message" | "cancel") => {
-    handleCloseMenu()
+  const handleAction = (
+    action:
+      | "accept"
+      | "reject"
+      | "add"
+      | "remove"
+      | "block"
+      | "message"
+      | "cancel"
+  ) => {
+    handleCloseMenu();
     switch (action) {
       case "accept":
-        onAccept?.(id)
-        break
+        onAccept?.(id);
+        break;
       case "reject":
-        onReject?.(id)
-        break
+        onReject?.(id);
+        break;
       case "add":
-        onAdd?.(id)
-        break
+        onAdd?.(id);
+        break;
       case "remove":
-        onRemove?.(id)
-        break
+        onRemove?.(id);
+        break;
       case "block":
-        onBlock?.(id)
-        break
+        onBlock?.(id);
+        break;
       case "message":
-        onMessage?.(id)
-        break
+        onMessage?.(id);
+        break;
     }
-  }
+  };
 
   return (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+      <CardContent
+        sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            mb: 2,
+          }}
+        >
           <Avatar
             src={avatar}
-            alt={name}
+            alt={`${lastName} ${firstName}`}
             component={Link}
             to={`/profile/${email}`}
             sx={{
@@ -123,12 +151,15 @@ const FriendCard: React.FC<FriendCardProps> = ({
             },
           }}
         >
-          {name}
+          {lastName} {firstName}
         </Typography>
 
         {mutualFriends > 0 && (
           <Box sx={{ display: "flex", alignItems: "center", mt: 1, mb: 2 }}>
-            <Person fontSize="small" sx={{ color: "text.secondary", mr: 0.5 }} />
+            <Person
+              fontSize="small"
+              sx={{ color: "text.secondary", mr: 0.5 }}
+            />
             <Typography variant="body2" color="text.secondary">
               {mutualFriends} bạn chung
             </Typography>
@@ -197,7 +228,12 @@ const FriendCard: React.FC<FriendCardProps> = ({
         </Box>
       </CardContent>
 
-      <Menu anchorEl={anchorEl} open={open} onClose={handleCloseMenu}>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleCloseMenu}
+        onClick={handleCloseMenu}
+      >
         <MenuItem onClick={() => handleAction("message")}>
           <Chat fontSize="small" sx={{ mr: 1 }} />
           Nhắn tin
@@ -207,13 +243,16 @@ const FriendCard: React.FC<FriendCardProps> = ({
           Hủy kết bạn
         </MenuItem>
         <Divider />
-        <MenuItem onClick={() => handleAction("block")} sx={{ color: "error.main" }}>
+        <MenuItem
+          onClick={() => handleAction("block")}
+          sx={{ color: "error.main" }}
+        >
           <Block fontSize="small" sx={{ mr: 1 }} />
           Chặn
         </MenuItem>
       </Menu>
     </Card>
-  )
-}
+  );
+};
 
-export default FriendCard
+export default FriendCard;

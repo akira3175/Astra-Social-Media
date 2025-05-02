@@ -1,228 +1,190 @@
-import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   Box,
-  Grid,
+  Card,
+  CardContent,
   Typography,
+  Button,
+  Avatar,
+  Grid,
   CircularProgress,
-  Pagination,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  type SelectChangeEvent,
-  Paper,
-} from "@mui/material"
-import FriendCard from "./FriendCard"
-import type { FriendStatus } from "./FriendCard"
-import { People } from "@mui/icons-material"
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
+import { PersonRemove } from "@mui/icons-material";
+import { useCurrentUser } from "../../../contexts/currentUserContext";
+import friendshipService from "../../../services/friendshipService";
+import { Link } from "react-router-dom";
+import { Friendship } from "../../../types/friendship";
 
-// Mock data for friends
-const MOCK_FRIENDS = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    avatar: "https://i.pravatar.cc/150?img=1",
-    email: "nguyenvana@example.com",
-    mutualFriends: 15,
-    status: "friend" as FriendStatus,
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    avatar: "https://i.pravatar.cc/150?img=5",
-    email: "tranthib@example.com",
-    mutualFriends: 8,
-    status: "friend" as FriendStatus,
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    avatar: "https://i.pravatar.cc/150?img=8",
-    email: "levanc@example.com",
-    mutualFriends: 12,
-    status: "friend" as FriendStatus,
-  },
-  {
-    id: 4,
-    name: "Phạm Thị D",
-    avatar: "https://i.pravatar.cc/150?img=10",
-    email: "phamthid@example.com",
-    mutualFriends: 5,
-    status: "friend" as FriendStatus,
-  },
-  {
-    id: 5,
-    name: "Hoàng Văn E",
-    avatar: "https://i.pravatar.cc/150?img=11",
-    email: "hoangvane@example.com",
-    mutualFriends: 3,
-    status: "friend" as FriendStatus,
-  },
-  {
-    id: 6,
-    name: "Ngô Thị F",
-    avatar: "https://i.pravatar.cc/150?img=12",
-    email: "ngothif@example.com",
-    mutualFriends: 7,
-    status: "friend" as FriendStatus,
-  },
-  {
-    id: 7,
-    name: "Đỗ Văn G",
-    avatar: "https://i.pravatar.cc/150?img=13",
-    email: "dovang@example.com",
-    mutualFriends: 2,
-    status: "friend" as FriendStatus,
-  },
-  {
-    id: 8,
-    name: "Vũ Thị H",
-    avatar: "https://i.pravatar.cc/150?img=14",
-    email: "vuthih@example.com",
-    mutualFriends: 9,
-    status: "friend" as FriendStatus,
-  },
-]
+const FriendList: React.FC = () => {
+  const [friends, setFriends] = useState<Friendship[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFriend, setSelectedFriend] = useState<Friendship | null>(
+    null
+  );
+  const [openDialog, setOpenDialog] = useState(false);
+  const { currentUser } = useCurrentUser();
 
-interface FriendsListProps {
-  searchQuery?: string
-}
-
-const FriendsList: React.FC<FriendsListProps> = ({ searchQuery = "" }) => {
-  const [friends, setFriends] = useState(MOCK_FRIENDS)
-  const [filteredFriends, setFilteredFriends] = useState(MOCK_FRIENDS)
-  const [isLoading, setIsLoading] = useState(false)
-  const [page, setPage] = useState(1)
-  const [sortBy, setSortBy] = useState("name")
-  const friendsPerPage = 8
-
-  // Filter and sort friends when search query or sort option changes
   useEffect(() => {
-    setIsLoading(true)
-
-    // Filter by search query
-    let filtered = friends
-    if (searchQuery) {
-      filtered = friends.filter((friend) => friend.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    if (currentUser?.id) {
+      loadFriends();
     }
+  }, [currentUser?.id]);
 
-    // Sort friends
-    filtered = [...filtered].sort((a, b) => {
-      if (sortBy === "name") {
-        return a.name.localeCompare(b.name)
-      } else if (sortBy === "mutual") {
-        return b.mutualFriends - a.mutualFriends
+  const loadFriends = async () => {
+    try {
+      setLoading(true);
+      const data = await friendshipService.getFriends();
+      setFriends(data as unknown as Friendship[]);
+      console.log("friends", data);
+      setError(null);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Không thể tải danh sách bạn bè");
       }
-      return 0
-    })
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setFilteredFriends(filtered)
-    setPage(1)
-    setIsLoading(false)
-  }, [searchQuery, sortBy, friends])
+  const handleUnfriend = async (friend: Friendship) => {
+    setSelectedFriend(friend);
+    setOpenDialog(true);
+  };
 
-  // Handle page change
-  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value)
+  const confirmUnfriend = async () => {
+    if (!selectedFriend) return;
+
+    try {
+      await friendshipService.removeFriend(selectedFriend.id);
+      // Cập nhật lại danh sách
+      setFriends(friends.filter((friend) => friend.id !== selectedFriend.id));
+      setOpenDialog(false);
+      setSelectedFriend(null);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
-  // Handle sort change
-  const handleSortChange = (event: SelectChangeEvent) => {
-    setSortBy(event.target.value)
+  if (error) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
   }
 
-  // Handle friend actions
-  const handleRemoveFriend = (id: number) => {
-    setFriends(friends.filter((friend) => friend.id !== id))
+  if (friends.length === 0) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography variant="h6" color="text.secondary">
+          Bạn chưa có bạn bè nào
+        </Typography>
+      </Box>
+    );
   }
-
-  const handleMessageFriend = (id: number) => {
-    console.log(`Message friend with ID: ${id}`)
-    // Implement message functionality
-  }
-
-  const handleBlockFriend = (id: number) => {
-    console.log(`Block friend with ID: ${id}`)
-    setFriends(friends.filter((friend) => friend.id !== id))
-    // Implement block functionality
-  }
-
-  // Calculate pagination
-  const indexOfLastFriend = page * friendsPerPage
-  const indexOfFirstFriend = indexOfLastFriend - friendsPerPage
-  const currentFriends = filteredFriends.slice(indexOfFirstFriend, indexOfLastFriend)
-  const totalPages = Math.ceil(filteredFriends.length / friendsPerPage)
 
   return (
-    <Box>
-      {/* Header with count and sort */}
-      <Paper sx={{ p: 2, mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="h6" sx={{ display: "flex", alignItems: "center" }}>
-          <People sx={{ mr: 1 }} />
-          {filteredFriends.length} bạn bè
-        </Typography>
+    <>
+      <Grid container spacing={2}>
+        {friends.map((friend) => {
+          const friendInfo = friend;
+          return (
+            <Grid item xs={12} sm={6} md={4} key={friend.id}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Avatar
+                      src={friendInfo.user.avatar}
+                      alt={`${friendInfo.user.firstName} ${friendInfo.user.lastName}`}
+                      sx={{ width: 56, height: 56, mr: 2 }}
+                    />
+                    <Box>
+                      <Typography
+                        variant="h6"
+                        component={Link}
+                        to={`/profile/${friendInfo.user.email}`}
+                        sx={{
+                          textDecoration: "none",
+                          color: "inherit",
+                          "&:hover": {
+                            color: "primary.main",
+                          },
+                        }}
+                      >
+                        {friendInfo.user.lastName} {friendInfo.user.firstName}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {friendInfo.user.email}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    Đã kết bạn từ{" "}
+                    {new Date(
+                      friend.acceptedAt[0],
+                      friend.acceptedAt[1] - 1,
+                      friend.acceptedAt[2],
+                      friend.acceptedAt[3],
+                      friend.acceptedAt[4],
+                      friend.acceptedAt[5]
+                    ).toLocaleDateString()}
+                  </Typography>
+                  <Button
+                    color="error"
+                    startIcon={<PersonRemove />}
+                    onClick={() => handleUnfriend(friend)}
+                    fullWidth
+                  >
+                    Xóa bạn bè
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
+      </Grid>
 
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel id="sort-select-label">Sắp xếp theo</InputLabel>
-          <Select
-            labelId="sort-select-label"
-            id="sort-select"
-            value={sortBy}
-            label="Sắp xếp theo"
-            onChange={handleSortChange}
-          >
-            <MenuItem value="name">Tên</MenuItem>
-            <MenuItem value="mutual">Bạn chung</MenuItem>
-          </Select>
-        </FormControl>
-      </Paper>
-
-      {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-          <CircularProgress />
-        </Box>
-      ) : filteredFriends.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 5 }}>
-          <Typography variant="h6" gutterBottom>
-            Không tìm thấy bạn bè
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Xác nhận xóa bạn bè</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Bạn có chắc chắn muốn xóa{" "}
+            {selectedFriend
+              ? `${selectedFriend.user.firstName} ${selectedFriend.user.lastName}`
+              : ""}{" "}
+            khỏi danh sách bạn bè?
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {searchQuery ? `Không có kết quả cho "${searchQuery}"` : "Bạn chưa có bạn bè nào."}
-          </Typography>
-        </Box>
-      ) : (
-        <>
-          <Grid container spacing={3}>
-            {currentFriends.map((friend) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={friend.id}>
-                <FriendCard
-                  {...friend}
-                  onRemove={handleRemoveFriend}
-                  onMessage={handleMessageFriend}
-                  onBlock={handleBlockFriend}
-                />
-              </Grid>
-            ))}
-          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
+          <Button onClick={confirmUnfriend} color="error">
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-                showFirstButton
-                showLastButton
-              />
-            </Box>
-          )}
-        </>
-      )}
-    </Box>
-  )
-}
-
-export default FriendsList
+export default FriendList;

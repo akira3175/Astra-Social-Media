@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import { ReactNode } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import './App.css'
 import { ThemeProvider, createTheme } from "@mui/material/styles"
 import CssBaseline from '@mui/material/CssBaseline';
 import LoginPage from "./pages/Auth/LoginPage"
 import HomePage from "./pages/Home/HomePage";
-import { isAuthenticated } from "./services/authService"
+import { getCurrentUser, isAuthenticated } from "./services/authService"
 import NotFound from "./pages/Status/NotFound";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
@@ -75,11 +75,30 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const [checking, setChecking] = useState(true);
+  const [authenticated, setAuthenticated] = useState<boolean>(false);
 
-  const authenticated = isAuthenticated();
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        await getCurrentUser(); // Gọi API để xác thực token
+        setAuthenticated(isAuthenticated()); // Sau khi gọi xong mới set authenticated
+      } catch (error) {
+        setAuthenticated(false); // Nếu lỗi -> token hết hạn hoặc sai
+      } finally {
+        setChecking(false); // Kết thúc kiểm tra
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (checking) {
+    return <div>Loading...</div>; // Hoặc spinner cho đẹp
+  }
 
   if (!authenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

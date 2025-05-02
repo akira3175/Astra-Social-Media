@@ -10,7 +10,7 @@ import {
   ListItem,
   ListItemText,
 } from "@mui/material";
-import { Post } from "../../../services/adminService";
+import { Post } from "../../../types/post";
 
 const NewPostOverview = ({
   posts,
@@ -42,6 +42,7 @@ const NewPostOverview = ({
             {posts.length >0 && posts.map((post) => (
               <ListItem key={post.id} disablePadding sx={{ mb: 2 }}>
                 <ListItemText
+                  primary={post.content}
                   primary={post.content}
                   secondary={
                     <Box

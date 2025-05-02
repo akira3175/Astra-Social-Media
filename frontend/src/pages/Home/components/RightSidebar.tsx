@@ -1,8 +1,7 @@
-import type React from "react"
+import type React from "react";
 import {
   Avatar,
   Box,
-  Button,
   Divider,
   List,
   ListItem,
@@ -11,58 +10,34 @@ import {
   ListItemText,
   Paper,
   Typography,
-} from "@mui/material"
+} from "@mui/material";
+import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useCurrentUser } from "../../../contexts/currentUserContext";
+import friendshipService from "../../../services/friendshipService";
 
-interface SuggestedUser {
-  id: number
-  name: string
-  avatar: string
-  mutualFriends: number
+interface Friend {
+  id: number;
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar: string;
+  };
+  friend: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar: string;
+  };
+  since: string;
 }
 
 interface RightSidebarProps {
-  className?: string
+  className?: string;
 }
-
-// Giả lập dữ liệu người dùng được đề xuất
-const SUGGESTED_USERS: SuggestedUser[] = [
-  {
-    id: 201,
-    name: "Phạm Thị D",
-    avatar: "https://i.pravatar.cc/150?img=10",
-    mutualFriends: 5,
-  },
-  {
-    id: 202,
-    name: "Hoàng Văn E",
-    avatar: "https://i.pravatar.cc/150?img=11",
-    mutualFriends: 2,
-  },
-  {
-    id: 203,
-    name: "Vũ Thị F",
-    avatar: "https://i.pravatar.cc/150?img=12",
-    mutualFriends: 8,
-  },
-  {
-    id: 204,
-    name: "Nguyễn Văn G",
-    avatar: "https://i.pravatar.cc/150?img=13",
-    mutualFriends: 3,
-  },
-  {
-    id: 205,
-    name: "Trần Thị H",
-    avatar: "https://i.pravatar.cc/150?img=14",
-    mutualFriends: 6,
-  },
-  {
-    id: 206,
-    name: "Lê Văn I",
-    avatar: "https://i.pravatar.cc/150?img=15",
-    mutualFriends: 4,
-  },
-]
 
 // Thêm nhiều xu hướng để test scroll
 const TRENDING_TOPICS = [
@@ -76,9 +51,30 @@ const TRENDING_TOPICS = [
   "#SứcKhỏe",
   "#GiáoDục",
   "#KinhTế",
-]
+];
 
 const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const { currentUser } = useCurrentUser();
+
+  useEffect(() => {
+    const fetchFriends = async () => {
+      if (!currentUser?.id) {
+        console.log("No current user ID found");
+        return;
+      }
+
+      try {
+        const data = await friendshipService.getFriends();
+        setFriends(data as unknown as Friend[]);
+      } catch (error) {
+        console.error("Error fetching friends:", error);
+      }
+    };
+
+    fetchFriends();
+  }, [currentUser?.id]);
+
   return (
     <Paper
       className={className}
@@ -88,73 +84,108 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
         boxShadow: "0 2px 12px rgba(0, 0, 0, 0.08)",
       }}
     >
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Gợi ý kết bạn
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+        Bạn bè
       </Typography>
       <List disablePadding>
-        {SUGGESTED_USERS.map((user) => (
-          <ListItem
-            key={user.id}
-            secondaryAction={
-              <Button
-                variant="outlined"
-                size="small"
-                sx={{
-                  borderColor: "#4f46e5",
-                  color: "#4f46e5",
-                  "&:hover": {
-                    borderColor: "#4338ca",
-                    bgcolor: "rgba(79, 70, 229, 0.05)",
-                  },
-                  textTransform: "none",
-                }}
-              >
-                Kết bạn
-              </Button>
-            }
-            disablePadding
-            sx={{ mb: 2 }}
-          >
-            <ListItemAvatar sx={{ minWidth: "42px" }}>
-              <Avatar src={user.avatar} />
-            </ListItemAvatar>
-            <ListItemText
-              primary={user.name}
-              secondary={`${user.mutualFriends} bạn chung`}
+        {friends.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            Không có bạn bè
+          </Typography>
+        ) : (
+          friends.map((friend) => {
+            const friendUser =
+              friend.user.id === currentUser?.id ? friend.friend : friend.user;
+          return (
+            <Link to={`/profile/${friendUser.email}`}>
+            <ListItem
+              key={friend.id}
+              disablePadding
               sx={{
-                "& span": {
-                  display: "block",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                mb: 2,
+                p: 1,
+                borderRadius: 1,
+                "&:hover": {
+                  bgcolor: "rgba(0, 0, 0, 0.04)",
                 },
-                maxWidth: "91px"
-              }} />
-          </ListItem>
-        ))}
+              }}
+            >
+              <ListItemAvatar sx={{ minWidth: "48px" }}>
+                <Avatar
+                  src={friendUser.avatar || ""}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    border: "2px solid #e0e0e0",
+                    bgcolor: "#e0e0e0",
+                  }}
+                >
+                  {!friendUser.avatar &&
+                    `${friendUser.firstName.charAt(
+                      0
+                    )}${friendUser.lastName.charAt(0)}`}
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 500,
+                      color: "#1a1a1a",
+                    }}
+                  >
+                    {`${friendUser.firstName} ${friendUser.lastName}`}
+                  </Typography>
+                }
+                sx={{
+                  ml: 1,
+                  "& span": {
+                    display: "block",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  },
+                }}
+              />
+            </ListItem>
+            </Link>
+            );
+          })
+        )}
       </List>
       <Divider sx={{ my: 2 }} />
       <Typography variant="h6" sx={{ mb: 2 }}>
-        Xu hướng
-      </Typography>
-      <List disablePadding>
-        {TRENDING_TOPICS.map((tag, index) => (
-          <ListItem key={index} disablePadding sx={{ mb: 1 }}>
-            <ListItemButton sx={{ borderRadius: 1 }}>
-              <ListItemText primary={tag} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+         Xu hướng
+       </Typography>
+       <List disablePadding>
+         {TRENDING_TOPICS.map((tag, index) => (
+           <ListItem key={index} disablePadding sx={{ mb: 1 }}>
+             <ListItemButton sx={{ borderRadius: 1 }}>
+               <ListItemText primary={tag} />
+             </ListItemButton>
+           </ListItem>
+         ))}
+       </List>
       <Box sx={{ mt: 3 }}>
         <Typography variant="caption" color="text.secondary">
           © 2025 AstraSocial
         </Typography>
         <Box sx={{ mt: 1 }}>
-          <Typography variant="caption" color="text.secondary" component="span" sx={{ mr: 1 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            component="span"
+            sx={{ mr: 1 }}
+          >
             Giới thiệu
           </Typography>
-          <Typography variant="caption" color="text.secondary" component="span" sx={{ mr: 1 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            component="span"
+            sx={{ mr: 1 }}
+          >
             Điều khoản
           </Typography>
           <Typography variant="caption" color="text.secondary" component="span">
@@ -163,8 +194,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
         </Box>
       </Box>
     </Paper>
-  )
-}
+  );
+};
 
-export default RightSidebar
-
+export default RightSidebar;
