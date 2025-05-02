@@ -1,7 +1,7 @@
-import type React from "react"
-import { useState, useEffect, useRef } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { AxiosError } from "axios"
+import type React from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { AxiosError } from "axios";
 import {
   Container,
   Box,
@@ -20,35 +20,42 @@ import {
   Stack,
   TextField,
   Button,
-} from "@mui/material"
-import { styled } from "@mui/material/styles"
-import type { User } from "../../types/user"
-import { getUserByEmail } from "../../services/authService"
-import { useCurrentUser } from "../../contexts/currentUserContext"
-import { GradientCircularProgress } from "../../components/ui/GradientCircularProgress"
-import NotFound from "../../pages/Status/NotFound"
-import BasePage from "../Base/BasePage"
-import { updateUserAvatar, updateUserBackground, updateUserName } from "../../services/authService"
-import ProfileBio from "./components/ProfileBio"
-import ProfilePhotos from "./components/ProfilePhotos"
-import ProfileFriends from "./components/ProfileFriends"
-import PostList from "../../pages/Home/components/PostList"
-import { usePostStore } from "../../stores/postStore"
-import CreatePost from "../../pages/Home/components/CreatePost"
+  Menu,
+  MenuItem,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import type { User } from "../../types/user";
+import { getUserByEmail } from "../../services/authService";
+import { useCurrentUser } from "../../contexts/currentUserContext";
+import { GradientCircularProgress } from "../../components/ui/GradientCircularProgress";
+import NotFound from "../../pages/Status/NotFound";
+import BasePage from "../Base/BasePage";
+import {
+  updateUserAvatar,
+  updateUserBackground,
+  updateUserName,
+} from "../../services/authService";
+import ProfileBio from "./components/ProfileBio";
+import ProfilePhotos from "./components/ProfilePhotos";
+import ProfileFriends from "./components/ProfileFriends";
+import PostList from "../../pages/Home/components/PostList";
+import { usePostStore } from "../../stores/postStore";
+import CreatePost from "../../pages/Home/components/CreatePost";
 
-import ChatBox from "../../components/ChatBox/ChatBox"
-import CameraAltIcon from "@mui/icons-material/CameraAlt"
-import EditIcon from "@mui/icons-material/Edit"
-import { Chat } from "@mui/icons-material"
-import { useTheme } from "@mui/material/styles"
-import useMediaQuery from "@mui/material/useMediaQuery"
+import ChatBox from "../../components/ChatBox/ChatBox";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import EditIcon from "@mui/icons-material/Edit";
+import { Chat } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { PersonAdd } from "@mui/icons-material";
+import friendshipService from "../../services/friendshipService";
 
-
-const ProfileContainer = styled(Container)(({ }) => ({
+const ProfileContainer = styled(Container)(({}) => ({
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
-}))
+}));
 
 const ProfileScrollContainer = styled(Box)(({ theme }) => ({
   flex: 1,
@@ -61,14 +68,14 @@ const ProfileScrollContainer = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.grey[400],
     borderRadius: "4px",
   },
-}))
+}));
 
 const ProfileHeader = styled(Paper)(({ theme }) => ({
   position: "relative",
   padding: theme.spacing(0),
   marginBottom: theme.spacing(2),
   overflow: "hidden",
-}))
+}));
 
 const BackgroundImage = styled("img")(({ theme }) => ({
   position: "absolute",
@@ -80,13 +87,13 @@ const BackgroundImage = styled("img")(({ theme }) => ({
   objectFit: "cover",
   objectPosition: "center",
   backgroundColor: theme.palette.grey[400],
-}))
+}));
 
-const BackgroundImageBox = styled(Box)(({ }) => ({
+const BackgroundImageBox = styled(Box)(({}) => ({
   position: "relative",
   width: "100%",
   aspectRatio: "14/3",
-}))
+}));
 
 const ProfileContent = styled(Box)(({ theme }) => ({
   position: "relative",
@@ -96,7 +103,7 @@ const ProfileContent = styled(Box)(({ theme }) => ({
   alignItems: "center",
   height: "250px",
   paddingTop: theme.spacing(2),
-}))
+}));
 
 const AvatarContainer = styled(Box)(({ theme }) => ({
   position: "relative",
@@ -104,7 +111,7 @@ const AvatarContainer = styled(Box)(({ theme }) => ({
   width: "120px",
   display: "flex",
   justifyContent: "center",
-}))
+}));
 
 const AvatarBox = styled(Box)(({ theme }) => ({
   position: "absolute",
@@ -115,14 +122,14 @@ const AvatarBox = styled(Box)(({ theme }) => ({
   width: "100%",
   gap: theme.spacing(1),
   paddingBottom: theme.spacing(2),
-}))
+}));
 
 const ProfileAvatar = styled(Avatar)(({ theme }) => ({
   width: theme.spacing(15),
   height: theme.spacing(15),
   border: `4px solid ${theme.palette.background.paper}`,
   marginBottom: theme.spacing(2),
-}))
+}));
 
 const ChangeBackgroundButton = styled(IconButton)(({ theme }) => ({
   position: "absolute",
@@ -142,7 +149,7 @@ const ChangeBackgroundButton = styled(IconButton)(({ theme }) => ({
     outline: "none",
   },
   zIndex: 2,
-}))
+}));
 
 const ChangeAvatarButton = styled(IconButton)(({ theme }) => ({
   position: "absolute",
@@ -158,153 +165,213 @@ const ChangeAvatarButton = styled(IconButton)(({ theme }) => ({
   "&:focus-visible": {
     outline: "none",
   },
-}))
+}));
 
 const ProfilePage: React.FC = () => {
-  const { email } = useParams<{ email: string }>()
-  const { currentUser, setCurrentUser } = useCurrentUser()
-  const [profile, setProfile] = useState<User | null>(null)
-  const [] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [, setError] = useState<string | null>(null)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
-  const avatarInputRef = useRef<HTMLInputElement>(null)
-  const backgroundInputRef = useRef<HTMLInputElement>(null)
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-  const navigate = useNavigate()
+  const { email } = useParams<{ email: string }>();
+  const { currentUser, setCurrentUser } = useCurrentUser();
+  const [profile, setProfile] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [notification, setNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [friendshipStatus, setFriendshipStatus] = useState<{
+    status: string;
+    friendshipId: number | null;
+  } | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const backgroundInputRef = useRef<HTMLInputElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const navigate = useNavigate();
 
-  const [openEditModal, setOpenEditModal] = useState(false)
-  const [editedFirstName, setEditedFirstName] = useState("")
-  const [editedLastName, setEditedLastName] = useState("")
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editedFirstName, setEditedFirstName] = useState("");
+  const [editedLastName, setEditedLastName] = useState("");
 
-  const { userPosts, isLoadingUserPosts, fetchPostsByUserEmail } = usePostStore()
+  const { userPosts, isLoadingUserPosts, fetchPostsByUserEmail } =
+    usePostStore();
 
-  const [isChatOpen, setIsChatOpen] = useState(false)
-  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(
+    null
+  );
+
+  const isCurrentUser = useMemo(
+    () => currentUser?.email === profile?.email,
+    [currentUser, profile]
+  );
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
       if (email) {
         try {
-          setIsLoading(true)
-          const data = await getUserByEmail(email)
-          setProfile(data)
-          console.log(data)
-          setIsLoading(false)
+          setIsLoading(true);
+          const data = await getUserByEmail(email);
+          console.log("Profile data loaded:", data);
+          console.log("Profile ID:", data?.id);
+          console.log("Profile Email:", data?.email);
+          setProfile(data);
+          setIsLoading(false);
         } catch (error) {
-          console.error("Failed to load profile:", error)
+          console.error("Failed to load profile:", error);
           if (error instanceof AxiosError && error.response?.status === 404) {
-            setProfile(null)
+            setProfile(null);
           } else {
-            setError("Failed to load profile. Please try again.")
+            setError("Failed to load profile. Please try again.");
           }
-          setIsLoading(false)
+          setIsLoading(false);
         }
       }
-    }
-    loadProfile()
-  }, [email, navigate])
+    };
+    loadProfile();
+  }, [email, navigate]);
 
   useEffect(() => {
     const loadPosts = async () => {
       if (email && currentUser?.email) {
-        await fetchPostsByUserEmail(email)
+        await fetchPostsByUserEmail(email);
       }
-    }
+    };
 
-    loadPosts()
-  }, [email, currentUser, fetchPostsByUserEmail])
+    loadPosts();
+  }, [email, currentUser, fetchPostsByUserEmail]);
+
+  useEffect(() => {
+    const checkFriendshipStatus = async () => {
+      if (profile && !isCurrentUser) {
+        try {
+          const status = await friendshipService.getFriendshipStatus(
+            profile.id
+          );
+          setFriendshipStatus(status);
+        } catch (error) {
+          console.error("Error checking friendship status:", error);
+        }
+      }
+    };
+    checkFriendshipStatus();
+  }, [profile, isCurrentUser]);
 
   const handleEditProfile = () => {
     if (profile) {
-      setEditedFirstName(profile.firstName || "")
-      setEditedLastName(profile.lastName || "")
-      setOpenEditModal(true)
+      setEditedFirstName(profile.firstName || "");
+      setEditedLastName(profile.lastName || "");
+      setOpenEditModal(true);
     }
-  }
+  };
 
   const handleCloseEditModal = () => {
-    setOpenEditModal(false)
-  }
+    setOpenEditModal(false);
+  };
 
   const handleSaveProfile = async () => {
     if (profile) {
-      setIsUpdating(true)
+      setIsUpdating(true);
       try {
-        await updateUserName(editedFirstName, editedLastName)
+        await updateUserName(editedFirstName, editedLastName);
         // Cập nhật profile sau khi lưu thành công
-        const updatedProfile = { ...profile, firstName: editedFirstName, lastName: editedLastName }
-        setProfile(updatedProfile)
-        setOpenEditModal(false)
-        setNotification({ type: "success", message: "Tên đã được cập nhật thành công" })
+        const updatedProfile = {
+          ...profile,
+          firstName: editedFirstName,
+          lastName: editedLastName,
+        };
+        setProfile(updatedProfile);
+        setOpenEditModal(false);
+        setNotification({
+          type: "success",
+          message: "Tên đã được cập nhật thành công",
+        });
         // Cập nhật currentUser nếu đây là người dùng hiện tại
         if (isCurrentUser) {
-          setCurrentUser(updatedProfile)
+          setCurrentUser(updatedProfile);
         }
       } catch (error) {
-        console.error("Failed to update profile:", error)
-        setNotification({ type: "error", message: "Không thể cập nhật tên. Vui lòng thử lại." })
+        console.error("Failed to update profile:", error);
+        setNotification({
+          type: "error",
+          message: "Không thể cập nhật tên. Vui lòng thử lại.",
+        });
       } finally {
-        setIsUpdating(false)
+        setIsUpdating(false);
       }
     }
-  }
+  };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: "avatar" | "background") => {
-    const file = event.target.files?.[0] // Lấy file đầu tiên
-    if (!file) return
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    type: "avatar" | "background"
+  ) => {
+    const file = event.target.files?.[0]; // Lấy file đầu tiên
+    if (!file) return;
 
     try {
-      let updatedUser
+      let updatedUser;
       if (type === "avatar") {
-        updatedUser = await updateUserAvatar(file)
+        updatedUser = await updateUserAvatar(file);
       } else {
-        updatedUser = await updateUserBackground(file)
+        updatedUser = await updateUserBackground(file);
       }
 
-      setCurrentUser(updatedUser)
-      setProfile(updatedUser)
-      setNotification({ type: "success", message: "Ảnh đã được cập nhật thành công" })
+      setCurrentUser(updatedUser);
+      setProfile(updatedUser);
+      setNotification({
+        type: "success",
+        message: "Ảnh đã được cập nhật thành công",
+      });
     } catch (error) {
       setNotification({
         type: "error",
-        message: "Không thể cập nhật ảnh hoặc ảnh không hỗ trợ định dạng. Vui lòng thử lại.",
-      })
-      console.error(`Error updating ${type}:`, error)
+        message:
+          "Không thể cập nhật ảnh hoặc ảnh không hỗ trợ định dạng. Vui lòng thử lại.",
+      });
+      console.error(`Error updating ${type}:`, error);
     }
-  }
+  };
 
   const refreshUserData = async () => {
     if (email) {
       try {
-        setIsLoading(true)
-        const data = await getUserByEmail(email)
-        setProfile(data)
+        setIsLoading(true);
+        const data = await getUserByEmail(email);
+        setProfile(data);
         if (isCurrentUser) {
-          setCurrentUser(data)
+          setCurrentUser(data);
         }
-        setIsLoading(false)
+        setIsLoading(false);
       } catch (error) {
-        console.error("Failed to refresh profile:", error)
-        setError("Failed to refresh profile. Please try again.")
-        setIsLoading(false)
+        console.error("Failed to refresh profile:", error);
+        setError("Failed to refresh profile. Please try again.");
+        setIsLoading(false);
       }
     }
-  }
+  };
 
   const triggerAvatarUpload = () => {
-    avatarInputRef.current?.click()
-  }
+    avatarInputRef.current?.click();
+  };
 
   const triggerBackgroundUpload = () => {
-    backgroundInputRef.current?.click()
-  }
+    backgroundInputRef.current?.click();
+  };
 
   const handleCloseNotification = () => {
-    setNotification(null)
-  }
+    setNotification(null);
+  };
 
   // const handleCreatePost = (newPost: Post) => {
   //   // Sử dụng addPost từ PostStore
@@ -323,39 +390,86 @@ const ProfilePage: React.FC = () => {
 
   const handleStartChat = () => {
     if (profile) {
-      setSelectedReceiverId(profile.id.toString())
-      setIsChatOpen(true)
+      setSelectedReceiverId(profile.id.toString());
+      setIsChatOpen(true);
     }
-  }
+  };
+
+  const handleAddFriend = async () => {
+    if (profile) {
+      try {
+        await friendshipService.sendFriendRequest(profile.email);
+        const status = await friendshipService.getFriendshipStatus(profile.id);
+        setFriendshipStatus(status);
+      } catch (error) {
+        console.error("Error sending friend request:", error);
+      }
+    }
+  };
+
+  const handleCancelFriendRequest = async () => {
+    if (profile) {
+      try {
+        await friendshipService.cancelFriendRequest(profile.email);
+        setFriendshipStatus(null);
+      } catch (error) {
+        console.error("Error canceling friend request:", error);
+      }
+    }
+  };
+
+  const handleUnfriend = async () => {
+    if (profile && friendshipStatus?.friendshipId) {
+      try {
+        await friendshipService.removeFriend(friendshipStatus.friendshipId);
+        setFriendshipStatus(null);
+      } catch (error) {
+        console.error("Error unfriending:", error);
+      }
+    }
+  };
 
   if (isLoading) {
     return (
       <BasePage>
         <ProfileContainer>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight="60vh"
+          >
             <CircularProgress />
           </Box>
         </ProfileContainer>
       </BasePage>
-    )
+    );
   }
 
   if (!profile) {
-    return <NotFound />
+    return <NotFound />;
   }
-
-  const isCurrentUser = currentUser?.email === profile.email
 
   return (
     <BasePage>
       <ProfileContainer>
         <ProfileScrollContainer>
           {isLoading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              minHeight="60vh"
+            >
               <CircularProgress />
             </Box>
           ) : !profile ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              minHeight="60vh"
+            >
               <Typography>Profile not found.</Typography>
             </Box>
           ) : (
@@ -387,18 +501,30 @@ const ProfilePage: React.FC = () => {
                             {profile.firstName?.charAt(0)}
                           </ProfileAvatar>
                           {isCurrentUser && (
-                            <ChangeAvatarButton onClick={triggerAvatarUpload} size="small" sx={{ bottom: "10px" }}>
+                            <ChangeAvatarButton
+                              onClick={triggerAvatarUpload}
+                              size="small"
+                              sx={{ bottom: "10px" }}
+                            >
                               <CameraAltIcon fontSize="small" />
                             </ChangeAvatarButton>
                           )}
                         </AvatarContainer>
 
-                        <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          gap={1}
+                        >
                           <Typography variant="h5" component="h1">
                             {profile.lastName + " " + profile.firstName}
                           </Typography>
                           {isCurrentUser ? (
-                            <IconButton onClick={handleEditProfile} size="small">
+                            <IconButton
+                              onClick={handleEditProfile}
+                              size="small"
+                            >
                               <EditIcon fontSize="small" />
                             </IconButton>
                           ) : null}
@@ -407,15 +533,64 @@ const ProfilePage: React.FC = () => {
                           {profile.email}
                         </Typography>
                         {!isCurrentUser && (
-                          <Button
-                            variant="contained"
-                            startIcon={<Chat />}
-                            onClick={handleStartChat}
-                            size="medium"
-                            sx={{ mt: 1 }}
-                          >
-                            Nhắn tin
-                          </Button>
+                          <Box sx={{ display: "flex", gap: 1 }}>
+                            {friendshipStatus?.status === "ACCEPTED" ? (
+                              <>
+                                <Button
+                                  variant="contained"
+                                  startIcon={<PersonAdd />}
+                                  onClick={handleClick}
+                                  size="medium"
+                                  sx={{ mt: 1 }}
+                                >
+                                  Bạn bè
+                                </Button>
+                                <Menu
+                                  anchorEl={anchorEl}
+                                  open={open}
+                                  onClose={handleClose}
+                                  onClick={handleClose}
+                                  transformOrigin={{
+                                    horizontal: "right",
+                                    vertical: "top",
+                                  }}
+                                  anchorOrigin={{
+                                    horizontal: "right",
+                                    vertical: "bottom",
+                                  }}
+                                >
+                                  <MenuItem onClick={handleUnfriend}>
+                                    Hủy kết bạn
+                                  </MenuItem>
+                                </Menu>
+                              </>
+                            ) : (
+                              <Button
+                                variant="contained"
+                                startIcon={<PersonAdd />}
+                                onClick={
+                                  friendshipStatus?.status === "PENDING"
+                                    ? handleCancelFriendRequest
+                                    : handleAddFriend
+                                }
+                                size="medium"
+                                sx={{ mt: 1 }}
+                              >
+                                {friendshipStatus?.status === "PENDING"
+                                  ? "Hủy lời mời"
+                                  : "Kết bạn"}
+                              </Button>
+                            )}
+                            <Button
+                              variant="contained"
+                              startIcon={<Chat />}
+                              onClick={handleStartChat}
+                              size="medium"
+                              sx={{ mt: 1 }}
+                            >
+                              Nhắn tin
+                            </Button>
+                          </Box>
                         )}
                       </AvatarBox>
                     </ProfileContent>
@@ -455,20 +630,31 @@ const ProfilePage: React.FC = () => {
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={4}>
                     {/* Tiểu sử */}
-                    <ProfileBio profile={profile} isCurrentUser={isCurrentUser} refreshUserData={refreshUserData}/>
+                    <ProfileBio
+                      profile={profile}
+                      isCurrentUser={isCurrentUser}
+                      refreshUserData={refreshUserData}
+                    />
 
                     {/* Danh sách hình ảnh */}
                     <ProfilePhotos />
 
                     {/* Danh sách bạn bè */}
-                    <ProfileFriends />
+                    <ProfileFriends
+                      userEmail={profile?.email}
+                      userId={profile?.id}
+                    />
                   </Grid>
 
                   <Grid item xs={12} md={8}>
                     {/* Khung đăng bài */}
                     {isCurrentUser && <CreatePost sx={{ mb: 3 }} />}
 
-                    <PostList posts={userPosts} isLoading={isLoadingUserPosts} className="profile-posts" />
+                    <PostList
+                      posts={userPosts}
+                      isLoading={isLoadingUserPosts}
+                      className="profile-posts"
+                    />
                   </Grid>
                 </Grid>
               </Box>
@@ -512,7 +698,12 @@ const ProfilePage: React.FC = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseEditModal}>Hủy</Button>
-              <Button onClick={handleSaveProfile} variant="contained" color="primary" disabled={isUpdating}>
+              <Button
+                onClick={handleSaveProfile}
+                variant="contained"
+                color="primary"
+                disabled={isUpdating}
+              >
                 {isUpdating ? "Đang lưu..." : "Lưu"}
               </Button>
             </DialogActions>
@@ -524,7 +715,11 @@ const ProfilePage: React.FC = () => {
             onClose={handleCloseNotification}
             anchorOrigin={{ vertical: "top", horizontal: "right" }}
           >
-            <Alert onClose={handleCloseNotification} severity={notification?.type || "info"} sx={{ width: "100%" }}>
+            <Alert
+              onClose={handleCloseNotification}
+              severity={notification?.type || "info"}
+              sx={{ width: "100%" }}
+            >
               {notification?.message}
             </Alert>
           </Snackbar>
@@ -539,7 +734,7 @@ const ProfilePage: React.FC = () => {
         />
       </ProfileContainer>
     </BasePage>
-  )
-}
+  );
+};
 
-export default ProfilePage
+export default ProfilePage;
