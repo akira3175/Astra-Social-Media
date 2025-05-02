@@ -1,12 +1,12 @@
 package org.example.backend.service;
 
 import org.example.backend.entity.Image;
-import org.example.backend.dto.PostDTO; 
+import org.example.backend.dto.PostDTO;
 import org.example.backend.entity.Post;
 import org.example.backend.elasticsearch.document.PostDocument;
 import org.example.backend.elasticsearch.repository.PostESRepository;
 import org.example.backend.entity.User;
-import org.example.backend.repository.CommentRepository; 
+import org.example.backend.repository.CommentRepository;
 import org.example.backend.repository.ImageRepository;
 import org.example.backend.repository.LikeRepository;
 import org.example.backend.repository.PostRepository;
@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Date;
-
 
 @Service
 public class PostService {
@@ -59,8 +58,8 @@ public class PostService {
         User currentUser = getCurrentUser(currentUserEmail);
         List<Post> posts = postRepository.findByIsDeletedFalse();
         return posts.stream()
-                    .map(post -> convertToDto(post, currentUser))
-                    .collect(Collectors.toList());
+                .map(post -> convertToDto(post, currentUser))
+                .collect(Collectors.toList());
     }
 
     // Helper method to convert Post entity to PostDTO
@@ -83,11 +82,11 @@ public class PostService {
             if (originalPost.isDeleted()) {
                 // Nếu bài gốc đã xóa, chỉ giữ lại thông tin cơ bản
                 originalPostDto = PostDTO.builder()
-                    .id(originalPost.getId())
-                    .user(originalPost.getUser())
-                    .isDeleted(true)
-                    .createdAt(originalPost.getCreatedAt())
-                    .build();
+                        .id(originalPost.getId())
+                        .user(originalPost.getUser())
+                        .isDeleted(true)
+                        .createdAt(originalPost.getCreatedAt())
+                        .build();
             } else {
                 originalPostDto = convertToDto(originalPost, currentUser);
             }
@@ -161,7 +160,7 @@ public class PostService {
 
         final Post existingPost = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-            
+
         User currentUser = getCurrentUser(email);
         if (!existingPost.getUser().getId().equals(currentUser.getId())) {
             throw new RuntimeException("You don't have permission to update this post");
@@ -169,21 +168,20 @@ public class PostService {
 
         // Kiểm tra thời gian dựa trên lần sửa cuối hoặc thời gian tạo nếu chưa từng sửa
         long currentTime = System.currentTimeMillis();
-        long lastEditTime = existingPost.getUpdatedAt() != null 
-            ? existingPost.getUpdatedAt().getTime() 
-            : existingPost.getCreatedAt().getTime();
+        long lastEditTime = existingPost.getUpdatedAt() != null
+                ? existingPost.getUpdatedAt().getTime()
+                : existingPost.getCreatedAt().getTime();
         long timeDifferenceMinutes = (currentTime - lastEditTime) / (60 * 1000);
 
         if (timeDifferenceMinutes < EDIT_TIME_LIMIT_MINUTES) {
             throw new RuntimeException(
-                String.format("Phải đợi %d phút sau lần sửa trước mới có thể sửa lại", 
-                EDIT_TIME_LIMIT_MINUTES)
-            );
+                    String.format("Phải đợi %d phút sau lần sửa trước mới có thể sửa lại",
+                            EDIT_TIME_LIMIT_MINUTES));
         }
 
         existingPost.setContent(newContent.trim());
         existingPost.setUpdatedAt(new Date());
-        
+
         try {
             final Post updatedPost = postRepository.save(existingPost);
             savePostToES(updatedPost.getId());
@@ -212,7 +210,7 @@ public class PostService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         User currentUser = getCurrentUser(currentUserEmail);
-        
+
         List<Post> posts = postRepository.findByUserIdAndIsDeletedFalse(user.getId());
         return posts.stream()
                 .map(post -> convertToDto(post, currentUser))
@@ -247,7 +245,8 @@ public class PostService {
         User currentUser = getCurrentUser(currentUserEmail);
 
         // Check if the current user liked this post
-        // boolean likedByCurrentUser = likeRepository.findByUserAndPost(currentUser, post).isPresent();
+        // boolean likedByCurrentUser = likeRepository.findByUserAndPost(currentUser,
+        // post).isPresent();
 
         // Get counts
         // Use the helper method for conversion
@@ -276,7 +275,7 @@ public class PostService {
     public Page<PostDTO> getPageOfPostDtos(String currentUserEmail, Pageable pageable) {
         User currentUser = getCurrentUser(currentUserEmail);
         Page<Post> postPage = postRepository.findByIsDeletedFalseOrderByCreatedAtDesc(pageable);
-        
+
         return postPage.map(post -> convertToDto(post, currentUser));
     }
 
@@ -287,7 +286,8 @@ public class PostService {
         postDocument.setUserId(post.getUser().getId().toString());
         postDocument.setCreatedAt(post.getCreatedAt());
         postDocument.setUpdatedAt(post.getUpdatedAt() != null ? post.getUpdatedAt() : null);
-        postDocument.setOriginalPostId(post.getOriginalPost() != null ? post.getOriginalPost().getId().toString() : null);
+        postDocument
+                .setOriginalPostId(post.getOriginalPost() != null ? post.getOriginalPost().getId().toString() : null);
         postDocument.setIsDeleted(post.isDeleted());
         postDocument.setLikedByCurrentUser(post.isLikedByCurrentUser());
         postDocument.setLikeCount(post.getLikeCount());

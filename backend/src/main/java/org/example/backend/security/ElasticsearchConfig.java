@@ -40,8 +40,8 @@ public class ElasticsearchConfig {
         String authHeader = "ApiKey " + apiKey;
 
         RestClientBuilder builder = RestClient.builder(
-                        new org.apache.http.HttpHost(host, port, "https"))
-                .setDefaultHeaders(new org.apache.http.Header[]{
+                new org.apache.http.HttpHost(host, port, "https"))
+                .setDefaultHeaders(new org.apache.http.Header[] {
                         new BasicHeader(HttpHeaders.AUTHORIZATION, authHeader)
                 });
 

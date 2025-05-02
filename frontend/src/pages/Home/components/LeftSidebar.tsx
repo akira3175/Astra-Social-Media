@@ -34,12 +34,15 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className, onToggleChat, setS
   const { currentUser } = useCurrentUser()
 
   const loadChatUsers = () => {
-    if (!currentUser?.id) return
-
     const token = localStorage.getItem('accessToken')
     if (!token) {
       console.log('User not logged in, redirecting to login page')
       window.location.href = '/login'
+      return
+    }
+
+    if (!currentUser?.id) {
+      console.log('Current user ID not found')
       return
     }
 
@@ -56,15 +59,15 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className, onToggleChat, setS
           if (res.status === 401) {
             localStorage.removeItem('accessToken')
             window.location.href = '/login'
+            return
           }
-          throw new Error('Network response was not ok')
+          throw new Error(`Network response was not ok: ${res.status}`)
         }
         return res.json()
       })
       .then(data => {
         console.log("Loaded chat users:", data)
         setChatUsers(data)
-        // Nếu có người dùng và có setSelectedReceiverId, chọn người đầu tiên
         if (data.length > 0 && setSelectedReceiverId) {
           setSelectedReceiverId(data[0].id)
         }
@@ -97,7 +100,6 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className, onToggleChat, setS
       text: "Tin nhắn",
       icon: <Chat />,
       path: "/messages",
-      onClick: toggleChat
     },
     { text: "Cài đặt", icon: <Settings />, path: "/settings" },
   ]

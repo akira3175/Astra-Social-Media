@@ -25,6 +25,9 @@ const StyledListItem = styled(ListItemButton)(({ theme }) => ({
     },
 }));
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const PROD_API_URL = import.meta.env.VITE_PRODUCTION_API_URL || 'https://astrasocial.netlify.app';
+
 const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser }) => {
     const [users, setUsers] = useState<ChatUser[]>([]);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -37,7 +40,7 @@ const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser
             return;
         }
 
-        fetch(`http://localhost:8080/api/chat/users/${currentUserId}`, {
+        fetch(`${API_URL}/api/chat/users/${currentUserId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -50,22 +53,36 @@ const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser
                     if (res.status === 401) {
                         localStorage.removeItem('accessToken');
                         window.location.href = '/login';
+                        return;
                     }
-                    throw new Error('Network response was not ok');
+                    if (res.status === 400) {
+                        throw new Error('Invalid request');
+                    }
+                    if (res.status === 404) {
+                        setUsers([]);
+                        return;
+                    }
+                    throw new Error(`Network response was not ok: ${res.status}`);
                 }
                 return res.json();
             })
             .then(data => {
-                console.log("Loaded chat users:", data);
-                setUsers(data);
+                if (data) {
+                    console.log("Loaded chat users:", data);
+                    setUsers(data);
+                }
             })
             .catch(error => {
                 console.error('Error fetching chat users:', error);
+                setUsers([]);
             });
     };
 
     useEffect(() => {
         loadUsers();
+        // Cập nhật danh sách người dùng mỗi 5 giây
+        const interval = setInterval(loadUsers, 5000);
+        return () => clearInterval(interval);
     }, [currentUserId]);
 
     const handleUserClick = (userId: string) => {
@@ -87,8 +104,16 @@ const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser
                         onClick={() => handleUserClick(user.id)}
                     >
                         <ListItemAvatar>
-                            <Avatar alt={user.name} src={user.avatar}>
-                                {user.name.charAt(0)}
+                            <Avatar
+                                alt={user.name}
+                                src={user.avatar ? `${API_URL}${user.avatar}` : undefined}
+                                sx={{
+                                    width: 40,
+                                    height: 40,
+                                    bgcolor: !user.avatar ? 'primary.main' : 'transparent'
+                                }}
+                            >
+                                {!user.avatar && user.name.charAt(0)}
                             </Avatar>
                         </ListItemAvatar>
                         <ListItemText
@@ -119,6 +144,18 @@ const ChatUserList: React.FC<ChatUserListProps> = ({ currentUserId, onSelectUser
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     fontSize: '0.75rem',
+                                    animation: 'pulse 2s infinite',
+                                    '@keyframes pulse': {
+                                        '0%': {
+                                            transform: 'scale(1)',
+                                        },
+                                        '50%': {
+                                            transform: 'scale(1.1)',
+                                        },
+                                        '100%': {
+                                            transform: 'scale(1)',
+                                        },
+                                    },
                                 }}
                             >
                                 {user.unreadCount}

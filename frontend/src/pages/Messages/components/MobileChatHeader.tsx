@@ -34,7 +34,7 @@ function MobileChatHeader(props: MobileChatHeaderProps) {
       </IconButton>
       <Avatar
         src={conversation.user.avatar}
-        alt={conversation.user.name}
+        alt={`${conversation.user.firstName} ${conversation.user.lastName}`}
         sx={{
           width: 36,
           height: 36,
@@ -43,7 +43,7 @@ function MobileChatHeader(props: MobileChatHeaderProps) {
       />
       <Box sx={{ ml: 1.5, flexGrow: 1 }}>
         <Typography variant="subtitle2" fontWeight={600}>
-          {conversation.user.name}
+          {`${conversation.user.firstName} ${conversation.user.lastName}`}
         </Typography>
         <Typography
           variant="caption"
