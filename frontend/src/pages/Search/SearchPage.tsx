@@ -274,7 +274,7 @@ const SearchPage: React.FC = () => {
                 ? [{ id: post.id, url: post.images[0].url }]
                 : [],
             createdAt: post.createdAt,
-            updatedAt: null,
+            updatedAt: post.updatedAt,
             user: {
               id: post.user.id,
               firstName: post.user.name.split(" ")[0],
@@ -283,11 +283,11 @@ const SearchPage: React.FC = () => {
               email: post.user.email,
             },
             likesCount: post.likesCount,
-            liked: false,
+            liked: post.liked,
             commentsCount: post.commentsCount,
-            saved: false,
-            originalPost: undefined,
-            isDeleted: false,
+            saved: post.saved,
+            originalPost: post.originalPost,
+            isDeleted: post.deleted,
           }))}
           isLoading={false}
         />

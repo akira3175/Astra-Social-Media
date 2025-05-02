@@ -24,9 +24,9 @@ console.log(currentUser);
   useEffect(() => {
     async function fetchComments() {
       try {
-        const response = await getUsers();
+        // const response = await getUsers();
 
-        console.log(response[0].avatar);
+        // console.log(response[0].avatar);
         
         //   const token = tokenService.getAccessToken();
         

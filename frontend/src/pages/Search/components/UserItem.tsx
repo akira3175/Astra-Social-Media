@@ -33,7 +33,7 @@ const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend, isFriend = false
                 <Typography
                   variant="h6"
                   component={Link}
-                  to={`/profile/${user.email.replace("@", "")}`}
+                  to={`/profile/${user.email}`}
                   sx={{
                     fontWeight: 600,
                     color: "text.primary",
