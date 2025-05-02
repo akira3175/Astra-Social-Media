@@ -373,16 +373,12 @@ public class AdminController {
 
             List<Post> posts = postService.getAllPosts();
             List<PostSummaryDTO> filteredPosts = posts.stream()
-            .map(post -> {
-                post.setUser(addDomainToImage(post.getUser(), request));
-                return post;
-            })
-                .map(this::convertToSummaryDTO)
                 .filter(post -> post.getComments().stream()
                     .anyMatch(comment -> {
                         Date commentDate = comment.getCreatedAt();
                         return commentDate.after(startDate) && commentDate.before(endDate);
                     }))
+                .map(post -> convertToSummaryDTO(post, request))
                 .collect(Collectors.toList());
 
             return ResponseEntity.ok().body(ApiResponse.builder()
@@ -423,18 +419,18 @@ public class AdminController {
     }
     
 
-    private PostSummaryDTO convertToSummaryDTO(Post post) {
+    private PostSummaryDTO convertToSummaryDTO(Post post, HttpServletRequest request) {
         PostSummaryDTO dto = new PostSummaryDTO();
         dto.setIdPost(post.getId());
-        dto.setUserPost(convertUser(post.getUser()));
+        dto.setUserPost(convertUser(addDomainToImage(post.getUser(), request)));
         dto.setComments(post.getComments().stream()
             .filter(c -> c.getParentComment() == null)
-            .map(this::convertComment)
+            .map(comment -> convertComment(comment, request))
             .collect(Collectors.toList()));
         return dto;
     }
     
-    private CommentDTO convertComment(Comment comment) {
+    private CommentDTO convertComment(Comment comment, HttpServletRequest request) {
         CommentDTO dto = new CommentDTO();
         dto.setImages(comment.getImages());
         dto.setLikes(comment.getLikes());
@@ -442,9 +438,9 @@ public class AdminController {
         dto.setUpdatedAt(comment.getUpdatedAt());
         dto.setIdComment(comment.getId());
         dto.setContent(comment.getContent());
-        dto.setUserComment(convertUser(comment.getUser()));
+        dto.setUserComment(convertUser(addDomainToImage(comment.getUser(), request)));
         dto.setReplies(comment.getReplies().stream()
-            .map(this::convertComment)
+            .map(reply -> convertComment(reply, request))
             .collect(Collectors.toList()));
         return dto;
     }
@@ -456,11 +452,7 @@ public class AdminController {
         List<Post> posts = postService.getAllPosts();
         List<PostSummaryDTO> simplifiedPosts = posts.stream()
                 .filter(c -> c.getComments().size() > 0)
-                .map(post -> {
-                    post.setUser(addDomainToImage(post.getUser(), request));
-                    return post;
-                })
-                .map(this::convertToSummaryDTO)
+                .map(post -> convertToSummaryDTO(post, request))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok().body(ApiResponse.builder()
