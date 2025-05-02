@@ -168,7 +168,7 @@ public class AdminController {
     @RequireAdmin
     @GetMapping("/users/getAllUser")
     public ResponseEntity<ApiResponse<Object>> getAllUser() {
-        List<User> users = userService.getAllUsers();
+        List<User> users = userService.getAllUsers().stream().filter(user -> user.getIsStaff() != true).collect(Collectors.toList());
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
@@ -185,7 +185,7 @@ public class AdminController {
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
 
-            List<User> users = userService.getAllUsers().stream().filter(user -> Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).after(startDate) && Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).before(endDate)).collect(Collectors.toList());
+            List<User> users = userService.getAllUsers().stream().filter(user -> Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).after(startDate) && Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).before(endDate) && user.getIsStaff() != true).collect(Collectors.toList());
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
@@ -302,6 +302,19 @@ public class AdminController {
                 .timestamp(System.currentTimeMillis())
                 .build());
     }
+
+    @RequireAdmin
+    @PostMapping("/posts/{postId}/unlock")
+    public ResponseEntity<ApiResponse<Object>> unlockPost(@PathVariable Long postId) {
+        postService.unlockPost(postId);
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data("Post unlocked")
+                .timestamp(System.currentTimeMillis())
+                .build());
+    }
+    
 
     // @RequireAdmin
     // @GetMapping("/comments/getAllComment")

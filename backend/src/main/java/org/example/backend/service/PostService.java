@@ -331,4 +331,12 @@ public class PostService {
         postRepository.save(post);
         savePostToES(postId);
     }
+
+    public void unlockPost(Long postId) {
+        Post post = getPostByIdOrThrow(postId);
+        post.setDeleted(false);
+        post.setDeletedAt(null);
+        postRepository.save(post);
+        savePostToES(postId);
+    }
 }
