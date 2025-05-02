@@ -39,7 +39,7 @@ export interface Post {
   originalPost?: Post;
   comments: Comment[];
   likes: Like[];
-  isDeleted: boolean;
+  deleted: boolean;
   deletedAt: string | null;
   likedByCurrentUser: boolean;
   likeCount: number;
@@ -397,6 +397,16 @@ export const adminLogin = async ({
   } catch (error) {
     console.error("Error logging in as admin:", error);
     throw new Error("Failed to login as admin");
+  }
+};
+
+export const unlockPost = async (postId: number): Promise<void> => {
+  try {
+    await api.post<ApiResponse<void>>(`/admin/posts/${postId}/unlock`);
+    console.log(`Post with ID ${postId} unlocked successfully.`);
+  } catch (error) {
+    console.error(`Error unlocking post with ID ${postId}:`, error);
+    throw new Error("Failed to unlock post");
   }
 };
 

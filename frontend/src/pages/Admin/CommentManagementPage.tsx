@@ -102,22 +102,16 @@ const CommentManagementPage: React.FC = () => {
     setRowsPerPage(Number.parseInt(event.target.value, 10));
     setPage(0);
   };
-
-  // Handle delete comment
   const handleDeleteComment = async () => {
     if (selectedComment) {
       try {
         await deleteComment(selectedComment.idComment);
-        setComments(
-          comments.filter(
-            (comment) => comment.idComment !== selectedComment.idComment
-          )
-        );
-        setFilteredComments(
-          filteredComments.filter(
-            (comment) => comment.idComment !== selectedComment.idComment
-          )
-        );
+  
+        // Refetch comments from the API to ensure the state is up-to-date
+        const updatedComments = await getComments({ page: 0, size: 100 });
+        setComments(updatedComments);
+        setFilteredComments(updatedComments);
+  
         setNotification({
           type: "success",
           message: "Đã xóa bình luận thành công",

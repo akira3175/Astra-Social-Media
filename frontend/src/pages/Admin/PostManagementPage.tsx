@@ -41,7 +41,7 @@ import {
   Image as ImageIcon,
 } from "@mui/icons-material";
 import AdminLayout from "./components/AdminLayout";
-import { Post, getPosts, lockPost } from "../../services/adminService";
+import { Post, getPosts, lockPost, unlockPost } from "../../services/adminService";
 
 const PostManagementPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -89,7 +89,7 @@ const PostManagementPage: React.FC = () => {
     // Filter by status
     if (statusFilter !== "all") {
       filtered = filtered.filter((post) =>
-        statusFilter === "deleted" ? post.isDeleted : !post.isDeleted
+        statusFilter === "deleted" ? post.deleted : !post.deleted
       );
     }
 
@@ -126,26 +126,30 @@ const PostManagementPage: React.FC = () => {
   // Handle post status toggle (lock/unlock)
   const handleTogglePostStatus = async (post: Post) => {
     try {
-      await lockPost(post.id);
-
+      if (post.deleted) {
+        await unlockPost(post.id); // Unlock the post
+      } else {
+        await lockPost(post.id); // Lock the post
+      }
+  
       // Update local state
       const updatedPosts = posts.map((p) =>
-        p.id === post.id ? { ...p, isDeleted: !p.isDeleted } : p
+        p.id === post.id ? { ...p, deleted: !p.deleted } : p
       );
       setPosts(updatedPosts);
       setFilteredPosts(updatedPosts);
-
+  
       setNotification({
         type: "success",
         message: `Đã ${
-          post.isDeleted ? "khôi phục" : "khóa"
+          post.deleted ? "khôi phục" : "khóa"
         } bài viết thành công`,
       });
     } catch (err) {
       setNotification({
         type: "error",
         message: `Không thể ${
-          post.isDeleted ? "khôi phục" : "khóa"
+          post.deleted ? "khôi phục" : "khóa"
         } bài viết. Vui lòng thử lại sau.`,
       });
       console.error("Error toggling post status:", err);
@@ -403,8 +407,8 @@ const PostManagementPage: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={post.isDeleted ? "Đã khóa" : "Đang hiển thị"}
-                          color={post.isDeleted ? "error" : "success"}
+                          label={post.deleted ? "Đã khóa" : "Đang hiển thị"}
+                          color={post.deleted ? "error" : "success"}
                           size="small"
                         />
                       </TableCell>
@@ -420,7 +424,7 @@ const PostManagementPage: React.FC = () => {
                             <Visibility fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        {!post.isDeleted ? (
+                        {!post.deleted ? (
                           <Tooltip title="Khóa bài viết">
                             <IconButton
                               size="small"
@@ -681,9 +685,9 @@ const PostManagementPage: React.FC = () => {
                         </Typography>
                         <Chip
                           label={
-                            selectedPost.isDeleted ? "Đã khóa" : "Đang hiển thị"
+                            selectedPost.deleted ? "Đã khóa" : "Đang hiển thị"
                           }
-                          color={selectedPost.isDeleted ? "error" : "success"}
+                          color={selectedPost.deleted ? "error" : "success"}
                           size="small"
                         />
                       </Box>
@@ -699,13 +703,13 @@ const PostManagementPage: React.FC = () => {
           {selectedPost && (
             <Button
               variant="contained"
-              color={selectedPost.isDeleted ? "success" : "error"}
+              color={selectedPost.deleted ? "success" : "error"}
               onClick={() => {
                 handleTogglePostStatus(selectedPost);
                 setOpenViewDialog(false);
               }}
             >
-              {selectedPost.isDeleted ? "Khôi phục bài viết" : "Khóa bài viết"}
+              {selectedPost.deleted ? "Khôi phục bài viết" : "Khóa bài viết"}
             </Button>
           )}
         </DialogActions>
