@@ -101,7 +101,8 @@ const PostManagementPage: React.FC = () => {
           post.content.toLowerCase().includes(query) ||
           `${post.user.lastName} ${post.user.firstName}`
             .toLowerCase()
-            .includes(query)
+            .includes(query) ||
+            post.id.toString().includes(query)
       );
     }
 

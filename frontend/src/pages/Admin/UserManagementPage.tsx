@@ -108,9 +108,12 @@ const UserManagementPage: React.FC = () => {
       filtered = filtered.filter(
         (user) =>
           user.name.toLowerCase().includes(query) ||
-          user.email.toLowerCase().includes(query)
+          user.email.toLowerCase().includes(query)||
+          user.id.toString().includes(query)
       )
     }
+
+
 
     setFilteredUsers(filtered)
     setPage(0)

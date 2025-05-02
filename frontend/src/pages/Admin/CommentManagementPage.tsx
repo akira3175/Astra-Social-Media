@@ -82,7 +82,8 @@ const CommentManagementPage: React.FC = () => {
           comment.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
           `${comment.userComment.name}`
             .toLowerCase()
-            .includes(searchQuery.toLowerCase())
+            .includes(searchQuery.toLowerCase()) ||
+          comment.idComment.toString().includes(searchQuery.toLowerCase())
       );
       setFilteredComments(filtered);
     }
@@ -147,9 +148,7 @@ const CommentManagementPage: React.FC = () => {
   const formatDate = (dateInput: string | number) => {
     // If the input is a number, assume it's a Unix timestamp in seconds
     const date =
-      typeof dateInput === "number"
-        ? new Date(dateInput)
-        : new Date(dateInput);
+      typeof dateInput === "number" ? new Date(dateInput) : new Date(dateInput);
 
     return date.toLocaleString("vi-VN", {
       year: "numeric",
