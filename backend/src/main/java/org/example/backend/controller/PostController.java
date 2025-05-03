@@ -20,7 +20,6 @@ import org.example.backend.dto.CreatePostRequest;
 import org.example.backend.dto.PostDTO;
 import org.example.backend.dto.UpdatePostRequest;
 
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.domain.Pageable;

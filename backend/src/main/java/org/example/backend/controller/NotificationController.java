@@ -75,7 +75,6 @@ public class NotificationController {
     }
 
     private String getEmailByUserId(Long id) {
-        // TODO: lấy email theo userId từ database (userRepo.findById(id).getEmail())
         return "akira31758421@gmail.com";
     }
 

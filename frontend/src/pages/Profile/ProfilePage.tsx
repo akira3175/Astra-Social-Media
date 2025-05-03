@@ -41,8 +41,6 @@ import ProfileFriends from "./components/ProfileFriends";
 import PostList from "../../pages/Home/components/PostList";
 import { usePostStore } from "../../stores/postStore";
 import CreatePost from "../../pages/Home/components/CreatePost";
-
-import ChatBox from "../../components/ChatBox/ChatBox";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import EditIcon from "@mui/icons-material/Edit";
 import { Chat } from "@mui/icons-material";
@@ -724,14 +722,6 @@ const ProfilePage: React.FC = () => {
             </Alert>
           </Snackbar>
         </ProfileScrollContainer>
-
-        {/* ChatBox */}
-        <ChatBox
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          receiverId={selectedReceiverId || ""}
-          currentUserId={currentUser?.id.toString() || ""}
-        />
       </ProfileContainer>
     </BasePage>
   );

@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { Box, Grid, useMediaQuery, useTheme, Typography } from "@mui/material"
@@ -10,20 +8,10 @@ import MobileChatHeader from "./components/MobileChatHeader"
 import { useCurrentUser } from "../../contexts/currentUserContext"
 import type { Conversation, Message } from "../../types/message"
 import SockJS from 'sockjs-client'
-import { Client, IMessage } from '@stomp/stompjs'
+import { Client } from '@stomp/stompjs'
 import { useEmojiPicker } from "../../hooks/useEmojiPicker"
 import { useFileUpload } from "../../hooks/useFileUpload"
-
-// Mở rộng interface Message
-interface ExtendedMessage extends Message {
-  conversationId: number;
-  receiverId: number;
-  fileUrl?: string;
-  fileType?: string;
-  fileName?: string;
-}
-
-type FileType = 'image' | 'video' | 'document' | 'file';
+import MessageService from "../../services/messageService"
 
 const MessagesPage: React.FC = () => {
   const theme = useTheme()
@@ -41,8 +29,6 @@ const MessagesPage: React.FC = () => {
   const reconnectAttempts = useRef(0)
   const maxReconnectAttempts = 10
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const [users, setUsers] = useState<any[]>([])
-  const [hasNewMessages, setHasNewMessages] = useState(false)
   const [isFirstLoad, setIsFirstLoad] = useState(true)
   const [shouldScroll, setShouldScroll] = useState(true)
 
@@ -74,15 +60,8 @@ const MessagesPage: React.FC = () => {
     if (!selectedConversation || !currentUser) return
 
     try {
-      const token = localStorage.getItem('accessToken')
-      const response = await fetch(`http://localhost:8080/api/chat/messages/${currentUser.id}/${selectedConversation.user.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      const data = await response.json()
-      setMessages(data)
+      const response = await MessageService.getMessages(currentUser.id.toString(), selectedConversation.user.id.toString())
+      setMessages(response)
     } catch (error) {
       console.error('Error loading messages:', error)
     }

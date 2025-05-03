@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import {
@@ -22,8 +20,7 @@ import {
   Image,
   Send
 } from "@mui/icons-material"
-import type { Conversation, Message as MessageType } from "../../../types/message"
-import MessageBubble from "./MessageBubble"
+import type { Conversation } from "../../../types/message"
 import { Client } from '@stomp/stompjs'
 import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data'

@@ -22,8 +22,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -205,6 +207,15 @@ public class UserController {
                 (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
                         : null);
         return user;
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<User>> getAllUsers(HttpServletRequest request) {
+        List<User> users = userService.getAllUsers().stream()
+                .map(user -> addDomainToImage(user, request))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(users);
     }
 
     @PatchMapping("/change-password")

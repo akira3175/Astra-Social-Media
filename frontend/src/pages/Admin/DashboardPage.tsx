@@ -6,8 +6,8 @@ import { useState, useEffect } from "react";
 import {
   getUsers,
   getPosts,
-  getComments,
-  getReports,
+  getAllUserLoginToday,
+  getComments
 } from "../../services/adminService";
 import NewUserOveriew from "./components/NewUserOveriew";
 import NewPostOverview from "./components/NewPostOverview";
@@ -15,14 +15,13 @@ import WeeklyOverview from "./components/WeeklyOverview";
 import { User } from "../../types/user";
 import { Post } from "../../types/post";
 import { Comment } from "../../types/comment";
-import { Report } from "../../types/management";
 
 const DashboardPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reports, setReports] = useState<User[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,11 +29,11 @@ const DashboardPage: React.FC = () => {
         const usersData = await getUsers();
         const postsData = await getPosts();
         const commentsData = await getComments();
-        const reportsData = await getReports();
+        const latestLogins = await getAllUserLoginToday();
         setUsers(usersData);
         setPosts(postsData);
         setComments(commentsData);
-        setReports(reportsData);
+        setReports(latestLogins);
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
@@ -76,7 +75,6 @@ const DashboardPage: React.FC = () => {
           users={users}
           isLoading={isLoading}
           posts={posts}
-          reports={reports}
           comments={comments}
         />
       </Grid>

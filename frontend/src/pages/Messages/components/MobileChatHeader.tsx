@@ -1,4 +1,3 @@
-"use client"
 import { Avatar, Box, IconButton, Typography, alpha } from "@mui/material"
 import { ArrowBack, MoreVert } from "@mui/icons-material"
 import type { Conversation } from "../../../types/message"

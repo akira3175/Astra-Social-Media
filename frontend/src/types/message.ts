@@ -1,18 +1,4 @@
-export interface ChatUser {
-  id: number
-  email: string
-  firstName: string
-  lastName: string
-  name: string
-  username: string
-  avatar: string
-  role: string
-  status: string
-  registeredDate: string
-  lastActive: string
-  isOnline: boolean
-  [key: string]: any
-}
+import { User } from "./user"
 
 export interface Message {
   id: number
@@ -38,18 +24,7 @@ export interface LastMessage {
 
 export interface Conversation {
   id: number
-  user: {
-    id: number
-    name: string
-    avatar?: string
-    isOnline?: boolean
-  }
-  lastMessage: {
-    id: number
-    text: string
-    timestamp: string
-    isRead: boolean
-    senderId: number
-  }
+  user: User
+  lastMessage: LastMessage
   unreadCount: number
 }

@@ -82,7 +82,7 @@ const createPost = async (payload: CreatePostPayload): Promise<Post> => {
   }
 };
 
-const getAllPosts = async (): Promise<Post[]> => {
+export const getAllPosts = async (): Promise<Post[]> => {
   const token = tokenService.getAccessToken();
   if (!token) {
     throw new Error("No authentication token found");
@@ -100,7 +100,7 @@ const getAllPosts = async (): Promise<Post[]> => {
     );
 
     if (response.data && response.data.status === 200 && response.data.data) {
-      return response.data.data;
+      return response.data.data as Post[];
     } else {
       throw new Error(response.data.message || "Failed to get all posts");
     }

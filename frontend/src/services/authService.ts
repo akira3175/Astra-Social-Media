@@ -34,7 +34,7 @@ export const searchUsers = async ({
   isActive?: boolean;
   page?: number;
   size?: number;
-}):Promise<User[]> => {
+}): Promise<User[]> => {
   const token = tokenService.getAccessToken();
   if (!token) {
     throw new Error("No authentication token found");
@@ -42,7 +42,7 @@ export const searchUsers = async ({
 
   try {
     const response = await api.get<AxiosResponse<User[]>>(
-      `/posts/search?keyword=${key}${size ?? `&size=${size}`}${
+      `${ENDPOINTS.SEARCH}?keyword=${key}${size ?? `&size=${size}`}${
         page ?? `&page=${page}`
       }${isActive ?? `&isActive=${isActive}`}${
         isStaff ?? `&isStaff=${isStaff}`
@@ -65,6 +65,18 @@ export const searchUsers = async ({
     throw error;
   }
 };
+
+export const getAllUser =async ():Promise<User[]> =>{
+
+  try {
+   const response = await api.get<AxiosResponse<User[]>>("/users/all")
+   return response.data as unknown as User []
+  } catch (error) {
+    console.error(error)
+    throw new Error("Failed to get User");
+  }
+
+}
 
 // Authentication Functions
 export const setAuthHeader = (token: string | null): void => {
@@ -321,7 +333,9 @@ export const requestOtp = async (email: string): Promise<string> => {
   }
 };
 
-export const sendForgotPasswordEmail = async (email: string): Promise<string> => {
+export const sendForgotPasswordEmail = async (
+  email: string
+): Promise<string> => {
   try {
     const response: AxiosResponse<string> = await api.post(
       ENDPOINTS.SEND_FORGOT_PASSWORD_EMAIL,
@@ -353,7 +367,7 @@ export const verifyResetToken = async (token: string): Promise<void> => {
     }
     throw new Error("Failed to verify reset token. Please try again.");
   }
-};  
+};
 
 export const resetPassword = async (
   token: string,
@@ -364,5 +378,4 @@ export const resetPassword = async (
   } catch {
     throw new Error("Failed to reset password. Please try again.");
   }
-};  
-
+};

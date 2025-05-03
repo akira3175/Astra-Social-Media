@@ -1,31 +1,40 @@
 package org.example.backend.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.backend.entity.ChatMessage;
+import org.example.backend.entity.User;
 import org.example.backend.model.ChatUser;
+import org.example.backend.security.JwtUtil;
 import org.example.backend.service.ChatService;
 import org.example.backend.service.CloudinaryService;
+import org.example.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
-import java.nio.charset.Charset;
-import java.io.InputStream;
-
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+/**
+ * REST controller for chat-related endpoints and WebSocket message handling.
+ */
+@Slf4j
 @RestController
 @RequestMapping("/api/chat")
 @CrossOrigin(origins = "*")
@@ -40,209 +49,220 @@ public class ChatController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserService userService;
+
+    /**
+     * WebSocket endpoint for sending messages.
+     *
+     * @param message The message to send
+     */
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatMessage message) {
         try {
-            System.out.println("Received message to send: " + message);
+            log.debug("Received message to send: {}", message);
 
-            // Lưu tin nhắn vào database
+            // Save message to database
             ChatMessage savedMessage = chatService.saveMessage(message);
-            System.out.println("Message saved to database: " + savedMessage);
+            log.debug("Message saved to database: {}", savedMessage);
 
-            // Gửi tin nhắn đến người nhận
-            String receiverDestination = "/user/" + message.getReceiverId() + "/queue/messages";
+            // Send message to receiver
+            String receiverDestination = "/user/" + savedMessage.getReceiver().getId() + "/queue/messages";
             messagingTemplate.convertAndSend(receiverDestination, savedMessage);
-            System.out.println("Message sent to receiver destination: " + receiverDestination);
+            log.debug("Message sent to receiver: {}", receiverDestination);
 
-            // Gửi tin nhắn về cho người gửi để xác nhận
-            String senderDestination = "/user/" + message.getSenderId() + "/queue/messages";
+            // Send confirmation to sender
+            String senderDestination = "/user/" + savedMessage.getSender().getId() + "/queue/messages";
             messagingTemplate.convertAndSend(senderDestination, savedMessage);
-            System.out.println("Message sent to sender destination: " + senderDestination);
+            log.debug("Message sent to sender: {}", senderDestination);
 
-            // Gửi tin nhắn đến channel chung để cập nhật danh sách chat
+            // Send message to public channel for chat list updates
             messagingTemplate.convertAndSend("/topic/public", savedMessage);
-            System.out.println("Message sent to public channel");
+            log.debug("Message sent to public channel");
         } catch (Exception e) {
-            System.err.println("Error sending message: " + e.getMessage());
-            e.printStackTrace();
-            // Có thể thêm logic để thông báo lỗi cho client
+            log.error("Error sending message: {}", e.getMessage(), e);
         }
     }
 
+    /**
+     * Uploads a file to Cloudinary.
+     *
+     * @param file The file to upload
+     * @param token Authentication token
+     * @return Response with file URL
+     */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestHeader("Authorization") String token) {
+
+        log.debug("Received file upload request: {} ({})", file.getOriginalFilename(), file.getSize());
+
+        // Validate file
+        if (file.isEmpty()) {
+            return createErrorResponse(HttpStatus.BAD_REQUEST, "File is empty");
+        }
+
+        // Check file size (10MB limit)
+        if (file.getSize() > 10 * 1024 * 1024) {
+            return createErrorResponse(HttpStatus.BAD_REQUEST, "File size exceeds 10MB limit");
+        }
+
         try {
-            System.out.println("Received file upload request");
-            System.out.println("File name: " + file.getOriginalFilename());
-            System.out.println("File size: " + file.getSize());
-            System.out.println("File type: " + file.getContentType());
-
-            if (token == null || !token.startsWith("Bearer ")) {
-                return ResponseEntity.status(401).body(Map.of(
-                        "status", 401,
-                        "message", "Invalid or missing token",
-                        "data", null,
-                        "timestamp", System.currentTimeMillis()));
-            }
-
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "status", 400,
-                        "message", "File is empty",
-                        "data", null,
-                        "timestamp", System.currentTimeMillis()));
-            }
-
-            // Kiểm tra kích thước file (ví dụ: tối đa 10MB)
-            if (file.getSize() > 10 * 1024 * 1024) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "status", 400,
-                        "message", "File size exceeds 10MB limit",
-                        "data", null,
-                        "timestamp", System.currentTimeMillis()));
-            }
-
             String fileUrl = cloudinaryService.uploadFile(file);
-            System.out.println("File uploaded successfully to Cloudinary: " + fileUrl);
+            log.info("File uploaded successfully to Cloudinary: {}", fileUrl);
 
-            return ResponseEntity.ok(Map.of(
-                    "status", 200,
-                    "message", "File uploaded successfully",
-                    "data", Map.of("fileUrl", fileUrl),
-                    "timestamp", System.currentTimeMillis()));
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("fileUrl", fileUrl);
+
+            return createSuccessResponse("File uploaded successfully", responseData);
         } catch (IOException e) {
-            System.err.println("Error uploading file to Cloudinary: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of(
-                    "status", 500,
-                    "message", "Error uploading file: " + e.getMessage(),
-                    "data", null,
-                    "timestamp", System.currentTimeMillis()));
+            log.error("Error uploading file to Cloudinary: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error uploading file: " + e.getMessage());
         } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of(
-                    "status", 500,
-                    "message", "Unexpected error: " + e.getMessage(),
-                    "data", null,
-                    "timestamp", System.currentTimeMillis()));
+            log.error("Unexpected error during file upload: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error: " + e.getMessage());
         }
     }
 
+    /**
+     * Gets messages between two users.
+     *
+     * @param senderId The ID of the first user
+     * @param receiverId The ID of the second user
+     * @param limit Maximum number of messages to return
+     * @return List of messages
+     */
     @GetMapping("/messages/{senderId}/{receiverId}")
     @ResponseBody
     public List<ChatMessage> getMessages(
             @PathVariable String senderId,
             @PathVariable String receiverId,
             @RequestParam(defaultValue = "20") int limit) {
-        System.out.println("Getting messages between " + senderId + " and " + receiverId);
-        List<ChatMessage> messages = chatService.getMessages(senderId, receiverId, limit);
-        System.out.println("Returning " + messages.size() + " messages");
-        return messages;
+
+        log.debug("Getting messages between {} and {}, limit: {}", senderId, receiverId, limit);
+        return chatService.getMessages(senderId, receiverId, limit);
     }
 
-    @GetMapping("/users/{userId}")
+    /**
+     * Gets a list of users that the specified user has chatted with.
+     *
+     * @param token Authentication token
+     * @return List of chat users
+     */
+    @GetMapping("/users/")
     public ResponseEntity<List<ChatUser>> getChatUsers(
-            @PathVariable String userId,
             @RequestHeader("Authorization") String token) {
+
+        token = token.replace("Bearer ", "").trim();
+
         try {
-            System.out.println("Received request for chat users with userId: " + userId);
-
-            if (token == null || !token.startsWith("Bearer ")) {
-                System.err.println("Invalid or missing token");
-                return ResponseEntity.status(401).build();
-            }
-
-            if (userId == null || userId.trim().isEmpty()) {
-                System.err.println("Invalid userId");
-                return ResponseEntity.badRequest().build();
-            }
-
-            try {
-                List<ChatUser> users = chatService.getChatUsers(userId);
-                System.out.println("Successfully retrieved " + (users != null ? users.size() : 0) + " chat users");
-                return ResponseEntity.ok(users != null ? users : new ArrayList<>());
-            } catch (Exception e) {
-                System.err.println("Error in chatService.getChatUsers: " + e.getMessage());
-                e.printStackTrace();
-                return ResponseEntity.status(500).build();
-            }
+            String email = jwtUtil.extractEmail(token);
+            List<ChatUser> users = chatService.getChatUsers(email);
+            log.debug("Retrieved {} chat users for user {}", users.size(), email);
+            return ResponseEntity.ok(users);
         } catch (Exception e) {
-            System.err.println("Unexpected error in getChatUsers: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).build();
+            log.error("Error retrieving chat users: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
+    /**
+     * Gets the count of unread messages for a user.
+     *
+     * @param userId The user ID
+     * @return Count of unread messages
+     */
     @GetMapping("/unread/{userId}")
     public ResponseEntity<Integer> getUnreadCount(@PathVariable String userId) {
         try {
             int count = chatService.getUnreadCount(userId);
+            log.debug("Unread count for user {}: {}", userId, count);
             return ResponseEntity.ok(count);
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            log.error("Error getting unread count: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
+    /**
+     * Marks a message as read.
+     *
+     * @param messageId The message ID
+     * @return Empty response
+     */
     @PostMapping("/read/{messageId}")
     public ResponseEntity<?> markAsRead(@PathVariable Long messageId) {
         try {
             chatService.markAsRead(messageId);
+            log.debug("Marked message {} as read", messageId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            log.error("Error marking message as read: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
+    /**
+     * Marks all messages from a sender to a receiver as read.
+     *
+     * @param userId The receiver ID
+     * @param senderId The sender ID
+     * @return Empty response
+     */
     @PostMapping("/read-all/{userId}/{senderId}")
     public ResponseEntity<?> markAllAsRead(
             @PathVariable String userId,
             @PathVariable String senderId) {
         try {
             chatService.markAllAsRead(userId, senderId);
+            log.debug("Marked all messages from {} to {} as read", senderId, userId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            log.error("Error marking messages as read: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
+    /**
+     * Downloads a file from Cloudinary.
+     *
+     * @param fileUrl The URL of the file
+     * @return File content
+     */
     @GetMapping("/download")
     public ResponseEntity<byte[]> downloadFile(@RequestParam String fileUrl) {
         try {
-            // Tạo URL connection để tải file từ Cloudinary
-            URL url = new URL(fileUrl);
+            log.debug("Downloading file from: {}", fileUrl);
+
+            // Extract clean URL without query parameters
+            String cleanUrl = fileUrl.split("\\?")[0];
+
+            // Create URL connection
+            URL url = new URL(cleanUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-
-            // Thêm headers cho Cloudinary
             connection.setRequestProperty("User-Agent", "Mozilla/5.0");
             connection.setRequestProperty("Accept", "*/*");
 
-            // Xóa token từ URL nếu có
-            String cleanUrl = fileUrl.split("\\?")[0];
-            if (!cleanUrl.equals(fileUrl)) {
-                url = new URL(cleanUrl);
-                connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-                connection.setRequestProperty("Accept", "*/*");
-            }
-
-            // Đọc dữ liệu từ connection
+            // Read file content
             try (InputStream inputStream = connection.getInputStream()) {
                 byte[] fileContent = inputStream.readAllBytes();
 
-                // Lấy tên file từ URL
+                // Extract filename from URL
                 String fileName = cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1);
-                fileName = URLDecoder.decode(fileName, Charset.forName("UTF-8").toString());
+                fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
 
-                // Xác định Content-Type dựa vào phần mở rộng của file
+                // Determine content type
                 String contentType = URLConnection.guessContentTypeFromName(fileName);
                 if (contentType == null) {
                     contentType = "application/octet-stream";
                 }
+
+                log.debug("File downloaded successfully: {} ({})", fileName, contentType);
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(contentType))
@@ -250,8 +270,40 @@ public class ChatController {
                         .body(fileContent);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error downloading file: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    /**
+     * Creates a success response.
+     *
+     * @param message Success message
+     * @param data Response data
+     * @return Response entity
+     */
+    private ResponseEntity<?> createSuccessResponse(String message, Object data) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", message);
+        response.put("data", data);
+        response.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Creates an error response.
+     *
+     * @param status HTTP status
+     * @param message Error message
+     * @return Response entity
+     */
+    private ResponseEntity<?> createErrorResponse(HttpStatus status, String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", status.value());
+        response.put("message", message);
+        response.put("data", null);
+        response.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.status(status).body(response);
     }
 }

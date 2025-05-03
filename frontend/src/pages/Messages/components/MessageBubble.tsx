@@ -1,14 +1,14 @@
 import React from 'react';
 import { Box, Typography, Avatar, Paper } from '@mui/material';
-import { AttachFile, Image, VideoFile, Description } from '@mui/icons-material';
+import { AttachFile, Description } from '@mui/icons-material';
 import type { Message } from '../../../types/message';
 import { alpha } from '@mui/material/styles';
+import MessageService from '../../../services/messageService';
 
 interface MessageBubbleProps {
   message: Message;
   isCurrentUser: boolean;
   showAvatar: boolean;
-  isLastInGroup: boolean;
   avatar?: string;
 }
 
@@ -16,7 +16,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isCurrentUser,
   showAvatar,
-  isLastInGroup,
   avatar
 }) => {
   const formatTime = (timestamp: string) => {
@@ -37,31 +36,22 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             return;
           }
 
-          // Gọi API endpoint mới để tải file
-          const response = await fetch(`http://localhost:8080/api/chat/download?fileUrl=${encodeURIComponent(message.fileUrl)}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
+          const response = await MessageService.downloadFile(message.fileUrl);
 
-          if (!response.ok) {
+          if (!response) {
             throw new Error('Download failed');
           }
 
-          // Lấy blob từ response
-          const blob = await response.blob();
+          const blob = new Blob([response], { type: response.type });
 
-          // Tạo URL tạm thời cho blob
           const url = window.URL.createObjectURL(blob);
 
-          // Tạo thẻ a để tải file
           const link = document.createElement('a');
           link.href = url;
           link.download = message.fileName || 'file';
           document.body.appendChild(link);
           link.click();
 
-          // Cleanup
           document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
         } catch (error) {
@@ -90,7 +80,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             }}
             onClick={(e) => {
               e.preventDefault();
-              // Mở ảnh trong tab mới khi click
               window.open(message.fileUrl, '_blank');
             }}
           />

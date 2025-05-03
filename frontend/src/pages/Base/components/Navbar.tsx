@@ -1,5 +1,4 @@
-"use client"
-
+import { useLocation } from "react-router-dom";
 import type React from "react"
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
@@ -28,19 +27,22 @@ import { Chat, Search, Settings, Logout, Person, Menu as MenuIcon, Home, Explore
 import { logout } from "../../../services/authService"
 import { useCurrentUser } from "../../../contexts/currentUserContext"
 import NotificationDropdown from "../../../components/Notifications/NotificationDropdown"
-import ChatBox from "../../../components/ChatBox/ChatBox"
 
 interface NavbarProps {
   onMenuToggle?: () => void
 }
 
-const Navbar: React.FC<NavbarProps> = ({ }) => {
+const Navbar: React.FC<NavbarProps> = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const { currentUser } = useCurrentUser() ?? {}
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialQuery = queryParams.get("q") || ""; // Get the 'q' parameter or default to an empty string
+  const [searchQuery, setSearchQuery] = useState(initialQuery); // Initialize with the query param
+
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
@@ -58,16 +60,15 @@ const Navbar: React.FC<NavbarProps> = ({ }) => {
   const handleLogout = () => {
     logout()
   }
-
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
       if (isMobile) {
-        setShowMobileSearch(false)
+        setShowMobileSearch(false);
       }
     }
-  }
+  };
 
   const toggleMobileSearch = () => {
     setShowMobileSearch(!showMobileSearch)
@@ -142,31 +143,31 @@ const Navbar: React.FC<NavbarProps> = ({ }) => {
               AstraSocial
             </Typography>
 
-            {/* Search bar - Desktop */}
-            {!isMobile && (
-              <Box component="form" onSubmit={handleSearch} sx={{ flexGrow: 1, maxWidth: "500px" }}>
-                <TextField
-                  placeholder="Tìm kiếm..."
-                  size="small"
-                  fullWidth
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "20px",
-                      bgcolor: "rgba(0, 0, 0, 0.04)",
-                    },
-                  }}
-                />
-              </Box>
-            )}
+           {/* Search bar - Desktop */}
+      {!isMobile && (
+        <Box component="form" onSubmit={handleSearch} sx={{ flexGrow: 1, maxWidth: "500px" }}>
+          <TextField
+            placeholder="Tìm kiếm..."
+            size="small"
+            fullWidth
+            value={searchQuery} // Controlled input
+            onChange={(e) => setSearchQuery(e.target.value)} // Update state on input change
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "20px",
+                bgcolor: "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          />
+        </Box>
+      )}
 
             {/* User menu */}
             <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
@@ -243,41 +244,41 @@ const Navbar: React.FC<NavbarProps> = ({ }) => {
             </Box>
           </Toolbar>
 
-          {/* Mobile Search Bar */}
-          {isMobile && showMobileSearch && (
-            <Box
-              component="form"
-              onSubmit={handleSearch}
-              sx={{
-                py: 1,
-                px: 2,
-                borderTop: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <TextField
-                placeholder="Tìm kiếm..."
-                size="small"
-                fullWidth
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "20px",
-                    bgcolor: "rgba(0, 0, 0, 0.04)",
-                  },
-                }}
-              />
-            </Box>
-          )}
+         {/* Mobile Search Bar */}
+      {isMobile && showMobileSearch && (
+        <Box
+          component="form"
+          onSubmit={handleSearch}
+          sx={{
+            py: 1,
+            px: 2,
+            borderTop: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <TextField
+            placeholder="Tìm kiếm..."
+            size="small"
+            fullWidth
+            autoFocus
+            value={searchQuery} // Controlled input
+            onChange={(e) => setSearchQuery(e.target.value)} // Update state on input change
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "20px",
+                bgcolor: "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          />
+        </Box>
+      )}
         </Container>
       </AppBar>
 
@@ -357,17 +358,6 @@ const Navbar: React.FC<NavbarProps> = ({ }) => {
           </ListItem>
         </List>
       </Drawer>
-
-      {/* Render ChatBox ở cấp cao nhất */}
-      {isChatOpen && currentUser?.id && (
-        <ChatBox
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          receiverId={selectedReceiverId || ""}
-          currentUserId={currentUser.id.toString()}
-          onSelectUser={handleSelectUser}
-        />
-      )}
     </>
   )
 }

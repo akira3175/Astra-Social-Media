@@ -15,6 +15,7 @@ import {
 } from "@mui/material"
 import { Visibility, VisibilityOff, Login as LoginIcon, AdminPanelSettings } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
+import { adminLogin } from "../../services/adminService"
 
 const AdminLoginPage: React.FC = () => {
   const [username, setUsername] = useState("")
@@ -35,16 +36,14 @@ const AdminLoginPage: React.FC = () => {
     setIsLoading(true)
     setError(null)
 
-    // Giả lập API call
-    setTimeout(() => {
-      // Kiểm tra thông tin đăng nhập (demo)
-      if (username === "admin" && password === "admin123") {
-        navigate("/admin/dashboard")
-      } else {
-        setError("Tên đăng nhập hoặc mật khẩu không đúng")
-      }
+    try {
+      await adminLogin({ email: username, password })
+      navigate("/admin/dashboard")
+    } catch {
+      setError("Tên đăng nhập hoặc mật khẩu không đúng")
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -144,6 +143,7 @@ const AdminLoginPage: React.FC = () => {
               Đây là trang đăng nhập dành cho quản trị viên.
               <br />
               Nếu bạn không phải là quản trị viên, vui lòng quay lại trang chủ.
+
             </Typography>
 
             <Box sx={{ mt: 3, textAlign: "center" }}>

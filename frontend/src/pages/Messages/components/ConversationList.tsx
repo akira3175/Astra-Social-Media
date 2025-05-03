@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import {
@@ -19,8 +17,10 @@ import {
   alpha,
 } from "@mui/material"
 import { Search, Edit, MoreVert } from "@mui/icons-material"
-import type { ChatUser, Conversation } from "../../../types/message"
+import type { Conversation } from "../../../types/message"
 import { useCurrentUser } from "../../../contexts/currentUserContext"
+import messageService from "../../../services/messageService"
+import { User } from "../../../types/user"
 
 interface ConversationListProps {
   conversations: Conversation[]
@@ -30,7 +30,7 @@ interface ConversationListProps {
 
 const ConversationList: React.FC<ConversationListProps> = ({ conversations, selectedId, onSelectConversation }) => {
   const [searchQuery, setSearchQuery] = useState("")
-  const [users, setUsers] = useState<ChatUser[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const { currentUser } = useCurrentUser()
 
   const formatLastMessageTime = (timestamp: string) => {
@@ -59,57 +59,14 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
   };
 
   // Lấy danh sách người dùng từ API
-  const loadUsers = () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token || !currentUser?.id) {
-      console.log('User not logged in');
-      return;
-    }
-
-    fetch(`http://localhost:8080/api/chat/users/${currentUser.id}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include'
-    })
-      .then(res => {
-        if (!res.ok) {
-          if (res.status === 401) {
-            localStorage.removeItem('accessToken');
-            window.location.href = '/login';
-            return;
-          }
-          if (res.status === 400) {
-            throw new Error('Invalid request');
-          }
-          if (res.status === 404) {
-            setUsers([]);
-            return;
-          }
-          throw new Error(`Network response was not ok: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        if (data) {
-          console.log("Loaded chat users:", data);
-          setUsers(data);
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching chat users:', error);
-        setUsers([]);
-      });
+  const loadUsers = async () => {
+    const response = await messageService.getChatUsers();
+    setUsers(response);
   };
 
   // Tải danh sách người dùng khi component mount
   useEffect(() => {
     loadUsers();
-    // Cập nhật danh sách người dùng mỗi 5 giây
-    const interval = setInterval(loadUsers, 5000);
-    return () => clearInterval(interval);
   }, [currentUser?.id]);
 
   // Kết hợp danh sách cuộc trò chuyện với danh sách người dùng
@@ -130,11 +87,11 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
 
   // Thêm các người dùng chưa có trong danh sách cuộc trò chuyện
   const newUsers = users.filter(user =>
-    !conversations.some(conv => conv.user.id.toString() === user.id)
+    !conversations.some(conv => conv.user.id === user.id)
   ).map(user => ({
     id: Date.now() + Math.floor(Math.random() * 1000),
     user: {
-      id: parseInt(user.id),
+      id: user.id,
       name: user.name,
       avatar: user.avatar,
       lastMessage: user.lastMessage,
@@ -241,7 +198,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
               >
                 <ListItemButton
                   selected={selectedId === conversation.id}
-                  onClick={() => onSelectConversation(conversation)}
+                  onClick={() => onSelectConversation(conversation as unknown as Conversation)}
                   sx={{
                     borderRadius: 2,
                     py: 1,
@@ -270,8 +227,8 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
                       }}
                     >
                       <Avatar
-                        src={conversation.user.avatar ? `http://localhost:8080${conversation.user.avatar}` : undefined}
-                        alt={conversation.user.name}
+                        src={conversation.user.avatar ? conversation.user.avatar : undefined}
+                        alt={conversation.user.avatar}
                         sx={{
                           width: 40,
                           height: 40,

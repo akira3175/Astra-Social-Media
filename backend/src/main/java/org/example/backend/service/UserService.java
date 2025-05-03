@@ -334,7 +334,7 @@ public class UserService {
 
         userESRepository.saveAll(userDocuments);
     }
-    
+
     public Long countAllUsers() {
         return userRepository.countAll();
     }
