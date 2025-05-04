@@ -66,7 +66,7 @@ const NotificationDropdown = () => {
       <IconButton
         aria-describedby={popoverId}
         onClick={handleClick}
-        color="inherit"
+        color="primary"
         aria-label={`Thông báo${unreadCount > 0 ? ` (${unreadCount} chưa đọc)` : ""}`}
       >
         <Badge badgeContent={unreadCount} color="error">

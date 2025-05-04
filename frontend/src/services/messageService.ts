@@ -3,27 +3,15 @@ import { Message } from '../types/message';
 import { User } from '../types/user';
 
 class MessageService {
-    async getMessages(senderId: string, receiverId: string, limit: number = 20): Promise<Message[]> {
+    async getMessages(receiverId: number, limit: number = 20): Promise<Message[]> {
         try {
-            const response = await api.get(`/api/chat/messages/${senderId}/${receiverId}`, {
+            const response = await api.get(`/chat/messages/${receiverId}`, {
                 params: { limit }
             });
+            console.log(response.data)
             return response.data;
         } catch (error) {
             console.error('Error getting messages:', error);
-            throw error;
-        }
-    }
-
-    async sendMessage(message: Message): Promise<Message> {
-        try {
-            // Note: This method would typically use a WebSocket connection
-            // The actual implementation depends on your WebSocket client setup
-            // This is just a placeholder for the REST API version
-            const response = await api.post(`/api/chat/send`, message);
-            return response.data;
-        } catch (error) {
-            console.error('Error sending message:', error);
             throw error;
         }
     }
@@ -33,7 +21,7 @@ class MessageService {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await api.post('/api/chat/upload', formData, {
+            const response = await api.post('/chat/upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 }
@@ -47,7 +35,8 @@ class MessageService {
 
     async getChatUsers(): Promise<User[]> {
         try {
-            const response = await api.get(`/api/chat/users/`);
+            const response = await api.get(`/chat/users/`);
+            console.log("response.data", response.data)
             return response.data;
         } catch (error) {
             console.error('Error getting chat users:', error);
@@ -57,7 +46,7 @@ class MessageService {
 
     async getUnreadCount(userId: string): Promise<number> {
         try {
-            const response = await api.get(`/api/chat/unread/${userId}`);
+            const response = await api.get(`/chat/unread/${userId}`);
             return response.data;
         } catch (error) {
             console.error('Error getting unread count:', error);
@@ -67,7 +56,7 @@ class MessageService {
 
     async markAsRead(messageId: number): Promise<void> {
         try {
-            await api.post(`/api/chat/read/${messageId}`);
+            await api.post(`/chat/read/${messageId}`);
         } catch (error) {
             console.error('Error marking message as read:', error);
             throw error;
@@ -76,7 +65,7 @@ class MessageService {
 
     async markAllAsRead(userId: string, senderId: string): Promise<void> {
         try {
-            await api.post(`/api/chat/read-all/${userId}/${senderId}`);
+            await api.post(`/chat/read-all/${userId}/${senderId}`);
         } catch (error) {
             console.error('Error marking all messages as read:', error);
             throw error;
@@ -85,7 +74,7 @@ class MessageService {
 
     async downloadFile(fileUrl: string): Promise<Blob> {
         try {
-            const response = await api.get(`/api/chat/download`, {
+            const response = await api.get(`/chat/download`, {
                 params: { fileUrl },
                 responseType: 'blob'
             });

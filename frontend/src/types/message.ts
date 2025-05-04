@@ -4,13 +4,13 @@ export interface Message {
   id: number
   text: string
   timestamp: string
-  senderId: number
-  receiverId: number
   isRead: boolean
   fileUrl?: string
   hasAttachment?: boolean
   attachmentType?: 'image' | 'video' | 'document' | 'file'
   fileName?: string
+  sender: User
+  receiver: User
   [key: string]: any
 }
 

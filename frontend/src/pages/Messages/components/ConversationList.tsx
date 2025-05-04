@@ -76,7 +76,8 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
       ...conversation,
       user: {
         ...conversation.user,
-        name: user?.name || `${conversation.user.firstName} ${conversation.user.lastName}`,
+        firstName: user?.firstName || conversation.user.firstName,
+        lastName: user?.lastName || conversation.user.lastName,
         avatar: user?.avatar || conversation.user.avatar,
         lastMessage: user?.lastMessage || conversation.lastMessage.text,
         lastMessageTime: user?.lastMessageTime || conversation.lastMessage.timestamp,
@@ -92,7 +93,8 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
     id: Date.now() + Math.floor(Math.random() * 1000),
     user: {
       id: user.id,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       avatar: user.avatar,
       lastMessage: user.lastMessage,
       lastMessageTime: user.lastMessageTime,
@@ -111,7 +113,8 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
 
   const filteredConversations = allConversations.filter(
     (conversation) =>
-      conversation.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conversation.user.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conversation.user.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       conversation.lastMessage.text.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -235,7 +238,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
                           bgcolor: !conversation.user.avatar ? 'primary.main' : 'transparent'
                         }}
                       >
-                        {!conversation.user.avatar && conversation.user.name.charAt(0)}
+                        {!conversation.user.avatar && conversation.user.firstName?.charAt(0)}
                       </Avatar>
                     </Badge>
                   </ListItemAvatar>
@@ -248,7 +251,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
                           color: conversation.user.unreadCount > 0 ? "text.primary" : "text.primary",
                         }}
                       >
-                        {conversation.user.name}
+                        {conversation.user.lastName} {conversation.user.firstName}
                       </Typography>
                     }
                     secondary={

@@ -1,9 +1,11 @@
 package org.example.backend.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.backend.dto.ChatMessageDTO;
+import org.example.backend.dto.ChatUserDTO;
 import org.example.backend.entity.ChatMessage;
 import org.example.backend.entity.User;
-import org.example.backend.model.ChatUser;
+import org.example.backend.mapper.ChatMessageMapper;
 import org.example.backend.security.JwtUtil;
 import org.example.backend.service.ChatService;
 import org.example.backend.service.CloudinaryService;
@@ -19,6 +21,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.example.backend.util.ImageUtils;
+import jakarta.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -29,7 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * REST controller for chat-related endpoints and WebSocket message handling.
@@ -131,20 +135,34 @@ public class ChatController {
     /**
      * Gets messages between two users.
      *
-     * @param senderId The ID of the first user
      * @param receiverId The ID of the second user
      * @param limit Maximum number of messages to return
      * @return List of messages
      */
-    @GetMapping("/messages/{senderId}/{receiverId}")
+    @GetMapping("/messages/{receiverId}")
     @ResponseBody
-    public List<ChatMessage> getMessages(
-            @PathVariable String senderId,
+    public List<ChatMessageDTO> getMessages(
+            @RequestHeader("Authorization") String token,
             @PathVariable String receiverId,
-            @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(defaultValue = "20") int limit,
+            HttpServletRequest request) {
 
-        log.debug("Getting messages between {} and {}, limit: {}", senderId, receiverId, limit);
-        return chatService.getMessages(senderId, receiverId, limit);
+        token = token.replace("Bearer ", "").trim();
+        String email = jwtUtil.extractEmail(token);
+        User sender = userService.getUserByEmail(email).orElse(null);
+
+        List<ChatMessage> messages = chatService.getMessages(sender.getId().toString(), receiverId, limit);
+
+        List<ChatMessageDTO> messageDTOs = messages.stream()
+                .map(ChatMessageMapper::toDTO)
+                .toList();
+
+        for (ChatMessageDTO messageDTO : messageDTOs) {
+            messageDTO.setSender(ImageUtils.addDomainToImage(messageDTO.getSender(), request));
+            messageDTO.setReceiver(ImageUtils.addDomainToImage(messageDTO.getReceiver(), request));
+        }
+
+        return messageDTOs;
     }
 
     /**
@@ -154,15 +172,19 @@ public class ChatController {
      * @return List of chat users
      */
     @GetMapping("/users/")
-    public ResponseEntity<List<ChatUser>> getChatUsers(
-            @RequestHeader("Authorization") String token) {
+    public ResponseEntity<List<ChatUserDTO>> getChatUsers(
+            @RequestHeader("Authorization") String token,
+            HttpServletRequest request) {
 
         token = token.replace("Bearer ", "").trim();
 
         try {
             String email = jwtUtil.extractEmail(token);
-            List<ChatUser> users = chatService.getChatUsers(email);
+            List<ChatUserDTO> users = chatService.getChatUsers(email);
             log.debug("Retrieved {} chat users for user {}", users.size(), email);
+            for (ChatUserDTO user : users) {
+                user.setAvatar(ImageUtils.addDomainToImage(user.getAvatar(), request));
+            }
             return ResponseEntity.ok(users);
         } catch (Exception e) {
             log.error("Error retrieving chat users: {}", e.getMessage(), e);

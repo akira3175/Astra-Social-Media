@@ -12,7 +12,6 @@ interface MobileChatHeaderProps {
 function MobileChatHeader(props: MobileChatHeaderProps) {
   const { conversation, onBack } = props
 
-  // Nếu không có conversation, không hiển thị gì cả
   if (!conversation) {
     return null
   }

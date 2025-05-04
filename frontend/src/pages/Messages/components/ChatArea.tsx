@@ -1,5 +1,5 @@
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import {
   Avatar,
   Box,
@@ -12,22 +12,18 @@ import {
   CircularProgress,
   Fade,
   ListItem,
-  useTheme
+  useTheme,
+  Badge,
 } from "@mui/material"
-import {
-  AttachFile,
-  EmojiEmotions,
-  Image,
-  Send
-} from "@mui/icons-material"
+import { AttachFile, EmojiEmotions, Image, Send, Download } from "@mui/icons-material"
 import type { Conversation } from "../../../types/message"
-import { Client } from '@stomp/stompjs'
-import Picker from '@emoji-mart/react'
-import data from '@emoji-mart/data'
+import type { Client } from "@stomp/stompjs"
+import Picker from "@emoji-mart/react"
+import data from "@emoji-mart/data"
 import { styled } from "@mui/material/styles"
-import { Message } from "../../../types/message"
-
-const MessageItem = styled(ListItem)(({ }) => ({
+import type { Message } from "../../../types/message"
+import MessageService from "../../../services/messageService"
+const MessageItem = styled(ListItem)(({}) => ({
   display: "flex",
   flexDirection: "column",
   padding: "4px 8px",
@@ -45,7 +41,7 @@ const MessageItem = styled(ListItem)(({ }) => ({
       transform: "translateY(0)",
     },
   },
-}));
+}))
 
 const formatTime = (timestamp: string | number[]) => {
   try {
@@ -63,7 +59,7 @@ const formatTime = (timestamp: string | number[]) => {
       else if (timestamp.length === 6) {
         date = new Date(timestamp[0], timestamp[1] - 1, timestamp[2], timestamp[3], timestamp[4], timestamp[5])
       } else {
-        console.error('Invalid timestamp array length:', timestamp)
+        console.error("Invalid timestamp array length:", timestamp)
         return "00:00"
       }
     } else {
@@ -72,7 +68,7 @@ const formatTime = (timestamp: string | number[]) => {
     }
 
     if (isNaN(date.getTime())) {
-      console.error('Invalid timestamp:', timestamp)
+      console.error("Invalid timestamp:", timestamp)
       return "00:00"
     }
 
@@ -81,34 +77,34 @@ const formatTime = (timestamp: string | number[]) => {
 
     // Nếu tin nhắn được gửi trong cùng ngày
     if (messageDate.toDateString() === now.toDateString()) {
-      return messageDate.toLocaleTimeString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+      return messageDate.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       })
     }
     // Nếu tin nhắn được gửi trong cùng tuần
     else if (now.getTime() - messageDate.getTime() <= 7 * 24 * 60 * 60 * 1000) {
-      return messageDate.toLocaleDateString('vi-VN', {
-        weekday: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+      return messageDate.toLocaleDateString("vi-VN", {
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       })
     }
     // Nếu tin nhắn được gửi trước đó
     else {
-      return messageDate.toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+      return messageDate.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       })
     }
   } catch (error) {
-    console.error('Error formatting time:', error, 'Timestamp:', timestamp)
+    console.error("Error formatting time:", error, "Timestamp:", timestamp)
     return "00:00"
   }
 }
@@ -117,7 +113,12 @@ interface ChatAreaProps {
   conversation: Conversation | null
   messages: Message[]
   currentUserId: number
-  onSendMessage: (text: string, fileUrl?: string, fileType?: 'image' | 'video' | 'document' | 'file', fileName?: string) => void
+  onSendMessage: (
+    text: string,
+    fileUrl?: string,
+    fileType?: "image" | "video" | "document" | "file",
+    fileName?: string,
+  ) => void
   messagesEndRef: React.RefObject<HTMLDivElement | null>
   ws: Client | null
   showEmojiPicker: boolean
@@ -127,26 +128,26 @@ interface ChatAreaProps {
   truncateFileName: (fileName: string, maxLength?: number) => string
 }
 
-type FileType = 'image' | 'video' | 'document' | 'file';
+type FileType = "image" | "video" | "document" | "file"
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL
 
 const getFileUrl = (fileUrl: string) => {
-  if (!fileUrl) return '';
+  if (!fileUrl) return ""
 
   // Nếu là URL Cloudinary
-  if (fileUrl.includes('cloudinary.com')) {
+  if (fileUrl.includes("cloudinary.com")) {
     // Nếu là file ảnh, giữ nguyên URL
     if (fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-      return fileUrl;
+      return fileUrl
     }
     // Nếu là file khác, chuyển về endpoint download của backend
-    return `${API_URL}/api/chat/download?fileUrl=${encodeURIComponent(fileUrl)}`;
+    return `${API_URL}/api/chat/download?fileUrl=${encodeURIComponent(fileUrl)}`
   }
 
   // Nếu là URL local
-  return fileUrl.startsWith('http') ? fileUrl : `${API_URL}${fileUrl}`;
-};
+  return fileUrl.startsWith("http") ? fileUrl : `${API_URL}${fileUrl}`
+}
 
 const ChatArea: React.FC<ChatAreaProps> = ({
   conversation,
@@ -159,148 +160,199 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   onEmojiClick,
   toggleEmojiPicker,
   isUploading,
-  truncateFileName
+  truncateFileName,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme()
   const messageInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showAttachOptions, setShowAttachOptions] = useState(false)
   const [isUploadingFile, setIsUploadingFile] = useState(false)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
+  const [imagePreview, setImagePreview] = useState<{ url: string; open: boolean }>({ url: "", open: false })
 
-  useEffect(() => {
-    if (messages && messages.length > 0) {
-      setLocalMessages(messages)
-      // Cuộn xuống khi có tin nhắn mới
-      if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
-      }
-    }
+  // Sử dụng useMemo để tối ưu hóa việc xử lý tin nhắn
+  const processedMessages = useMemo(() => {
+    if (!messages || messages.length === 0) return []
+
+    return messages.map((message) => ({
+      ...message,
+      formattedTime: formatTime(message.timestamp),
+    }))
   }, [messages])
 
-  const handleFileUpload = async (file: File) => {
-    if (!file) return null;
-
-    setIsUploadingFile(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('No access token found');
-      }
-
-      const response = await fetch(`${API_URL}/api/chat/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
-        credentials: 'include'
-      });
-
-      const data = await response.json();
-      console.log('Upload response:', data);
-
-      if (!response.ok) {
-        throw new Error(data.message || `Upload failed with status ${response.status}`);
-      }
-
-      if (!data.data || !data.data.fileUrl) {
-        throw new Error('Invalid response format');
-      }
-
-      // Xử lý URL file trước khi trả về
-      const fileUrl = data.data.fileUrl;
-
-      // Xác định loại file dựa vào extension
-      const extension = file.name.split('.').pop()?.toLowerCase() || '';
-      let fileType: 'image' | 'video' | 'document' | 'file';
-
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
-        fileType = 'image';
-      } else if (['mp4', 'webm', 'mov'].includes(extension)) {
-        fileType = 'video';
-      } else if (['pdf', 'doc', 'docx', 'txt'].includes(extension)) {
-        fileType = 'document';
-      } else {
-        fileType = 'file';
-      }
-
-      return { fileUrl, fileType };
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      throw error;
-    } finally {
-      setIsUploadingFile(false);
+  useEffect(() => {
+    if (processedMessages && processedMessages.length > 0) {
+      setLocalMessages(processedMessages)
+      // Cuộn xuống khi có tin nhắn mới
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+        }
+      }, 100)
     }
-  };
+  }, [processedMessages])
 
-  const handleSendMessage = async () => {
-    const messageText = messageInputRef.current?.value?.trim() || "";
-    let fileUrl: string | undefined = undefined;
-    let fileType: 'image' | 'video' | 'document' | 'file' | undefined = undefined;
-    let fileName: string | undefined = undefined;
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      if (!file) return null
 
-    if (fileInputRef.current?.files?.length) {
-      const file = fileInputRef.current.files[0];
-      console.log('Selected file:', file);
+      setIsUploadingFile(true)
 
       try {
-        const uploadResult = await handleFileUpload(file);
+        const response = await MessageService.uploadFile(file)
+
+        console.log(response)
+
+        if (!response) {
+          throw new Error(`Upload failed with status ${response}`)
+        }
+
+
+        // Xử lý URL file trước khi trả về
+        const fileUrl = response
+
+        // Xác định loại file dựa vào extension
+        const extension = file.name.split(".").pop()?.toLowerCase() || ""
+        let fileType: FileType
+
+        if (["jpg", "jpeg", "png", "gif", "webp"].includes(extension)) {
+          fileType = "image"
+        } else if (["mp4", "webm", "mov"].includes(extension)) {
+          fileType = "video"
+        } else if (["pdf", "doc", "docx", "txt"].includes(extension)) {
+          fileType = "document"
+        } else {
+          fileType = "file"
+        }
+
+        return { fileUrl, fileType }
+      } catch (error) {
+        console.error("Error uploading file:", error)
+        throw error
+      } finally {
+        setIsUploadingFile(false)
+      }
+    },
+    [API_URL],
+  )
+
+  const handleSendMessage = useCallback(async () => {
+    const messageText = messageInputRef.current?.value?.trim() || ""
+    let fileUrl: string | undefined = undefined
+    let fileType: FileType | undefined = undefined
+    let fileName: string | undefined = undefined
+
+    if (fileInputRef.current?.files?.length) {
+      const file = fileInputRef.current.files[0]
+
+      try {
+        const uploadResult = await handleFileUpload(file)
         if (uploadResult) {
-          fileUrl = uploadResult.fileUrl;
-          fileType = uploadResult.fileType;
-          fileName = file.name;
+          fileUrl = uploadResult.fileUrl
+          fileType = uploadResult.fileType
+          fileName = file.name
         }
       } catch (error) {
-        console.error('Error uploading file:', error);
-        return;
+        console.error("Error uploading file:", error)
+        return
       }
     }
 
     if (messageText || fileUrl) {
-      onSendMessage(messageText, fileUrl, fileType, fileName);
+      onSendMessage(messageText, fileUrl, fileType, fileName)
       if (messageInputRef.current) {
-        messageInputRef.current.value = "";
+        messageInputRef.current.value = ""
       }
       if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        fileInputRef.current.value = ""
       }
     }
-  };
+  }, [handleFileUpload, onSendMessage])
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-  }
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault()
+        handleSendMessage()
+      }
+    },
+    [handleSendMessage],
+  )
 
-  const toggleAttachOptions = () => {
+  const toggleAttachOptions = useCallback(() => {
     setShowAttachOptions(!showAttachOptions)
-  }
+  }, [showAttachOptions])
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleSendMessage();
-    }
-  };
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (file) {
+        handleSendMessage()
+      }
+    },
+    [handleSendMessage],
+  )
 
-  const handleEmojiSelect = (emoji: any) => {
-    const emojiText = onEmojiClick(emoji)
-    if (messageInputRef.current) {
-      const start = messageInputRef.current.selectionStart || 0
-      const end = messageInputRef.current.selectionEnd || 0
-      const text = messageInputRef.current.value
-      const newText = text.substring(0, start) + emojiText + text.substring(end)
-      messageInputRef.current.value = newText
-      messageInputRef.current.focus()
-      messageInputRef.current.setSelectionRange(start + emojiText.length, start + emojiText.length)
-    }
-  }
+  const handleEmojiSelect = useCallback(
+    (emoji: any) => {
+      const emojiText = onEmojiClick(emoji)
+      if (messageInputRef.current) {
+        const start = messageInputRef.current.selectionStart || 0
+        const end = messageInputRef.current.selectionEnd || 0
+        const text = messageInputRef.current.value
+        const newText = text.substring(0, start) + emojiText + text.substring(end)
+        messageInputRef.current.value = newText
+        messageInputRef.current.focus()
+        messageInputRef.current.setSelectionRange(start + emojiText.length, start + emojiText.length)
+      }
+    },
+    [onEmojiClick],
+  )
+
+  const openImagePreview = useCallback((url: string) => {
+    setImagePreview({ url, open: true })
+  }, [])
+
+  const closeImagePreview = useCallback(() => {
+    setImagePreview({ url: "", open: false })
+  }, [])
+
+  const handleDownloadFile = useCallback(
+    async (fileUrl: string, fileName = "file") => {
+      if (!fileUrl) return
+
+      try {
+        const token = localStorage.getItem("accessToken")
+        if (!token) {
+          console.error("No access token found")
+          return
+        }
+
+        const response = await fetch(`${API_URL}/chat/download?fileUrl=${encodeURIComponent(fileUrl)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error("Download failed")
+        }
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      } catch (error) {
+        console.error("Error downloading file:", error)
+      }
+    },
+    [API_URL],
+  )
 
   if (!conversation) {
     return (
@@ -343,37 +395,52 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Avatar
-            src={conversation.user.avatar ? `http://localhost:8080${conversation.user.avatar}` : undefined}
-            alt={conversation.user.name}
+          <Badge
+            overlap="circular"
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            variant="dot"
+            color={conversation.user.isOnline ? "success" : "default"}
             sx={{
-              width: 40,
-              height: 40,
-              mr: 1.5,
-              border: (theme) => `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-              bgcolor: !conversation.user.avatar ? 'primary.main' : 'transparent'
+              "& .MuiBadge-badge": {
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                border: "2px solid white",
+              },
             }}
           >
-            {!conversation.user.avatar && conversation.user.name.charAt(0)}
-          </Avatar>
+            <Avatar
+              src={conversation.user.avatar ? conversation.user.avatar : undefined}
+              alt={conversation.user.lastName + " " + conversation.user.firstName}
+              sx={{
+                width: 40,
+                height: 40,
+                mr: 1.5,
+                border: (theme) => `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                bgcolor: !conversation.user.avatar ? "primary.main" : "transparent",
+              }}
+            >
+              {!conversation.user.avatar && conversation.user.firstName?.charAt(0)}
+            </Avatar>
+          </Badge>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {conversation.user.name}
+              {conversation.user.lastName} {conversation.user.firstName}
             </Typography>
             <Typography
               variant="caption"
               color={conversation.user.isOnline ? "success.main" : "text.secondary"}
-              sx={{ display: 'flex', alignItems: 'center' }}
+              sx={{ display: "flex", alignItems: "center" }}
             >
               <Box
                 component="span"
                 sx={{
-                  display: 'inline-block',
+                  display: "inline-block",
                   width: 8,
                   height: 8,
-                  borderRadius: '50%',
-                  bgcolor: conversation.user.isOnline ? 'success.main' : 'text.disabled',
-                  mr: 0.5
+                  borderRadius: "50%",
+                  bgcolor: conversation.user.isOnline ? "success.main" : "text.disabled",
+                  mr: 0.5,
                 }}
               />
               {conversation.user.isOnline ? "Đang hoạt động" : "Không hoạt động"}
@@ -392,13 +459,26 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           flexDirection: "column",
           bgcolor: (theme) => alpha(theme.palette.background.default, 0.6),
           backgroundImage: 'url("/placeholder.svg?height=500&width=500")',
-          backgroundBlendMode: 'overlay',
-          backgroundSize: '200px',
-          backgroundRepeat: 'repeat',
-          backgroundPosition: 'center',
+          backgroundBlendMode: "overlay",
+          backgroundSize: "200px",
+          backgroundRepeat: "repeat",
+          backgroundPosition: "center",
           minHeight: 0,
-          height: 'calc(100vh - 180px)',
-          maxHeight: 'calc(100vh - 180px)',
+          height: "calc(100vh - 180px)",
+          maxHeight: "calc(100vh - 180px)",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+            borderRadius: "4px",
+            "&:hover": {
+              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
+            },
+          },
         }}
       >
         {localMessages.length === 0 ? (
@@ -417,9 +497,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           </Box>
         ) : (
           localMessages.map((message, index) => {
-            const isCurrentUser = String(message.senderId) === String(currentUserId);
-            const showAvatar = !isCurrentUser && (index === 0 || localMessages[index - 1].senderId !== message.senderId);
-            const isLastInGroup = index === localMessages.length - 1 || localMessages[index + 1].senderId !== message.senderId;
+            const isCurrentUser = String(message.sender.id) === String(currentUserId)
+            const showAvatar = !isCurrentUser && (index === 0 || localMessages[index - 1].sender.id !== message.sender.id)
+            const isLastInGroup =
+              index === localMessages.length - 1 || localMessages[index + 1].sender.id !== message.sender.id
+            const isFirstInGroup = index === 0 || localMessages[index - 1].sender.id !== message.sender.id
 
             return (
               <Fade in={true} key={message.id} timeout={300}>
@@ -428,161 +510,143 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     alignItems: isCurrentUser ? "flex-end" : "flex-start",
                     alignSelf: isCurrentUser ? "flex-end" : "flex-start",
                     maxWidth: "70%",
-                    margin: "4px 0",
-                    padding: "4px 8px",
+                    margin: isFirstInGroup ? "8px 0 2px 0" : "2px 0",
+                    padding: "2px 8px",
                   }}
                 >
-                  <Box sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    mb: 0.5,
-                    alignSelf: isCurrentUser ? "flex-end" : "flex-start"
-                  }}>
-                    <Tooltip title={message.senderName || "User"}>
-                      <Avatar
-                        src={message.senderAvatar ? `http://localhost:8080${message.senderAvatar}` : undefined}
-                        sx={{
-                          width: 24,
-                          height: 24,
-                          bgcolor: !message.senderAvatar ? "grey.300" : "transparent",
-                        }}
-                      >
-                        {(!message.senderAvatar && message.senderName) ? message.senderName.charAt(0) : "U"}
-                      </Avatar>
-                    </Tooltip>
-                    <Typography variant="caption" color="text.secondary">
-                      {message.senderName || "User"}
-                    </Typography>
-                  </Box>
+                  {isFirstInGroup && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 0.5,
+                        alignSelf: isCurrentUser ? "flex-end" : "flex-start",
+                      }}
+                    >
+                      <Tooltip title={message.sender.lastName + " " + message.sender.firstName || "User"}>
+                        <Avatar
+                          src={message.sender.avatar ? message.sender.avatar : undefined}
+                          sx={{
+                            width: 24,
+                            height: 24,
+                            bgcolor: !message.sender.avatar ? "grey.300" : "transparent",
+                          }}
+                        >
+                          {!message.sender.avatar && message.sender.firstName ? message.sender.firstName.charAt(0) : "U"}
+                        </Avatar>
+                      </Tooltip>
+                      <Typography variant="caption" color="text.secondary">
+                        {message.sender.lastName + " " + message.sender.firstName || "User"}
+                      </Typography>
+                    </Box>
+                  )}
                   <Paper
+                    elevation={0}
                     sx={{
                       p: 1.5,
                       borderRadius: 2,
-                      background: isCurrentUser ? theme.palette.primary.main : theme.palette.grey[100],
+                      background: isCurrentUser
+                        ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.8)}, ${theme.palette.primary.main})`
+                        : theme.palette.grey[100],
                       color: isCurrentUser ? theme.palette.primary.contrastText : theme.palette.text.primary,
-                      maxWidth: '100%',
+                      maxWidth: "100%",
+                      boxShadow: isCurrentUser
+                        ? `0 2px 8px ${alpha(theme.palette.primary.main, 0.2)}`
+                        : `0 2px 8px ${alpha(theme.palette.grey[300], 0.2)}`,
                     }}
                   >
                     {message.content && (
-                      <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                      <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
                         {message.content}
                       </Typography>
                     )}
                     {message.fileUrl && (
-                      <Box sx={{ mt: 1 }}>
-                        {message.fileType === 'image' ? (
+                      <Box sx={{ mt: message.content ? 1 : 0 }}>
+                        {message.fileType === "image" ? (
                           <Box
                             component="img"
                             src={message.fileUrl}
-                            alt={message.fileName || 'Uploaded image'}
+                            alt={message.fileName || "Uploaded image"}
                             sx={{
-                              maxWidth: '200px',
-                              maxHeight: '200px',
-                              borderRadius: '8px',
-                              objectFit: 'contain',
-                              cursor: 'pointer',
-                              '&:hover': {
-                                opacity: 0.9
-                              }
+                              maxWidth: "200px",
+                              maxHeight: "200px",
+                              borderRadius: "8px",
+                              objectFit: "contain",
+                              cursor: "pointer",
+                              transition: "transform 0.2s ease",
+                              "&:hover": {
+                                transform: "scale(1.02)",
+                                opacity: 0.95,
+                              },
                             }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              window.open(message.fileUrl, '_blank');
-                            }}
+                            onClick={() => openImagePreview(message.fileUrl || "")}
                             onError={(e) => {
-                              console.error('Error loading image:', e);
-                              const target = e.target as HTMLImageElement;
-                              target.src = '/placeholder-image.png';
+                              console.error("Error loading image:", e)
+                              const target = e.target as HTMLImageElement
+                              target.src = "/placeholder-image.png"
                             }}
                           />
                         ) : (
                           <Box
                             sx={{
-                              display: 'flex',
-                              alignItems: 'center',
+                              display: "flex",
+                              alignItems: "center",
                               gap: 1,
                               p: 1,
-                              bgcolor: 'rgba(0,0,0,0.05)',
-                              borderRadius: '8px'
+                              bgcolor: isCurrentUser
+                                ? alpha(theme.palette.common.white, 0.15)
+                                : alpha(theme.palette.common.black, 0.05),
+                              borderRadius: "8px",
+                              transition: "background-color 0.2s ease",
+                              "&:hover": {
+                                bgcolor: isCurrentUser
+                                  ? alpha(theme.palette.common.white, 0.25)
+                                  : alpha(theme.palette.common.black, 0.08),
+                              },
                             }}
                           >
-                            <AttachFile />
-                            <Typography variant="body2">
-                              {message.fileName ? truncateFileName(message.fileName) : 'File đính kèm'}
+                            <AttachFile fontSize="small" />
+                            <Typography
+                              variant="body2"
+                              sx={{ flexGrow: 1, overflow: "hidden", textOverflow: "ellipsis" }}
+                            >
+                              {message.fileName ? truncateFileName(message.fileName) : "File đính kèm"}
                             </Typography>
-                            <a
-                              href={getFileUrl(message.fileUrl)}
-                              download={message.fileName}
-                              onClick={async (e) => {
-                                e.preventDefault();
-                                if (!message.fileUrl) return;
-                                const fileUrl = getFileUrl(message.fileUrl);
-                                if (fileUrl) {
-                                  try {
-                                    const token = localStorage.getItem('accessToken');
-                                    if (!token) {
-                                      console.error('No access token found');
-                                      return;
-                                    }
-
-                                    // Gọi API endpoint mới để tải file
-                                    const response = await fetch(`${API_URL}/api/chat/download?fileUrl=${encodeURIComponent(fileUrl)}`, {
-                                      headers: {
-                                        'Authorization': `Bearer ${token}`
-                                      }
-                                    });
-
-                                    if (!response.ok) {
-                                      throw new Error('Download failed');
-                                    }
-
-                                    // Lấy blob từ response
-                                    const blob = await response.blob();
-
-                                    // Tạo URL tạm thời cho blob
-                                    const url = window.URL.createObjectURL(blob);
-
-                                    // Tạo thẻ a để tải file
-                                    const link = document.createElement('a');
-                                    link.href = url;
-                                    link.download = message.fileName || 'file';
-                                    document.body.appendChild(link);
-                                    link.click();
-
-                                    // Cleanup
-                                    document.body.removeChild(link);
-                                    window.URL.revokeObjectURL(url);
-                                  } catch (error) {
-                                    console.error('Error downloading file:', error);
-                                  }
-                                }
-                              }}
-                              style={{
-                                color: isCurrentUser ? 'white' : theme.palette.primary.main,
-                                textDecoration: 'none'
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDownloadFile(message.fileUrl || "", message.fileName)}
+                              sx={{
+                                color: isCurrentUser ? theme.palette.primary.contrastText : theme.palette.primary.main,
+                                "&:hover": {
+                                  bgcolor: isCurrentUser
+                                    ? alpha(theme.palette.common.white, 0.15)
+                                    : alpha(theme.palette.primary.main, 0.1),
+                                },
                               }}
                             >
-                              Tải xuống
-                            </a>
+                              <Download fontSize="small" />
+                            </IconButton>
                           </Box>
                         )}
                       </Box>
                     )}
                   </Paper>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      mt: 0.5,
-                      alignSelf: isCurrentUser ? "flex-end" : "flex-start"
-                    }}
-                  >
-                    {formatTime(message.timestamp)}
-                  </Typography>
+                  {isLastInGroup && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        mt: 0.5,
+                        alignSelf: isCurrentUser ? "flex-end" : "flex-start",
+                      }}
+                    >
+                      {message.formattedTime || formatTime(message.timestamp)}
+                    </Typography>
+                  )}
                 </MessageItem>
               </Fade>
-            );
+            )
           })
         )}
         <div ref={messagesEndRef} />
@@ -596,26 +660,17 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           borderTop: "1px solid",
           borderColor: "divider",
           bgcolor: "background.paper",
-          position: 'relative'
+          position: "relative",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Tooltip title="Chọn emoji">
-            <IconButton
-              color="primary"
-              size="small"
-              onClick={toggleEmojiPicker}
-            >
+            <IconButton color="primary" size="small" onClick={toggleEmojiPicker}>
               <EmojiEmotions />
             </IconButton>
           </Tooltip>
 
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            onChange={handleFileSelect}
-          />
+          <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileSelect} />
 
           <Tooltip title="Đính kèm file">
             <IconButton
@@ -632,7 +687,12 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             <IconButton
               color="primary"
               size="small"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                if (fileInputRef.current) {
+                  fileInputRef.current.accept = "image/*"
+                  fileInputRef.current.click()
+                }
+              }}
               disabled={isUploadingFile}
             >
               <Image />
@@ -646,6 +706,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             inputRef={messageInputRef}
             onKeyPress={handleKeyPress}
             disabled={isUploadingFile}
+            multiline
+            maxRows={3}
             InputProps={{
               sx: {
                 borderRadius: 4,
@@ -657,9 +719,19 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           <Tooltip title="Gửi tin nhắn">
             <IconButton
               color="primary"
-              size="small"
               onClick={handleSendMessage}
               disabled={isUploadingFile}
+              sx={{
+                bgcolor: theme.palette.primary.main,
+                color: theme.palette.primary.contrastText,
+                "&:hover": {
+                  bgcolor: theme.palette.primary.dark,
+                },
+                "&.Mui-disabled": {
+                  bgcolor: alpha(theme.palette.primary.main, 0.5),
+                  color: theme.palette.primary.contrastText,
+                },
+              }}
             >
               <Send />
             </IconButton>
@@ -667,7 +739,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         </Box>
 
         {isUploadingFile && (
-          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
             <CircularProgress size={20} />
             <Typography variant="caption" color="text.secondary">
               Đang tải lên file...
@@ -679,13 +751,13 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         {showEmojiPicker && (
           <Box
             sx={{
-              position: 'absolute',
-              bottom: '100%',
+              position: "absolute",
+              bottom: "100%",
               left: 0,
               zIndex: 1000,
               mb: 1,
               boxShadow: 3,
-              borderRadius: 1
+              borderRadius: 1,
             }}
           >
             <Picker
@@ -700,6 +772,39 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           </Box>
         )}
       </Paper>
+
+      {/* Image Preview Modal */}
+      {imagePreview.open && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: "rgba(0, 0, 0, 0.8)",
+            zIndex: 1300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            p: 2,
+          }}
+          onClick={closeImagePreview}
+        >
+          <Box
+            component="img"
+            src={imagePreview.url}
+            alt="Preview"
+            sx={{
+              maxWidth: "90%",
+              maxHeight: "90%",
+              objectFit: "contain",
+              borderRadius: 1,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </Box>
+      )}
     </Box>
   )
 }

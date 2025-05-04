@@ -1,9 +1,10 @@
 package org.example.backend.service;
 
 import lombok.extern.slf4j.Slf4j;
+
+import org.example.backend.dto.ChatUserDTO;
 import org.example.backend.entity.ChatMessage;
 import org.example.backend.entity.User;
-import org.example.backend.model.ChatUser;
 import org.example.backend.repository.ChatMessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -85,7 +86,7 @@ public class ChatService {
                     .fileUrl(message.getFileUrl())
                     .fileType(message.getFileType())
                     .fileName(message.getFileName())
-                    .read(false)
+                    .isRead(false)
                     .build();
 
             // Handle file attachment information
@@ -184,14 +185,9 @@ public class ChatService {
      * @return List of messages between the two users
      */
     public List<ChatMessage> getMessages(String senderId, String receiverId, int limit) {
-        log.debug("Getting messages between {} and {}", senderId, receiverId);
-
         List<ChatMessage> messages = chatMessageRepository
-                .findBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByTimestampDesc(
-                        senderId, receiverId, senderId, receiverId,
-                        PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "timestamp")));
-
-        log.debug("Found {} messages", messages.size());
+                .findMessagesBetweenUsers(senderId, receiverId,
+                PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "timestamp")));
 
         // Sort messages by timestamp ascending for display
         messages.sort(Comparator.comparing(ChatMessage::getTimestamp));
@@ -204,7 +200,7 @@ public class ChatService {
      * @param email The user email
      * @return List of chat users
      */
-    public List<ChatUser> getChatUsers(String email) {
+    public List<ChatUserDTO> getChatUsers(String email) {
         try {
             log.debug("Getting chat users for email: {}", email);
 
@@ -243,8 +239,8 @@ public class ChatService {
      * @param messages List of messages
      * @return List of chat users
      */
-    private List<ChatUser> buildChatUserList(String userId, List<ChatMessage> messages) {
-        Map<String, ChatUser> userMap = new HashMap<>();
+    private List<ChatUserDTO> buildChatUserList(String userId, List<ChatMessage> messages) {
+        Map<String, ChatUserDTO> userMap = new HashMap<>();
 
         for (ChatMessage message : messages) {
             try {
@@ -258,7 +254,7 @@ public class ChatService {
                 String otherUserId = otherUser.getId().toString();
 
                 if (!userMap.containsKey(otherUserId)) {
-                    ChatUser chatUser = createChatUser(userId, otherUser, message);
+                    ChatUserDTO chatUser = createChatUser(userId, otherUser, message);
                     userMap.put(otherUserId, chatUser);
                 }
             } catch (Exception e) {
@@ -267,7 +263,7 @@ public class ChatService {
             }
         }
 
-        List<ChatUser> result = new ArrayList<>(userMap.values());
+        List<ChatUserDTO> result = new ArrayList<>(userMap.values());
         log.debug("Returning {} chat users", result.size());
         return result;
     }
@@ -280,18 +276,19 @@ public class ChatService {
      * @param message The message
      * @return ChatUser object
      */
-    private ChatUser createChatUser(String currentUserId, User otherUser, ChatMessage message) {
+    private ChatUserDTO createChatUser(String currentUserId, User otherUser, ChatMessage message) {
         String otherUserId = otherUser.getId().toString();
         
-        ChatUser chatUser = new ChatUser();
+        ChatUserDTO chatUser = new ChatUserDTO();
         chatUser.setId(otherUserId);
+        chatUser.setFirstName(otherUser.getFirstName());
+        chatUser.setLastName(otherUser.getLastName());
         chatUser.setLastMessage(message.getContent());
         chatUser.setLastMessageTime(message.getTimestamp().toString());
-        chatUser.setName(otherUser.getFirstName() + " " + otherUser.getLastName());
         chatUser.setAvatar(otherUser.getAvatar());
 
         int unreadCount = chatMessageRepository
-                .countByReceiverIdAndSenderIdAndReadFalse(currentUserId, otherUserId);
+                .countByReceiverIdAndSenderIdAndIsReadFalse(currentUserId, otherUserId);
         chatUser.setUnreadCount(unreadCount);
 
         return chatUser;
@@ -304,7 +301,7 @@ public class ChatService {
      * @return Count of unread messages
      */
     public int getUnreadCount(String userId) {
-        return chatMessageRepository.countByReceiverIdAndReadFalse(userId);
+        return chatMessageRepository.countByReceiverIdAndIsReadFalse(userId);
     }
 
     /**
@@ -314,7 +311,7 @@ public class ChatService {
      */
     public void markAsRead(Long messageId) {
         chatMessageRepository.findById(messageId).ifPresent(message -> {
-            message.setRead(true);
+            message.setIsRead(true);
             chatMessageRepository.save(message);
             log.debug("Marked message {} as read", messageId);
         });
@@ -328,10 +325,10 @@ public class ChatService {
      */
     public void markAllAsRead(String userId, String senderId) {
         List<ChatMessage> unreadMessages = chatMessageRepository
-                .findByReceiverIdAndSenderIdAndReadFalse(userId, senderId);
+                .findByReceiverIdAndSenderIdAndIsReadFalse(userId, senderId);
 
         if (!unreadMessages.isEmpty()) {
-            unreadMessages.forEach(message -> message.setRead(true));
+            unreadMessages.forEach(message -> message.setIsRead(true));
             chatMessageRepository.saveAll(unreadMessages);
             log.debug("Marked {} messages as read from {} to {}", unreadMessages.size(), senderId, userId);
         }

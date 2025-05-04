@@ -23,7 +23,7 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material"
-import { Chat, Search, Settings, Logout, Person, Menu as MenuIcon, Home, Explore, Bookmark } from "@mui/icons-material"
+import { Chat, Search, Settings, Logout, Person, Menu as MenuIcon, Home, Group, Bookmark } from "@mui/icons-material"
 import { logout } from "../../../services/authService"
 import { useCurrentUser } from "../../../contexts/currentUserContext"
 import NotificationDropdown from "../../../components/Notifications/NotificationDropdown"
@@ -45,7 +45,6 @@ const Navbar: React.FC<NavbarProps> = () => {
 
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
   const open = Boolean(anchorEl)
   const navigate = useNavigate()
 
@@ -80,13 +79,6 @@ const Navbar: React.FC<NavbarProps> = () => {
 
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen)
-    if (!isChatOpen && currentUser?.id) {
-      setSelectedReceiverId(null)
-    }
-  }
-
-  const handleSelectUser = (userId: string) => {
-    setSelectedReceiverId(userId)
   }
 
   return (
@@ -173,7 +165,7 @@ const Navbar: React.FC<NavbarProps> = () => {
             <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
               {isMobile && (
                 <IconButton
-                  color="inherit"
+                  color="primary"
                   onClick={toggleMobileSearch}
                   sx={{ outline: "none", "&:focus": { outline: "none" } }}
                 >
@@ -184,13 +176,16 @@ const Navbar: React.FC<NavbarProps> = () => {
               {/* Notification Dropdown */}
               <NotificationDropdown />
 
-              <IconButton
-                color="inherit"
-                onClick={toggleChat}
-                sx={{ outline: "none", "&:focus": { outline: "none" } }}
-              >
-                <Chat />
-              </IconButton>
+              {/* Chat Icon */}
+              <Link to="/messages">
+                <IconButton
+                  color="inherit"
+                  onClick={toggleChat}
+                  sx={{ outline: "none", "&:focus": { outline: "none" } }}
+                >
+                  <Chat />
+                </IconButton>
+              </Link>
               <IconButton
                 onClick={handleProfileClick}
                 aria-controls={open ? "profile-menu" : undefined}
@@ -329,11 +324,11 @@ const Navbar: React.FC<NavbarProps> = () => {
             </ListItemIcon>
             <ListItemText primary="Trang cá nhân" />
           </ListItem>
-          <ListItem component={Link} to="/explore" onClick={() => setMobileMenuOpen(false)}>
+          <ListItem component={Link} to="/friends" onClick={() => setMobileMenuOpen(false)}>
             <ListItemIcon>
-              <Explore />
+              <Group />
             </ListItemIcon>
-            <ListItemText primary="Khám phá" />
+            <ListItemText primary="Bạn bè" />
           </ListItem>
           <ListItem component={Link} to="/notifications" onClick={() => setMobileMenuOpen(false)}>
             <ListItemIcon>

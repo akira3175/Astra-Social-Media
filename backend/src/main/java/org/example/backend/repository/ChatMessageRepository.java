@@ -28,15 +28,14 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
          * @return List of messages between the two users
          */
         @Query("SELECT m FROM ChatMessage m WHERE " +
-                "(m.sender.id = :sender1 AND m.receiver.id = :receiver1) OR " +
-                "(m.sender.id = :sender2 AND m.receiver.id = :receiver2) " +
+                "(m.sender.id = :user1 AND m.receiver.id = :user2) OR " +
+                "(m.sender.id = :user2 AND m.receiver.id = :user1) " +
                 "ORDER BY m.timestamp DESC")
-        List<ChatMessage> findBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByTimestampDesc(
-                @Param("sender1") String sender1,
-                @Param("receiver1") String receiver1,
-                @Param("sender2") String sender2,
-                @Param("receiver2") String receiver2,
+        List<ChatMessage> findMessagesBetweenUsers(
+                @Param("user1") String user1,
+                @Param("user2") String user2,
                 Pageable pageable);
+ 
 
         /**
          * Finds all messages where the user is either sender or receiver.
@@ -63,8 +62,8 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
          * @param receiverId The receiver's ID
          * @return Count of unread messages
          */
-        @Query("SELECT COUNT(c) FROM ChatMessage c WHERE c.receiver.id = :receiverId AND c.read = false")
-        int countByReceiverIdAndReadFalse(@Param("receiverId") String receiverId);
+        @Query("SELECT COUNT(c) FROM ChatMessage c WHERE c.receiver.id = :receiverId AND c.isRead = false")
+        int countByReceiverIdAndIsReadFalse(@Param("receiverId") String receiverId);
 
         /**
          * Counts unread messages from a specific sender to a specific receiver.
@@ -73,8 +72,8 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
          * @param senderId The sender's ID
          * @return Count of unread messages
          */
-        @Query("SELECT COUNT(c) FROM ChatMessage c WHERE c.receiver.id = :receiverId AND c.sender.id = :senderId AND c.read = false")
-        int countByReceiverIdAndSenderIdAndReadFalse(@Param("receiverId") String receiverId, @Param("senderId") String senderId);
+        @Query("SELECT COUNT(c) FROM ChatMessage c WHERE c.receiver.id = :receiverId AND c.sender.id = :senderId AND c.isRead = false")
+        int countByReceiverIdAndSenderIdAndIsReadFalse(@Param("receiverId") String receiverId, @Param("senderId") String senderId);
 
         /**
          * Finds all unread messages from a specific sender to a specific receiver.
@@ -83,6 +82,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
          * @param senderId The sender's ID
          * @return List of unread messages
          */
-        @Query("SELECT c FROM ChatMessage c WHERE c.receiver.id = :receiverId AND c.sender.id = :senderId AND c.read = false")
-        List<ChatMessage> findByReceiverIdAndSenderIdAndReadFalse(@Param("receiverId") String receiverId, @Param("senderId") String senderId);
+        @Query("SELECT c FROM ChatMessage c WHERE c.receiver.id = :receiverId AND c.sender.id = :senderId AND c.isRead = false")
+        List<ChatMessage> findByReceiverIdAndSenderIdAndIsReadFalse(@Param("receiverId") String receiverId, @Param("senderId") String senderId);
 }

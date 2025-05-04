@@ -2,6 +2,7 @@ package org.example.backend.util;
 
 import org.example.backend.elasticsearch.document.UserDocument;
 import org.example.backend.entity.User;
+import org.example.backend.dto.UserDTO;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -33,6 +34,15 @@ public class ImageUtils {
      * @return UserDocument with complete image URLs
      */
     public static UserDocument addDomainToImage(UserDocument user, HttpServletRequest request) {
+        String baseUrl = getBaseUrl(request);
+        user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ?
+                baseUrl + user.getAvatar() : null);
+        user.setBackground((user.getBackground() != null && !user.getBackground().isEmpty()) ?
+                baseUrl + user.getBackground() : null);
+        return user;
+    }
+
+    public static UserDTO addDomainToImage(UserDTO user, HttpServletRequest request) {
         String baseUrl = getBaseUrl(request);
         user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ?
                 baseUrl + user.getAvatar() : null);

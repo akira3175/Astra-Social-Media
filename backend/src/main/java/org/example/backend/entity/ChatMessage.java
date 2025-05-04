@@ -21,11 +21,11 @@ public class ChatMessage {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id", referencedColumnName = "id", nullable = false)
     private User sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receiver_id", nullable = false)
+    @JoinColumn(name = "receiver_id", referencedColumnName = "id", nullable = false)
     private User receiver;
 
     @Column(columnDefinition = "TEXT", nullable = false)
@@ -41,7 +41,7 @@ public class ChatMessage {
 
     private String fileName;
 
-    private Boolean read = false;
+    private Boolean isRead = false;
 
     private Boolean hasAttachment = false;
 
@@ -52,7 +52,7 @@ public class ChatMessage {
         if (timestamp == null) {
             timestamp = ZonedDateTime.now();
         }
-        if (read == null) read = false;
+        if (isRead == null) isRead = false;
         if (hasAttachment == null) hasAttachment = false;
     }
 }

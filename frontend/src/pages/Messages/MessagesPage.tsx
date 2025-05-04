@@ -60,7 +60,7 @@ const MessagesPage: React.FC = () => {
     if (!selectedConversation || !currentUser) return
 
     try {
-      const response = await MessageService.getMessages(currentUser.id.toString(), selectedConversation.user.id.toString())
+      const response = await MessageService.getMessages(selectedConversation.user.id)
       setMessages(response)
     } catch (error) {
       console.error('Error loading messages:', error)
@@ -202,8 +202,8 @@ const MessagesPage: React.FC = () => {
       id: Date.now(),
       text,
       timestamp: new Date().toISOString(),
-      senderId: currentUser?.id || 0,
-      receiverId: selectedConversation.user.id,
+      sender: currentUser,
+      receiver: selectedConversation.user,
       isRead: false,
       fileUrl: processedFileUrl,
       hasAttachment: !!fileUrl,
@@ -258,8 +258,8 @@ const MessagesPage: React.FC = () => {
             id: data.id,
             text: data.content || data.text || '',
             timestamp: data.timestamp,
-            senderId: Number(data.senderId),
-            receiverId: Number(data.receiverId),
+            sender: data.sender,
+            receiver: data.receiver,
             isRead: data.isRead || false,
             fileUrl: processedFileUrl,
             fileType: data.type || data.fileType,
@@ -308,9 +308,10 @@ const MessagesPage: React.FC = () => {
   const connectWebSocket = () => {
     if (isConnecting || !currentUser) return
 
+    const wsUrl = import.meta.env.VITE_WEBSOCKET_URL
     setIsConnecting(true)
     const token = localStorage.getItem('accessToken')
-    const socket = new SockJS('http://localhost:8080/ws')
+    const socket = new SockJS(wsUrl)
     const stompClient = new Client({
       webSocketFactory: () => socket,
       connectHeaders: {
@@ -347,10 +348,10 @@ const MessagesPage: React.FC = () => {
             id: data.id,
             text: data.content || data.text || '',
             timestamp: data.timestamp,
-            senderId: Number(data.senderId),
+            sender: data.sender,
             isRead: false,
             conversationId: data.conversationId,
-            receiverId: data.receiverId,
+            receiver: data.receiver,
             ...(data.fileUrl && {
               fileUrl: data.fileUrl,
               fileType: data.fileType,
@@ -539,7 +540,7 @@ const MessagesPage: React.FC = () => {
                 flexDirection: "column",
               }}
             >
-              {isMobile && <MobileChatHeader conversation={selectedConversation} onBack={handleBackToList} />}
+              {/* {isMobile && <MobileChatHeader conversation={selectedConversation} onBack={handleBackToList} />} */}
               {selectedConversation ? (
                 <ChatArea
                   conversation={selectedConversation}
