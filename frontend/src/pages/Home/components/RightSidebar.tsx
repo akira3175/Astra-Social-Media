@@ -6,7 +6,6 @@ import {
   List,
   ListItem,
   ListItemAvatar,
-  ListItemButton,
   ListItemText,
   Paper,
   Typography,
@@ -40,19 +39,18 @@ interface RightSidebarProps {
 }
 
 // Thêm nhiều xu hướng để test scroll
-const TRENDING_TOPICS = [
-  // "#TinMới",
-  // "#CôngNghệ",
-  // "#DuLịch",
-  // "#ẨmThực",
-  // "#ThểThao",
-  // "#GiảiTrí",
-  // "#KhoaHọc",
-  // "#SứcKhỏe",
-  // "#GiáoDục",
-  // "#KinhTế",
-  ""
-];
+// const TRENDING_TOPICS = [
+//   "#TinMới",
+//   "#CôngNghệ",
+//   "#DuLịch",
+//   "#ẨmThực",
+//   "#ThểThao",
+//   "#GiảiTrí",
+//   "#KhoaHọc",
+//   "#SứcKhỏe",
+//   "#GiáoDục",
+//   "#KinhTế",
+// ];
 
 const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
   const [friends, setFriends] = useState<Friend[]>([]);
