@@ -305,7 +305,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           return
         }
 
-        const response = await fetch(`${API_URL}/chat/download?fileUrl=${encodeURIComponent(fileUrl)}`, {
+        const response = await fetch(`${API_URL}chat/download?fileUrl=${encodeURIComponent(fileUrl)}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
