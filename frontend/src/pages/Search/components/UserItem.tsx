@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { Box, Avatar, Typography, Button, Card, CardContent } from "@mui/material"
 import { Link } from "react-router-dom"
@@ -19,7 +17,7 @@ const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend, isFriend = false
           <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
             <Avatar
               src={user.avatar}
-              alt={user.name}
+              alt={user.lastName + " " + user.firstName}
               sx={{
                 width: 60,
                 height: 60,
@@ -44,7 +42,7 @@ const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend, isFriend = false
                     },
                   }}
                 >
-                  {user.name}
+                  {user.lastName + " " + user.firstName}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {user.email}

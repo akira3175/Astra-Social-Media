@@ -5,17 +5,22 @@ import org.example.backend.entity.Post;
 import org.example.backend.entity.User;
 import org.example.backend.repository.LikeRepository;
 import org.example.backend.repository.CommentRepository;
+import org.example.backend.repository.UserRepository;
+import org.example.backend.repository.PostRepository;
 import java.util.Collections;
 import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.elasticsearch.document.PostDocument;
+import org.example.backend.exception.AppException;
+import org.example.backend.exception.ErrorCode;
+
 
 @Component
 @RequiredArgsConstructor
 public class PostMapper {
     private final LikeRepository likeRepository;
     private final CommentRepository commentRepository;
-
+    private final PostRepository postRepository;
     public PostDTO toDto(Post post, User currentUser) {
         if (post == null) {
             return null;
@@ -57,6 +62,42 @@ public class PostMapper {
                 .commentsCount(commentsCount)
                 .originalPost(originalPostDto)
                 .isDeleted(post.isDeleted())
+                .build();
+    }
+
+    public PostDTO toDTO(PostDocument postDocument, User user) {
+        if (postDocument == null) {
+            return null;
+        }
+
+        boolean likedByCurrentUser = false;
+        if (user != null) {
+            Post post = postRepository.findById(Long.parseLong(postDocument.getId()))
+                    .orElse(null);
+            likedByCurrentUser = likeRepository.findByUserAndPost(user, post).isPresent();
+        }
+
+        long likesCount = likeRepository.countByPostId(Long.parseLong(postDocument.getId()));
+        long commentsCount = commentRepository.countByPostId(Long.parseLong(postDocument.getId()));
+
+        PostDTO originalPostDto = null;
+        if (postDocument.getOriginalPostId() != null) {
+            Post originalPost = postRepository.findById(Long.parseLong(postDocument.getOriginalPostId()))
+                    .orElse(null);
+            originalPostDto = toDto(originalPost, user);
+        }
+
+        return PostDTO.builder()
+                .id(Long.parseLong(postDocument.getId()))
+                .content(postDocument.getContent())
+                .user(user)
+                .createdAt(postDocument.getCreatedAt())
+                .updatedAt(postDocument.getUpdatedAt() != null ? postDocument.getUpdatedAt() : null)
+                .originalPost(originalPostDto)
+                .isDeleted(postDocument.isDeleted())
+                .liked(likedByCurrentUser)
+                .likesCount(likesCount)
+                .commentsCount(commentsCount)
                 .build();
     }
 

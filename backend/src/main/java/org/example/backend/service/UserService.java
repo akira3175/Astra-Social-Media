@@ -124,6 +124,11 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
     @Transactional
     public User getUserInfo(String email) {
         return userRepository.findByEmail(email)

@@ -187,7 +187,7 @@ public class UserController {
         String email = jwtUtil.extractEmail(token);
         User userCurrent = userService.getUserInfo(email);
 
-        Page<UserDocument> users = null;// userService.searchUsers(keyword, isStaff, isActive, page, size, userCurrent);
+        Page<UserDocument> users = userService.searchUsers(keyword, isStaff, isActive, page, size, userCurrent);
         return users.map(user -> addDomainToImage(user, request));
     }
 

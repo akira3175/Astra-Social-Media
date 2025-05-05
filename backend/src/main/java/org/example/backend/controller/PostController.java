@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.example.backend.dto.CreatePostRequest;
 import org.example.backend.dto.PostDTO;
 import org.example.backend.dto.UpdatePostRequest;
+import org.example.backend.mapper.PostMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +33,12 @@ public class PostController {
 
     @Autowired
     private PostService postService;
-
     @Autowired
     private JwtUtil jwtUtil;
-
     @Autowired
     private UserService userService;
+    @Autowired
+    private PostMapper postMapper;
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PostDTO>>> getAllPosts(
@@ -222,7 +223,7 @@ public class PostController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<Page<PostDocument>> search(
+    public ResponseEntity<Page<PostDTO>> search(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -230,8 +231,13 @@ public class PostController {
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
         User user = userService.getUserInfo(email);
 
-        Page<PostDocument> result = null;// postService.searchPosts(keyword, user, page, size);
-        return ResponseEntity.ok(result);
+        Page<PostDocument> postDocuments = postService.searchPosts(keyword, user, page, size);
+        Page<PostDTO> postDtos = postDocuments.map(postDocument -> {
+            User userPost = userService.getUserById(Long.parseLong(postDocument.getUserId()));
+            return postMapper.toDTO(postDocument, userPost);
+        });
+
+        return ResponseEntity.ok(postDtos);
     }
 
 }

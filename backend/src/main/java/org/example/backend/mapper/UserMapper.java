@@ -3,10 +3,12 @@ package org.example.backend.mapper;
 import org.example.backend.dto.UserDTO;
 import org.example.backend.entity.User;
 import org.example.backend.elasticsearch.document.UserDocument;
+import org.springframework.stereotype.Component;
+
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 
-
+@Component
 public class UserMapper {
     public static UserDTO toDTO(User user) {
         if (user == null) return null;
@@ -21,6 +23,21 @@ public class UserMapper {
                 .bio(user.getBio())
                 .build();
     }
+
+    public User toEntity(UserDTO userDTO) {
+        if (userDTO == null) return null;
+
+        return User.builder()
+                .id(userDTO.getId())
+                .email(userDTO.getEmail())
+                .firstName(userDTO.getFirstName())
+                .lastName(userDTO.getLastName())
+                .avatar(userDTO.getAvatar())
+                .background(userDTO.getBackground())
+                .bio(userDTO.getBio())
+                .build();
+    }
+    
 
     public UserDocument toDocument(User user) {
         UserDocument userDocument = new UserDocument();
