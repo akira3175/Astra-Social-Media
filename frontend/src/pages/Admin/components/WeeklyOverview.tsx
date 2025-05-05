@@ -8,9 +8,8 @@ import {
   Divider,
   LinearProgress,
 } from "@mui/material";
-import { Comment } from "../../../types/comment";
+import { FlattenedComment } from "../../../services/adminService";
 import { Post } from "../../../types/post";
-import { Report } from "../../../types/management";
 import { User } from "../../../types/user";
 
 const WeeklyOverview = ({
@@ -22,7 +21,7 @@ const WeeklyOverview = ({
   users: User[];
   isLoading: boolean;
   posts: Post[];
-  comments: Comment[];
+  comments: FlattenedComment[];
 }) => {
   // Helper function to check if a date is within the past week
   const isWithinPastWeek = (date: string | Date): boolean => {

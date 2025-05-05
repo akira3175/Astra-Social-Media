@@ -12,10 +12,7 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import {
-  Report,
-} from "../../../types/management";
-import { Comment } from "../../../types/comment";
+import { FlattenedComment } from "../../../services/adminService";
 import { Post } from "../../../types/post";
 import { User } from "../../../types/user";
 
@@ -30,7 +27,7 @@ export const TopGeneralOverview = ({
   users: User[];
   posts: Post[];
   isLoading: boolean;
-  comments: Comment[];
+  comments: FlattenedComment[];
   reports: User[];
 }) => {
   const isWithinPastRange = (

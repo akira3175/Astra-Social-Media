@@ -191,12 +191,12 @@ const FriendRequests: React.FC = () => {
                     >
                       Đã gửi lời mời kết bạn vào{" "}
                       {new Date(
-                        request.createdAt[0],
-                        request.createdAt[1] - 1,
-                        request.createdAt[2],
-                        request.createdAt[3],
-                        request.createdAt[4],
-                        request.createdAt[5]
+                        request.createdAt[0] as unknown as number,
+                        request.createdAt[1] as unknown as number - 1,
+                        request.createdAt[2] as unknown as number,
+                        request.createdAt[3] as unknown as number,
+                        request.createdAt[4] as unknown as number,
+                        request.createdAt[5] as unknown as number
                       ).toLocaleDateString()}
                     </Typography>
                     {/* Các nút chấp nhận và từ chối */}

@@ -41,7 +41,8 @@ import {
   Image as ImageIcon,
 } from "@mui/icons-material";
 import AdminLayout from "./components/AdminLayout";
-import { Post, getPosts, lockPost, unlockPost } from "../../services/adminService";
+import { getPosts, lockPost, unlockPost } from "../../services/adminService";
+import { Post } from "../../types/post";
 
 const PostManagementPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -387,7 +388,7 @@ const PostManagementPage: React.FC = () => {
                                 }}
                               />
                               <Typography variant="body2">
-                                {post.likes.length}
+                                {post.likesCount}
                               </Typography>
                             </Box>
                           </Tooltip>
@@ -402,7 +403,7 @@ const PostManagementPage: React.FC = () => {
                                 }}
                               />
                               <Typography variant="body2">
-                                {post.comments.length}
+                                {post.commentsCount}
                               </Typography>
                             </Box>
                           </Tooltip>
@@ -606,7 +607,7 @@ const PostManagementPage: React.FC = () => {
                       <Box>
                         <ThumbUp color="primary" />
                         <Typography variant="h6">
-                          {selectedPost.likes.length}
+                          {selectedPost.likesCount}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Lượt thích
@@ -615,7 +616,7 @@ const PostManagementPage: React.FC = () => {
                       <Box>
                         <Comment color="primary" />
                         <Typography variant="h6">
-                          {selectedPost.comments.length}
+                          {selectedPost.commentsCount}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Bình luận

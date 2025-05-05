@@ -86,7 +86,7 @@ const NewPostOverview = ({
                           }}
                         />
                         <Typography variant="caption">
-                          {post.likeCount}
+                          {post.likesCount}
                         </Typography>
                       </Box>
                     </Box>

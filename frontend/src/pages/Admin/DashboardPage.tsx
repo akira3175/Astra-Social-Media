@@ -14,13 +14,13 @@ import NewPostOverview from "./components/NewPostOverview";
 import WeeklyOverview from "./components/WeeklyOverview";
 import { User } from "../../types/user";
 import { Post } from "../../types/post";
-import { Comment } from "../../types/comment";
+import { FlattenedComment } from "../../services/adminService";
 
 const DashboardPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<FlattenedComment[]>([]);
   const [reports, setReports] = useState<User[]>([]);
 
   useEffect(() => {

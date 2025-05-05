@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import {
@@ -132,40 +134,20 @@ type FileType = "image" | "video" | "document" | "file"
 
 const API_URL = import.meta.env.VITE_API_URL
 
-const getFileUrl = (fileUrl: string) => {
-  if (!fileUrl) return ""
-
-  // Nếu là URL Cloudinary
-  if (fileUrl.includes("cloudinary.com")) {
-    // Nếu là file ảnh, giữ nguyên URL
-    if (fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-      return fileUrl
-    }
-    // Nếu là file khác, chuyển về endpoint download của backend
-    return `${API_URL}/api/chat/download?fileUrl=${encodeURIComponent(fileUrl)}`
-  }
-
-  // Nếu là URL local
-  return fileUrl.startsWith("http") ? fileUrl : `${API_URL}${fileUrl}`
-}
-
 const ChatArea: React.FC<ChatAreaProps> = ({
   conversation,
   messages,
   currentUserId,
   onSendMessage,
   messagesEndRef,
-  ws,
   showEmojiPicker,
   onEmojiClick,
   toggleEmojiPicker,
-  isUploading,
   truncateFileName,
 }) => {
   const theme = useTheme()
   const messageInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [showAttachOptions, setShowAttachOptions] = useState(false)
   const [isUploadingFile, setIsUploadingFile] = useState(false)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
   const [imagePreview, setImagePreview] = useState<{ url: string; open: boolean }>({ url: "", open: false })
@@ -206,7 +188,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         if (!response) {
           throw new Error(`Upload failed with status ${response}`)
         }
-
 
         // Xử lý URL file trước khi trả về
         const fileUrl = response
@@ -278,10 +259,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     },
     [handleSendMessage],
   )
-
-  const toggleAttachOptions = useCallback(() => {
-    setShowAttachOptions(!showAttachOptions)
-  }, [showAttachOptions])
 
   const handleFileSelect = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -494,11 +471,13 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             <Typography variant="body1" color="text.secondary">
               Chưa có tin nhắn nào
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Hãy gửi tin nhắn đầu tiên để bắt đầu cuộc trò chuyện
+            </Typography>
           </Box>
         ) : (
           localMessages.map((message, index) => {
             const isCurrentUser = String(message.sender.id) === String(currentUserId)
-            const showAvatar = !isCurrentUser && (index === 0 || localMessages[index - 1].sender.id !== message.sender.id)
             const isLastInGroup =
               index === localMessages.length - 1 || localMessages[index + 1].sender.id !== message.sender.id
             const isFirstInGroup = index === 0 || localMessages[index - 1].sender.id !== message.sender.id
@@ -533,7 +512,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                             bgcolor: !message.sender.avatar ? "grey.300" : "transparent",
                           }}
                         >
-                          {!message.sender.avatar && message.sender.firstName ? message.sender.firstName.charAt(0) : "U"}
+                          {!message.sender.avatar && message.sender.firstName
+                            ? message.sender.firstName.charAt(0)
+                            : "U"}
                         </Avatar>
                       </Tooltip>
                       <Typography variant="caption" color="text.secondary">

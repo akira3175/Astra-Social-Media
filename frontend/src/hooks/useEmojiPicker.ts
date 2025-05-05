@@ -1,6 +1,4 @@
 import { useState, useCallback } from 'react'
-import data from '@emoji-mart/data'
-import Picker from '@emoji-mart/react'
 
 export const useEmojiPicker = () => {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false)

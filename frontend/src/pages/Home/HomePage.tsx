@@ -1,6 +1,4 @@
-"use client"
-
-import React, { useEffect, useLayoutEffect, useState } from "react"
+import React, { useEffect, useLayoutEffect} from "react"
 import { Box, useMediaQuery, useTheme } from "@mui/material"
 import BasePage from "../Base/BasePage"
 import LeftSidebar from "./components/LeftSidebar"
@@ -9,14 +7,12 @@ import CreatePost from "./components/CreatePost"
 import PostList from "./components/PostList"
 import MobileBottomNav from "./components/MobileBottomNav"
 import { usePostStore } from "../../stores/postStore"
-import { useCurrentUser } from "../../contexts/currentUserContext" // Import useCurrentUser
 import { Outlet } from 'react-router-dom';
 
 const HomePage: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"))
-  const { currentUser } = useCurrentUser()
 
   const { posts, isLoading, fetchPosts, } = usePostStore()
   const [isLayoutReady, setIsLayoutReady] = React.useState<boolean>(false)

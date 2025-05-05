@@ -39,13 +39,26 @@ import {
   Email,
 } from "@mui/icons-material"
 import AdminLayout from "./components/AdminLayout"
-import { User, getUsers, banUser, unbanUser } from "../../services/adminService"
+import { getUsers, banUser, unbanUser } from "../../services/adminService"
+import { User } from "../../types/user"
 
 // Interface for UI representation of user
 interface UserUI extends User {
   status: "active" | "banned";
-  registeredDate: string;
-  lastActive: string;
+  registeredDate: string | undefined;
+  lastActive: string | undefined;
+  name: string;
+  email: string;
+  id: number;
+  avatar: string;
+  firstName: string;
+  lastName: string;
+  bio: string;
+  isSuperUser: boolean;
+  isStaff: boolean;
+  isActive: boolean;
+  dateJoined: string;
+  lastLogin: string;
 }
 
 // Transform backend user data to UI format
@@ -55,6 +68,18 @@ const transformUserToUI = (user: User): UserUI => {
     status: user.isActive ? "active" : "banned",
     registeredDate: user.dateJoined,
     lastActive: user.lastLogin || user.dateJoined,
+    name: `${user.firstName} ${user.lastName}`,
+    email: user.email,
+    id: user.id,
+    avatar: user.avatar,
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
+    bio: user.bio || "",
+    isSuperUser: user.isSuperUser || false,
+    isStaff: user.isStaff || false,
+    isActive: user.isActive || false,
+    dateJoined: user.dateJoined || "",
+    lastLogin: user.lastLogin || "",
   }
 }
 
@@ -293,8 +318,8 @@ const UserManagementPage: React.FC = () => {
                       </Box>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{formatDate(user.registeredDate)}</TableCell>
-                    <TableCell>{formatDate(user.lastActive)}</TableCell>
+                    <TableCell>{user.registeredDate ? formatDate(user.registeredDate) : "Không có dữ liệu"}</TableCell>
+                    <TableCell>{user.lastActive ? formatDate(user.lastActive) : "Không có dữ liệu"}</TableCell>
                     <TableCell>
                       <Chip
                         label={user.status === "active" ? "Đang hoạt động" : "Đã khóa"}
@@ -393,13 +418,13 @@ const UserManagementPage: React.FC = () => {
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <CalendarToday sx={{ mr: 1, color: "text.secondary" }} />
                       <Typography variant="body1">
-                        <strong>Ngày đăng ký:</strong> {formatDate(selectedUser.registeredDate)}
+                        <strong>Ngày đăng ký:</strong> {selectedUser.registeredDate ? formatDate(selectedUser.registeredDate) : "Không có dữ liệu"}
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <CalendarToday sx={{ mr: 1, color: "text.secondary" }} />
                       <Typography variant="body1">
-                        <strong>Lần đăng nhập cuối:</strong> {formatDate(selectedUser.lastActive)}
+                        <strong>Lần đăng nhập cuối:</strong> {selectedUser.lastActive ? formatDate(selectedUser.lastActive) : "Không có dữ liệu"}
                       </Typography>
                     </Box>
                   </Box>
