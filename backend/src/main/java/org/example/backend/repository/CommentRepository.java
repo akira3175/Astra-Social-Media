@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
@@ -21,4 +22,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     @Query("SELECT COUNT(c) FROM Comment c")
     Long countAll();
+    
+    List<Comment> findByPostIdAndParentCommentIsNullAndIsDeletedFalseOrderByCreatedAtAsc(Long postId);
+    Optional<Comment> findByIdAndIsDeletedFalse(Long id);
+    Long countByPostIdAndIsDeletedFalse(Long postId);
+    Long countByIsDeletedTrue();
 }

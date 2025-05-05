@@ -9,7 +9,6 @@ import { getCurrentUser, isAuthenticated } from "./services/authService"
 import NotFound from "./pages/Status/NotFound";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import { CurrentUserProvider } from "./contexts/currentUserContext";
-import AdminPage from "./pages/Admin/AdminPage";
 import SearchPage from "./pages/Search/SearchPage";
 import AdminLoginPage from "./pages/Admin/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
@@ -34,6 +33,7 @@ import ChatBubble from "./components/AIChatBox/ChatBubble";
 import OTPVerificationPage from "./pages/Auth/OTPVerificationPage";
 import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/Auth/ResetPasswordPage";
+import BasePage from "./pages/Base/BasePage";
 
 const theme = createTheme({
   breakpoints: {
@@ -129,7 +129,6 @@ const AppContent: React.FC = () => {
       <CssBaseline />
       <Router>
         <Routes>
-          <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/login" element={<LoginPage />}></Route>
@@ -194,9 +193,9 @@ const AppContent: React.FC = () => {
           <Route
             path="/friends"
             element={
-              // <ProtectedRoute>
+              <ProtectedRoute>
                 <FriendsPage />
-              /* </ProtectedRoute> */
+              </ProtectedRoute>
             }
           />
           <Route
@@ -208,6 +207,11 @@ const AppContent: React.FC = () => {
               }
             />
           {/* Các route khác có thể thêm vào đây */}
+          <Route path="*" element={
+            <BasePage>
+              <NotFound />
+            </BasePage>} 
+          />
         </Routes>
         {isAuthenticated() && <ChatBubble />}
       </Router>

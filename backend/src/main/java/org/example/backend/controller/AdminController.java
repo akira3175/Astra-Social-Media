@@ -1,8 +1,13 @@
 package org.example.backend.controller;
 
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.example.backend.security.JwtUtil;
 import org.example.backend.security.RequireAdmin;
+
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Calendar;
 import java.text.ParseException;
 
 import org.example.backend.entity.User;
@@ -27,6 +31,8 @@ import org.example.backend.repository.PostRepository;
 import org.example.backend.repository.CommentRepository;
 import org.example.backend.repository.UserRepository;
 import org.example.backend.entity.Comment;
+import org.example.backend.entity.Image;
+import org.example.backend.entity.Like;
 import org.example.backend.service.UserService;
 import org.example.backend.service.CommentService;
 import org.example.backend.service.PostService;
@@ -58,7 +64,7 @@ public class AdminController {
 
         Map<String, String> tokens = userService.login(email, password);
         User user = userService.getUserInfo(email);
-        if (!user.getIsSuperUser()) {
+        if (!user.getIsStaff()) {
             return ResponseEntity.status(401).body(ApiResponse.builder()
                 .status(401)
                 .message("You are not Admin")
@@ -163,8 +169,12 @@ public class AdminController {
 
     @RequireAdmin
     @GetMapping("/users/getAllUser")
-    public ResponseEntity<ApiResponse<Object>> getAllUser() {
-        List<User> users = userService.getAllUsers();
+    public ResponseEntity<ApiResponse<Object>> getAllUser(HttpServletRequest request) {
+        List<User> users = userService.getAllUsers().stream()
+            .filter(user -> user.getIsStaff() != true)
+            .map(user -> addDomainToImage(user, request))
+            .collect(Collectors.toList());
+        
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
@@ -173,15 +183,31 @@ public class AdminController {
                 .build());
     }
 
+    private User addDomainToImage(User user, HttpServletRequest request) {
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        
+        if (user.getAvatar() != null && !user.getAvatar().isEmpty() && !user.getAvatar().startsWith("http")) {
+            user.setAvatar(baseUrl + user.getAvatar());
+        }
+        
+        if (user.getBackground() != null && !user.getBackground().isEmpty() && !user.getBackground().startsWith("http")) {
+            user.setBackground(baseUrl + user.getBackground());
+        }
+        
+        return user;
+    }
+
     @RequireAdmin
     @GetMapping("/users/getAllUserAt")
-    public ResponseEntity<ApiResponse<Object>> getAllNewUser(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr) {
+    public ResponseEntity<ApiResponse<Object>> getAllNewUser(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr, HttpServletRequest request) {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
 
-            List<User> users = userService.getAllUsers().stream().filter(user -> Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).after(startDate) && Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).before(endDate)).collect(Collectors.toList());
+            List<User> users = userService.getAllUsers().stream()
+            .map(user -> addDomainToImage(user, request))
+            .filter(user -> Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).after(startDate) && Date.from(user.getDateJoined().atZone(ZoneId.systemDefault()).toInstant()).before(endDate) && user.getIsStaff() != true).collect(Collectors.toList());
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
@@ -201,7 +227,10 @@ public class AdminController {
     @RequireAdmin
     @GetMapping("/users/getUserLoginToday")
     public ResponseEntity<ApiResponse<Object>> getUserLoginToday() {
-        List<User> users = userService.getAllUsers().stream().filter(user -> user.getLastLogin().isAfter(LocalDateTime.now().minusDays(1))).collect(Collectors.toList());
+        List<User> users = userService.getAllUsers().stream().filter(user -> 
+        user.getIsStaff() != true &&
+        user.getLastLogin() != null && 
+        user.getLastLogin().isAfter(LocalDateTime.now().minusDays(1))).collect(Collectors.toList());
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
@@ -236,27 +265,26 @@ public class AdminController {
     // Post
     @RequireAdmin
     @GetMapping("/posts/getAllPost")
-    public ResponseEntity<ApiResponse<Object>> getAllPost() {
-        List<User> users = userService.getAllUsers();
-
-        List<Map<Long, List<Post>>> ListUserPost = new ArrayList<>();
-
-        for (User user : users) {
-            Map<Long, List<Post>> userPost = new HashMap<>();
-            userPost.put(user.getId(), postService.getPostsByUserId(user.getId()));
-            ListUserPost.add(userPost);
-        }
+    public ResponseEntity<ApiResponse<Object>> getAllPost(HttpServletRequest request) {
+        List<Post> posts = postService.getAllPosts().stream()
+            .map(post -> {
+                post.setUser(addDomainToImage(post.getUser(), request));
+                return post;
+            })
+            .collect(Collectors.toList());
+        
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
-                .data(ListUserPost)
+                .data(posts)
                 .timestamp(System.currentTimeMillis())
                 .build());
     }
+    
 
     @RequireAdmin
     @GetMapping("/posts/getAllPostAt")
-    public ResponseEntity<ApiResponse<Object>> getAllPostAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr) {
+    public ResponseEntity<ApiResponse<Object>> getAllPostAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr, HttpServletRequest request) {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
             Date startDate = dateFormat.parse(startDateStr);
@@ -269,6 +297,10 @@ public class AdminController {
                 List<Post> filteredPosts = postService.getPostsByUserId(user.getId())
                     .stream()
                     .filter(post -> post.getCreatedAt().after(startDate) && post.getCreatedAt().before(endDate))
+                    .map(post -> {
+                        post.setUser(addDomainToImage(post.getUser(), request));
+                        return post;
+                    })
                     .collect(Collectors.toList());
                 
                 if (!filteredPosts.isEmpty()) {
@@ -307,33 +339,52 @@ public class AdminController {
     }
 
     @RequireAdmin
-    @GetMapping("/comments/getAllComment")
-    public ResponseEntity<ApiResponse<Object>> getAllComment() {
-        List<Comment> comments = commentService.getAllComments();
+    @PostMapping("/posts/{postId}/unlock")
+    public ResponseEntity<ApiResponse<Object>> unlockPost(@PathVariable Long postId) {
+        postService.unlockPost(postId);
         return ResponseEntity.ok().body(ApiResponse.builder()
                 .status(200)
                 .message("Success")
-                .data(comments)
+                .data("Post unlocked")
                 .timestamp(System.currentTimeMillis())
                 .build());
     }
+    
+
+    // @RequireAdmin
+    // @GetMapping("/comments/getAllComment")
+    // public ResponseEntity<ApiResponse<Object>> getAllComment() {
+    //     List<Comment> comments = commentService.getAllComments();
+    //     return ResponseEntity.ok().body(ApiResponse.builder()
+    //             .status(200)
+    //             .message("Success")
+    //             .data(comments)
+    //             .timestamp(System.currentTimeMillis())
+    //             .build());
+    // }
 
     @RequireAdmin
     @GetMapping("/comments/getAllCommentAt")
-    public ResponseEntity<ApiResponse<Object>> getAllCommentAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr) {
+    public ResponseEntity<ApiResponse<Object>> getAllCommentAt(@RequestParam("start") String startDateStr, @RequestParam("end") String endDateStr, HttpServletRequest request) {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
 
-            List<Comment> filteredComments = commentService.getAllComments().stream()
-                .filter(comment -> comment.getCreatedAt().after(startDate) && comment.getCreatedAt().before(endDate))
+            List<Post> posts = postService.getAllPosts();
+            List<PostSummaryDTO> filteredPosts = posts.stream()
+                .filter(post -> post.getComments().stream()
+                    .anyMatch(comment -> {
+                        Date commentDate = comment.getCreatedAt();
+                        return commentDate.after(startDate) && commentDate.before(endDate);
+                    }))
+                .map(post -> convertToSummaryDTO(post, request))
                 .collect(Collectors.toList());
 
             return ResponseEntity.ok().body(ApiResponse.builder()
                     .status(200)
                     .message("Success")
-                    .data(filteredComments)
+                    .data(filteredPosts)
                     .timestamp(System.currentTimeMillis())
                     .build());
         } catch (ParseException e) {
@@ -358,4 +409,90 @@ public class AdminController {
                 .build());
     }
 
+    private CustomUserDTO convertUser(User user) {
+        CustomUserDTO dto = new CustomUserDTO();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setAvatar(user.getAvatar());
+        return dto;
+    }
+    
+
+    private PostSummaryDTO convertToSummaryDTO(Post post, HttpServletRequest request) {
+        PostSummaryDTO dto = new PostSummaryDTO();
+        dto.setIdPost(post.getId());
+        dto.setUserPost(convertUser(addDomainToImage(post.getUser(), request)));
+        dto.setComments(post.getComments().stream()
+            .filter(c -> c.getParentComment() == null)
+            .map(comment -> convertComment(comment, request))
+            .collect(Collectors.toList()));
+        return dto;
+    }
+    
+    private CommentDTO convertComment(Comment comment, HttpServletRequest request) {
+        CommentDTO dto = new CommentDTO();
+        dto.setImages(comment.getImages());
+        dto.setLikes(comment.getLikes());
+        dto.setCreatedAt(comment.getCreatedAt());
+        dto.setUpdatedAt(comment.getUpdatedAt());
+        dto.setIdComment(comment.getId());
+        dto.setContent(comment.getContent());
+        dto.setUserComment(convertUser(addDomainToImage(comment.getUser(), request)));
+        dto.setReplies(comment.getReplies().stream()
+            .map(reply -> convertComment(reply, request))
+            .collect(Collectors.toList()));
+        return dto;
+    }
+
+
+    @RequireAdmin
+    @GetMapping("/comments/getAllComment")
+    public ResponseEntity<ApiResponse<Object>> getAllComment(HttpServletRequest request) {
+        List<Post> posts = postService.getAllPosts();
+        List<PostSummaryDTO> simplifiedPosts = posts.stream()
+                .filter(c -> c.getComments().size() > 0)
+                .map(post -> convertToSummaryDTO(post, request))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                .status(200)
+                .message("Success")
+                .data(simplifiedPosts)
+                .timestamp(System.currentTimeMillis())
+                .build());
+    }
+
+    
+
 }
+
+// PostSummaryDTO.java
+@Data
+class PostSummaryDTO {
+    private Long idPost;
+    private CustomUserDTO userPost;
+    private List<CommentDTO> comments;
+}
+
+// CommentDTO.java
+@Data
+class CommentDTO {
+    private Long idComment;
+    private String content;
+    private List<Image> images;
+    private List<Like> likes;
+    private CustomUserDTO userComment;
+    private List<CommentDTO> replies;
+    private Date createdAt;
+    private Date updatedAt;
+}
+
+@Data
+class CustomUserDTO {
+    private Long id;
+    private String name;
+    private String email;
+    private String avatar;
+}
+

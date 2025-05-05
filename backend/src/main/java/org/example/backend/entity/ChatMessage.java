@@ -1,51 +1,58 @@
 package org.example.backend.entity;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Data
+import java.time.ZonedDateTime;
+
 @Entity
 @Table(name = "chat_messages")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder(toBuilder = true)
 public class ChatMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "sender_id")
-    private String senderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id", referencedColumnName = "id", nullable = false)
+    private User sender;
 
-    @Column(name = "receiver_id")
-    private String receiverId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receiver_id", referencedColumnName = "id", nullable = false)
+    private User receiver;
 
-    @Column(name = "content")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @Column(name = "timestamp")
-    private LocalDateTime timestamp;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    private ZonedDateTime timestamp;
 
-    @Column(name = "sender_name")
-    private String senderName;
+    @Column(length = 1000)
+    private String fileUrl;
 
-    @Column(name = "sender_avatar")
-    private String senderAvatar;
+    private String fileType;
+
+    private String fileName;
+
+    private Boolean isRead = false;
+
+    private Boolean hasAttachment = false;
+
+    private String attachmentType;
 
     @PrePersist
     protected void onCreate() {
-        timestamp = LocalDateTime.now();
-    }
-
-    @PostLoad
-    protected void onLoad() {
-        if (senderName == null) {
-            senderName = "Người dùng";
+        if (timestamp == null) {
+            timestamp = ZonedDateTime.now();
         }
-    }
-
-    public enum FriendshipStatus {
-        PENDING,
-        ACCEPTED,
-        REJECTED,
-        BLOCKED
+        if (isRead == null) isRead = false;
+        if (hasAttachment == null) hasAttachment = false;
     }
 }

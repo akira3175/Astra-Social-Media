@@ -16,3 +16,8 @@ export interface Comment {
   replies: Comment[]; 
   isDeleted: boolean;
 }
+
+export interface CommentListResponse {
+  comments: Comment[];
+  totalCount: number;
+}

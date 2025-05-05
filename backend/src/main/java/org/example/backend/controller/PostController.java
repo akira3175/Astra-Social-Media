@@ -19,11 +19,11 @@ import org.springframework.web.bind.annotation.*;
 import org.example.backend.dto.CreatePostRequest;
 import org.example.backend.dto.PostDTO;
 import org.example.backend.dto.UpdatePostRequest;
+import org.example.backend.mapper.PostMapper;
 
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.data.domain.Pageable; 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
@@ -33,40 +33,39 @@ public class PostController {
 
     @Autowired
     private PostService postService;
-
     @Autowired
     private JwtUtil jwtUtil;
-
     @Autowired
     private UserService userService;
+    @Autowired
+    private PostMapper postMapper;
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PostDTO>>> getAllPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction
-    ) {
+            @RequestParam(defaultValue = "desc") String direction) {
         try {
             String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            
-            Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? 
-                Sort.Direction.DESC : Sort.Direction.ASC;
-                
+
+            Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC
+                    : Sort.Direction.ASC;
+
             Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
-            
+
             // Sử dụng getPageOfPostDtos thay vì getAllPostDtos
             Page<PostDTO> postsPage = postService.getPageOfPostDtos(email, pageable);
-            
+
             ApiResponse<Page<PostDTO>> response = ApiResponse.<Page<PostDTO>>builder()
                     .status(HttpStatus.OK.value())
                     .message("Lấy danh sách bài đăng thành công")
                     .data(postsPage)
                     .timestamp(System.currentTimeMillis())
                     .build();
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             ApiResponse<Page<PostDTO>> errorResponse = ApiResponse.<Page<PostDTO>>builder()
                     .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
@@ -74,27 +73,15 @@ public class PostController {
                     .data(null)
                     .timestamp(System.currentTimeMillis())
                     .build();
-            
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(errorResponse);
         }
     }
 
-    // @GetMapping("/user/{userId}")
-    // public ResponseEntity<ApiResponse<List<Post>>> getPostsByUserId(@PathVariable Long userId) {
-    //     List<Post> posts = postService.getPostsByUserId(userId);
-    //     ApiResponse<List<Post>> response = ApiResponse.<List<Post>>builder()
-    //             .status(HttpStatus.OK.value())
-    //             .message("Lấy danh sách bài đăng theo người dùng thành công")
-    //             .data(posts)
-    //             .timestamp(System.currentTimeMillis())
-    //             .build();
-    //     return ResponseEntity.ok(response);
-    // }
-
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PostDTO>> getPostById(@PathVariable Long id,
-                                                            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         try {
@@ -150,10 +137,10 @@ public class PostController {
     public ResponseEntity<ApiResponse<PostDTO>> updatePost(
             @PathVariable Long id,
             @RequestBody UpdatePostRequest request) {
-        
+
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        
-                  try {
+
+        try {
             Post updatedPost = postService.updatePost(id, email, request.getContent());
             PostDTO postDto = postService.getPostDtoById(updatedPost.getId(), email);
 
@@ -177,14 +164,14 @@ public class PostController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deletePost(@PathVariable Long id) {
-        postService.softDeletePost(id); 
+        postService.softDeletePost(id);
         ApiResponse<Void> response = ApiResponse.<Void>builder()
-                .status(HttpStatus.OK.value()) 
+                .status(HttpStatus.OK.value())
                 .message("Đã đánh dấu xóa bài đăng")
                 .data(null)
                 .timestamp(System.currentTimeMillis())
                 .build();
-        return ResponseEntity.ok(response); 
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/reposts/{originalPostId}")
@@ -209,7 +196,7 @@ public class PostController {
 
         Post repostEntity = postService.createRepost(originalPostId, email, content);
 
-        PostDTO repostDto = postService.getPostDtoById(repostEntity.getId(), email); 
+        PostDTO repostDto = postService.getPostDtoById(repostEntity.getId(), email);
 
         ApiResponse<PostDTO> response = ApiResponse.<PostDTO>builder()
                 .status(HttpStatus.CREATED.value())
@@ -224,7 +211,7 @@ public class PostController {
     @GetMapping("/user/{email}")
     public ResponseEntity<ApiResponse<List<PostDTO>>> getPostsByUserEmail(@PathVariable String email) {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        
+
         List<PostDTO> posts = postService.getPostsByUserEmail(email, currentUserEmail);
         ApiResponse<List<PostDTO>> response = ApiResponse.<List<PostDTO>>builder()
                 .status(HttpStatus.OK.value())
@@ -236,17 +223,21 @@ public class PostController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<Page<PostDocument>> search(
+    public ResponseEntity<Page<PostDTO>> search(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestHeader("Authorization") String token
-    ) {
+            @RequestHeader("Authorization") String token) {
         String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
         User user = userService.getUserInfo(email);
 
-        Page<PostDocument> result = postService.searchPosts(keyword, user, page, size);
-        return ResponseEntity.ok(result);
+        Page<PostDocument> postDocuments = postService.searchPosts(keyword, user, page, size);
+        Page<PostDTO> postDtos = postDocuments.map(postDocument -> {
+            User userPost = userService.getUserById(Long.parseLong(postDocument.getUserId()));
+            return postMapper.toDTO(postDocument, userPost);
+        });
+
+        return ResponseEntity.ok(postDtos);
     }
 
 }

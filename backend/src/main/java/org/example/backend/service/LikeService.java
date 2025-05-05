@@ -2,7 +2,6 @@ package org.example.backend.service;
 
 import org.example.backend.entity.*;
 import org.example.backend.repository.LikeRepository;
-import org.example.backend.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,16 +15,14 @@ public class LikeService {
 
     @Autowired
     private LikeRepository likeRepository;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
     @Autowired
     private UserService userService; 
     @Autowired
     private PostService postService; 
     @Autowired
     private CommentService commentService;
-    @Autowired NotificationService notificationService;
+    @Autowired
+    private NotificationService notificationService;
 
 
     public void deleteLike(Long id) {

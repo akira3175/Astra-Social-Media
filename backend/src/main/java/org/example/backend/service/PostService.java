@@ -1,12 +1,12 @@
 package org.example.backend.service;
 
 import org.example.backend.entity.Image;
-import org.example.backend.dto.PostDTO; 
+import org.example.backend.dto.PostDTO;
 import org.example.backend.entity.Post;
 import org.example.backend.elasticsearch.document.PostDocument;
 import org.example.backend.elasticsearch.repository.PostESRepository;
 import org.example.backend.entity.User;
-import org.example.backend.repository.CommentRepository; 
+import org.example.backend.repository.CommentRepository;
 import org.example.backend.repository.ImageRepository;
 import org.example.backend.repository.LikeRepository;
 import org.example.backend.repository.PostRepository;
@@ -18,13 +18,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.example.backend.mapper.PostMapper;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Date;
-
+import java.util.Comparator;
 
 @Service
 public class PostService {
@@ -32,21 +32,16 @@ public class PostService {
 
     @Autowired
     private PostRepository postRepository;
-
     @Autowired
     private PostESRepository postESRepository;
-
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private ImageRepository imageRepository;
-
     @Autowired
     private LikeRepository likeRepository; // Inject LikeRepository
-
     @Autowired
     private CommentRepository commentRepository; // Inject CommentRepository
+    @Autowired
+    private PostMapper postMapper;
 
     public User getCurrentUser(String email) {
         return userRepository.findByEmail(email)
@@ -59,53 +54,8 @@ public class PostService {
         User currentUser = getCurrentUser(currentUserEmail);
         List<Post> posts = postRepository.findByIsDeletedFalse();
         return posts.stream()
-                    .map(post -> convertToDto(post, currentUser))
-                    .collect(Collectors.toList());
-    }
-
-    // Helper method to convert Post entity to PostDTO
-    private PostDTO convertToDto(Post post, User currentUser) {
-        if (post == null) {
-            return null;
-        }
-
-        boolean likedByCurrentUser = false;
-        if (currentUser != null) {
-            likedByCurrentUser = likeRepository.findByUserAndPost(currentUser, post).isPresent();
-        }
-        long likesCount = likeRepository.countByPostId(post.getId());
-        long commentsCount = commentRepository.countByPostId(post.getId());
-
-        // Xử lý originalPost bị xóa
-        PostDTO originalPostDto = null;
-        if (post.getOriginalPost() != null) {
-            Post originalPost = post.getOriginalPost();
-            if (originalPost.isDeleted()) {
-                // Nếu bài gốc đã xóa, chỉ giữ lại thông tin cơ bản
-                originalPostDto = PostDTO.builder()
-                    .id(originalPost.getId())
-                    .user(originalPost.getUser())
-                    .isDeleted(true)
-                    .createdAt(originalPost.getCreatedAt())
-                    .build();
-            } else {
-                originalPostDto = convertToDto(originalPost, currentUser);
-            }
-        }
-
-        return PostDTO.builder()
-                .id(post.getId())
-                .content(post.getContent())
-                .user(post.getUser())
-                .images(post.getImages() != null ? post.getImages() : Collections.emptyList())
-                .createdAt(post.getCreatedAt())
-                .updatedAt(post.getUpdatedAt())
-                .likesCount(likesCount)
-                .liked(likedByCurrentUser)
-                .commentsCount(commentsCount)
-                .originalPost(originalPostDto)
-                .isDeleted(post.isDeleted())
-                .build();
+                .map(post -> postMapper.toDto(post, currentUser))
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -121,6 +71,10 @@ public class PostService {
     public Post getPostByIdOrThrow(Long id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
+    }
+
+    public List<Post> getAllPosts() {
+        return postRepository.findAll();
     }
 
     // No changes needed in this file, the method is already there
@@ -161,7 +115,7 @@ public class PostService {
 
         final Post existingPost = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
-            
+
         User currentUser = getCurrentUser(email);
         if (!existingPost.getUser().getId().equals(currentUser.getId())) {
             throw new RuntimeException("You don't have permission to update this post");
@@ -169,21 +123,20 @@ public class PostService {
 
         // Kiểm tra thời gian dựa trên lần sửa cuối hoặc thời gian tạo nếu chưa từng sửa
         long currentTime = System.currentTimeMillis();
-        long lastEditTime = existingPost.getUpdatedAt() != null 
-            ? existingPost.getUpdatedAt().getTime() 
-            : existingPost.getCreatedAt().getTime();
+        long lastEditTime = existingPost.getUpdatedAt() != null
+                ? existingPost.getUpdatedAt().getTime()
+                : existingPost.getCreatedAt().getTime();
         long timeDifferenceMinutes = (currentTime - lastEditTime) / (60 * 1000);
 
         if (timeDifferenceMinutes < EDIT_TIME_LIMIT_MINUTES) {
             throw new RuntimeException(
-                String.format("Phải đợi %d phút sau lần sửa trước mới có thể sửa lại", 
-                EDIT_TIME_LIMIT_MINUTES)
-            );
+                    String.format("Phải đợi %d phút sau lần sửa trước mới có thể sửa lại",
+                            EDIT_TIME_LIMIT_MINUTES));
         }
 
         existingPost.setContent(newContent.trim());
         existingPost.setUpdatedAt(new Date());
-        
+
         try {
             final Post updatedPost = postRepository.save(existingPost);
             savePostToES(updatedPost.getId());
@@ -212,10 +165,11 @@ public class PostService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         User currentUser = getCurrentUser(currentUserEmail);
-        
+
         List<Post> posts = postRepository.findByUserIdAndIsDeletedFalse(user.getId());
+        posts.sort(Comparator.comparing(Post::getCreatedAt).reversed());
         return posts.stream()
-                .map(post -> convertToDto(post, currentUser))
+                .map(post -> postMapper.toDto(post, currentUser))
                 .collect(Collectors.toList());
     }
 
@@ -247,11 +201,12 @@ public class PostService {
         User currentUser = getCurrentUser(currentUserEmail);
 
         // Check if the current user liked this post
-        // boolean likedByCurrentUser = likeRepository.findByUserAndPost(currentUser, post).isPresent();
+        // boolean likedByCurrentUser = likeRepository.findByUserAndPost(currentUser,
+        // post).isPresent();
 
         // Get counts
         // Use the helper method for conversion
-        return convertToDto(post, currentUser);
+        return postMapper.toDto(post, currentUser);
     }
 
     @Transactional
@@ -276,37 +231,22 @@ public class PostService {
     public Page<PostDTO> getPageOfPostDtos(String currentUserEmail, Pageable pageable) {
         User currentUser = getCurrentUser(currentUserEmail);
         Page<Post> postPage = postRepository.findByIsDeletedFalseOrderByCreatedAtDesc(pageable);
-        
-        return postPage.map(post -> convertToDto(post, currentUser));
-    }
 
-    private PostDocument convertToPostDocument(Post post) {
-        PostDocument postDocument = new PostDocument();
-        postDocument.setId(post.getId().toString());
-        postDocument.setContent(post.getContent());
-        postDocument.setUserId(post.getUser().getId().toString());
-        postDocument.setCreatedAt(post.getCreatedAt());
-        postDocument.setUpdatedAt(post.getUpdatedAt() != null ? post.getUpdatedAt() : null);
-        postDocument.setOriginalPostId(post.getOriginalPost() != null ? post.getOriginalPost().getId().toString() : null);
-        postDocument.setIsDeleted(post.isDeleted());
-        postDocument.setLikedByCurrentUser(post.isLikedByCurrentUser());
-        postDocument.setLikeCount(post.getLikeCount());
-        postDocument.setTotalCommentCount(post.getTotalCommentCount());
-        return postDocument;
+        return postPage.map(post -> postMapper.toDto(post, currentUser));
     }
 
     public void savePostToES(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        PostDocument postDocument = convertToPostDocument(post);
+        PostDocument postDocument = postMapper.toDocument(post);
         postESRepository.save(postDocument);
     }
 
     public void syncAllPostsToES() {
         List<Post> posts = postRepository.findAll();
         List<PostDocument> documents = posts.stream()
-                .map(this::convertToPostDocument)
+                .map(postMapper::toDocument)
                 .toList();
         postESRepository.saveAll(documents);
     }
@@ -324,6 +264,14 @@ public class PostService {
         Post post = getPostByIdOrThrow(postId);
         post.setDeleted(true);
         post.setDeletedAt(new Date());
+        postRepository.save(post);
+        savePostToES(postId);
+    }
+
+    public void unlockPost(Long postId) {
+        Post post = getPostByIdOrThrow(postId);
+        post.setDeleted(false);
+        post.setDeletedAt(null);
         postRepository.save(post);
         savePostToES(postId);
     }

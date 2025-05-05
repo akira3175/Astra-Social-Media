@@ -51,7 +51,7 @@ export default function LoginPage() {
       setCurrentUser(user)
 
       navigate("/");
-    } catch (error) {
+    } catch {
       alert("Đăng nhập thất bại!");
     }
   };

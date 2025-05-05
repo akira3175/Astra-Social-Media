@@ -484,7 +484,7 @@ const Post: React.FC<PostProps> = ({ post, defaultShowComments = false, ...props
         )}
          {/* Render original post preview if this is a repost */}
          {originalPost && (
-           originalPost.isDeleted ? (
+           originalPost.deleted ? (
              <Box sx={{ 
                p: 2, 
                bgcolor: 'grey.100', 

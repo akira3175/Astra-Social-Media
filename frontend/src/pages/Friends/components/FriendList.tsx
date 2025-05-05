@@ -23,9 +23,7 @@ const FriendList: React.FC = () => {
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFriend, setSelectedFriend] = useState<Friendship | null>(
-    null
-  );
+  const [selectedFriend, setSelectedFriend] = useState<Friendship | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const { currentUser } = useCurrentUser();
 
@@ -142,12 +140,12 @@ const FriendList: React.FC = () => {
                   >
                     Đã kết bạn từ{" "}
                     {new Date(
-                      friend.acceptedAt[0],
-                      friend.acceptedAt[1] - 1,
-                      friend.acceptedAt[2],
-                      friend.acceptedAt[3],
-                      friend.acceptedAt[4],
-                      friend.acceptedAt[5]
+                      friend.acceptedAt[0] as unknown as number,
+                      friend.acceptedAt[1] as unknown as number - 1,
+                      friend.acceptedAt[2] as unknown as number,
+                      friend.acceptedAt[3] as unknown as number,
+                      friend.acceptedAt[4] as unknown as number,
+                      friend.acceptedAt[5] as unknown as number
                     ).toLocaleDateString()}
                   </Typography>
                   <Button

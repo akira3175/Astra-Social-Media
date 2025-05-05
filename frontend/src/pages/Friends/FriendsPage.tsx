@@ -53,7 +53,7 @@ const FriendsPage: React.FC = () => {
         }
 
         const response = await axios.get(
-          `http://localhost:8080/api/users/${currentUser.id}/friends`,
+          `http://localhost:8080/api/friendships/user/${currentUser.id}/friends`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

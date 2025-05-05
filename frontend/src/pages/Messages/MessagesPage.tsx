@@ -1,245 +1,43 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { Box, Grid, useMediaQuery, useTheme } from "@mui/material"
+import { Box, Grid, useMediaQuery, useTheme, Typography } from "@mui/material"
 import BasePage from "../Base/BasePage"
 import ConversationList from "./components/ConversationList"
 import ChatArea from "./components/ChatArea"
-import MobileChatHeader from "./components/MobileChatHeader"
 import { useCurrentUser } from "../../contexts/currentUserContext"
 import type { Conversation, Message } from "../../types/message"
-
-// Dữ liệu mẫu cho các cuộc trò chuyện
-const SAMPLE_CONVERSATIONS: Conversation[] = [
-  {
-    id: 1,
-    user: {
-      id: 101,
-      email: "nguyenvana@example.com",
-      firstName: "Văn A",
-      lastName: "Nguyễn",
-      name: "Nguyễn Văn A",
-      username: "nguyenvana",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      role: "user",
-      status: "active",
-      registeredDate: "01/01/2023",
-      lastActive: "10:30",
-      isOnline: true,
-    },
-    lastMessage: {
-      id: 1001,
-      text: "Bạn đã xem tài liệu tôi gửi chưa?",
-      timestamp: "10:30",
-      isRead: true,
-      senderId: 101,
-    },
-    unreadCount: 0,
-  },
-  {
-    id: 2,
-    user: {
-      id: 102,
-      email: "tranthib@example.com",
-      firstName: "Thị B",
-      lastName: "Trần",
-      name: "Trần Thị B",
-      username: "tranthib",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      role: "user",
-      status: "active",
-      registeredDate: "15/02/2023",
-      lastActive: "Hôm qua",
-      isOnline: true,
-    },
-    lastMessage: {
-      id: 1002,
-      text: "Hẹn gặp lại vào ngày mai nhé!",
-      timestamp: "Hôm qua",
-      isRead: false,
-      senderId: 102,
-    },
-    unreadCount: 3,
-  },
-  {
-    id: 3,
-    user: {
-      id: 103,
-      email: "levanc@example.com",
-      firstName: "Văn C",
-      lastName: "Lê",
-      name: "Lê Văn C",
-      username: "levanc",
-      avatar: "https://i.pravatar.cc/150?img=8",
-      role: "user",
-      status: "active",
-      registeredDate: "20/03/2023",
-      lastActive: "2 ngày trước",
-      isOnline: false,
-    },
-    lastMessage: {
-      id: 1003,
-      text: "Cảm ơn bạn rất nhiều!",
-      timestamp: "Thứ 2",
-      isRead: true,
-      senderId: 103,
-    },
-    unreadCount: 0,
-  },
-  {
-    id: 4,
-    user: {
-      id: 104,
-      email: "phamthid@example.com",
-      firstName: "Thị D",
-      lastName: "Phạm",
-      name: "Phạm Thị D",
-      username: "phamthid",
-      avatar: "https://i.pravatar.cc/150?img=10",
-      role: "user",
-      status: "active",
-      registeredDate: "05/04/2023",
-      lastActive: "1 tuần trước",
-      isOnline: false,
-    },
-    lastMessage: {
-      id: 1004,
-      text: "Bạn có thể gửi cho tôi file đó được không?",
-      timestamp: "25/03",
-      isRead: true,
-      senderId: 104,
-    },
-    unreadCount: 0,
-  },
-  {
-    id: 5,
-    user: {
-      id: 105,
-      email: "hoangvane@example.com",
-      firstName: "Văn E",
-      lastName: "Hoàng",
-      name: "Hoàng Văn E",
-      username: "hoangvane",
-      avatar: "https://i.pravatar.cc/150?img=11",
-      role: "user",
-      status: "active",
-      registeredDate: "10/04/2023",
-      lastActive: "3 giờ trước",
-      isOnline: true,
-    },
-    lastMessage: {
-      id: 1005,
-      text: "Tôi sẽ gửi email cho bạn sau.",
-      timestamp: "20/03",
-      isRead: true,
-      senderId: 999, // Current user
-    },
-    unreadCount: 0,
-  },
-]
-
-// Dữ liệu mẫu cho các tin nhắn trong một cuộc trò chuyện
-const SAMPLE_MESSAGES: Record<number, Message[]> = {
-  1: [
-    {
-      id: 1,
-      text: "Chào bạn, bạn khỏe không?",
-      timestamp: "10:00",
-      senderId: 101,
-      isRead: true,
-    },
-    {
-      id: 2,
-      text: "Tôi khỏe, cảm ơn bạn! Còn bạn thì sao?",
-      timestamp: "10:05",
-      senderId: 999, // Current user
-      isRead: true,
-    },
-    {
-      id: 3,
-      text: "Tôi cũng khỏe. Tôi đã gửi cho bạn một tài liệu qua email, bạn kiểm tra giúp tôi nhé.",
-      timestamp: "10:10",
-      senderId: 101,
-      isRead: true,
-    },
-    {
-      id: 4,
-      text: "Tôi sẽ kiểm tra ngay bây giờ.",
-      timestamp: "10:15",
-      senderId: 999, // Current user
-      isRead: true,
-    },
-    {
-      id: 5,
-      text: "Bạn đã xem tài liệu tôi gửi chưa?",
-      timestamp: "10:30",
-      senderId: 101,
-      isRead: true,
-    },
-  ],
-  2: [
-    {
-      id: 1,
-      text: "Chào bạn, ngày mai chúng ta có cuộc họp lúc mấy giờ nhỉ?",
-      timestamp: "Hôm qua, 15:30",
-      senderId: 999, // Current user
-      isRead: true,
-    },
-    {
-      id: 2,
-      text: "Chào bạn, cuộc họp sẽ bắt đầu lúc 9 giờ sáng.",
-      timestamp: "Hôm qua, 15:45",
-      senderId: 102,
-      isRead: true,
-    },
-    {
-      id: 3,
-      text: "Cảm ơn bạn. Tôi sẽ chuẩn bị tài liệu.",
-      timestamp: "Hôm qua, 16:00",
-      senderId: 999, // Current user
-      isRead: true,
-    },
-    {
-      id: 4,
-      text: "Tuyệt vời! Bạn nhớ mang theo bản báo cáo quý 2 nhé.",
-      timestamp: "Hôm qua, 16:15",
-      senderId: 102,
-      isRead: true,
-    },
-    {
-      id: 5,
-      text: "Hẹn gặp lại vào ngày mai nhé!",
-      timestamp: "Hôm qua, 16:30",
-      senderId: 102,
-      isRead: false,
-    },
-    {
-      id: 6,
-      text: "Bạn có cần tôi chuẩn bị thêm gì không?",
-      timestamp: "Hôm qua, 17:00",
-      senderId: 102,
-      isRead: false,
-    },
-    {
-      id: 7,
-      text: "Nhớ mang theo laptop nhé!",
-      timestamp: "Hôm qua, 17:30",
-      senderId: 102,
-      isRead: false,
-    },
-  ],
-}
+import SockJS from "sockjs-client"
+import { Client } from "@stomp/stompjs"
+import { useEmojiPicker } from "../../hooks/useEmojiPicker"
+import { useFileUpload } from "../../hooks/useFileUpload"
+import MessageService from "../../services/messageService"
 
 const MessagesPage: React.FC = () => {
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const { currentUser } = useCurrentUser()
-  const [conversations, setConversations] = useState<Conversation[]>(SAMPLE_CONVERSATIONS)
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [showMobileChat, setShowMobileChat] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { showEmojiPicker, handleEmojiClick, toggleEmojiPicker } = useEmojiPicker()
+  const { isUploading } = useFileUpload()
+  const [ws, setWs] = useState<Client | null>(null)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const reconnectAttempts = useRef(0)
+  const maxReconnectAttempts = 10
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [shouldScroll, setShouldScroll] = useState(true)
+
+  // Thêm hàm truncateFileName
+  const truncateFileName = (fileName: string, maxLength = 15) => {
+    if (fileName.length <= maxLength) return fileName
+    const extension = fileName.split(".").pop()
+    const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf("."))
+    const truncatedName = nameWithoutExt.substring(0, maxLength - 3) + "..."
+    return `${truncatedName}.${extension}`
+  }
 
   // Chọn cuộc trò chuyện đầu tiên khi trang được tải
   useEffect(() => {
@@ -248,68 +46,396 @@ const MessagesPage: React.FC = () => {
     }
   }, [conversations])
 
-  // Cuộn xuống tin nhắn mới nhất
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+  // Thêm hàm loadMessages
+  const loadMessages = async () => {
+    if (!selectedConversation || !currentUser) return
 
+    try {
+      const response = await MessageService.getMessages(selectedConversation.user.id)
+      setMessages(response)
+    } catch (error) {
+      console.error("Error loading messages:", error)
+    }
+  }
+
+  // Xử lý khi chọn cuộc trò chuyện
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation)
-
-    // Lấy tin nhắn cho cuộc trò chuyện được chọn
-    const conversationMessages = SAMPLE_MESSAGES[conversation.id] || []
-    setMessages(conversationMessages)
-
-    // Đánh dấu tin nhắn là đã đọc
-    if (conversation.unreadCount > 0) {
-      const updatedConversations = conversations.map((conv) =>
-        conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
-      )
-      setConversations(updatedConversations)
-    }
-
-    // Hiển thị khu vực chat trên mobile
-    if (isMobile) {
-      setShowMobileChat(true)
-    }
+    setShowMobileChat(true)
+    setShouldScroll(true)
   }
 
-  const handleBackToList = () => {
-    setShowMobileChat(false)
+  // Thêm useEffect để theo dõi selectedConversation
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages()
+    }
+  }, [selectedConversation])
+
+  // Thêm hàm getFileUrl
+  const getFileUrl = (fileUrl: string) => {
+    if (!fileUrl) return ""
+
+    // Nếu là URL Cloudinary
+    if (fileUrl.includes("cloudinary.com")) {
+      const token = localStorage.getItem("accessToken")
+      return `${fileUrl}?token=${token}`
+    }
+
+    // Nếu là URL local
+    return fileUrl.startsWith("http") ? fileUrl : `http://localhost:8080${fileUrl}`
   }
 
-  const handleSendMessage = (text: string) => {
-    if (!selectedConversation || !text.trim()) return
+  // Sửa lại hàm handleSendMessage
+  const handleSendMessage = async (
+    text: string,
+    fileUrl?: string,
+    fileType?: "image" | "video" | "document" | "file",
+    fileName?: string,
+  ) => {
+    if (!selectedConversation || !ws) return
 
-    // Tạo tin nhắn mới
-    const newMessage: Message = {
+    // Xử lý URL file
+    let processedFileUrl = fileUrl
+    if (fileUrl) {
+      processedFileUrl = getFileUrl(fileUrl)
+    }
+
+    const message: Message = {
       id: Date.now(),
       text,
-      timestamp: "Vừa xong",
-      senderId: currentUser?.id || 999, // Current user
+      timestamp: new Date().toISOString(),
+      sender: currentUser,
+      receiver: selectedConversation.user,
       isRead: false,
+      fileUrl: processedFileUrl,
+      hasAttachment: !!fileUrl,
+      attachmentType: fileType,
+      fileName,
     }
 
-    // Cập nhật danh sách tin nhắn
-    setMessages([...messages, newMessage])
+    console.log("Sending message:", message)
 
-    // Cập nhật cuộc trò chuyện với tin nhắn mới nhất
-    const updatedConversations = conversations.map((conv) =>
-      conv.id === selectedConversation.id
-        ? {
-            ...conv,
-            lastMessage: {
-              id: newMessage.id,
-              text: newMessage.text,
-              timestamp: newMessage.timestamp,
-              isRead: newMessage.isRead,
-              senderId: newMessage.senderId,
-            },
-          }
-        : conv
-    )
-    setConversations(updatedConversations)
+    // Thêm tin nhắn vào danh sách ngay lập tức
+    setMessages((prev) => {
+      const newMessages = [...prev, message]
+      return newMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    })
+
+    // Gửi tin nhắn qua WebSocket
+    ws.publish({
+      destination: "/app/chat.send",
+      body: JSON.stringify({
+        ...message,
+        content: text,
+        type: fileType || "text",
+        fileUrl: processedFileUrl,
+      }),
+    })
   }
+
+  // Xử lý tin nhắn nhận được từ WebSocket
+  useEffect(() => {
+    if (!ws) return
+
+    const subscription = ws.subscribe(`/user/${currentUser?.id}/queue/messages`, (message) => {
+      try {
+        const data = JSON.parse(message.body)
+        console.log("Received message:", data)
+
+        // Xử lý URL file
+        let processedFileUrl = data.fileUrl
+        if (data.fileUrl && !data.fileUrl.startsWith("http")) {
+          processedFileUrl = `http://${data.fileUrl}`
+        }
+
+        // Cập nhật tin nhắn trong state
+        setMessages((prev) => {
+          const existingMessage = prev.find((m) => m.id === data.id)
+          if (existingMessage) {
+            return prev
+          }
+          const newMessages = [
+            ...prev,
+            {
+              id: data.id,
+              text: data.content || data.text || "",
+              timestamp: data.timestamp,
+              sender: data.sender,
+              receiver: data.receiver,
+              isRead: data.isRead || false,
+              fileUrl: processedFileUrl,
+              fileType: data.type || data.fileType,
+              fileName: data.fileName,
+              hasAttachment: !!data.fileUrl,
+            },
+          ]
+          return newMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        })
+      } catch (error) {
+        console.error("Error processing message:", error)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [ws, currentUser?.id])
+
+  // Kết nối WebSocket khi component mount
+  useEffect(() => {
+    if (currentUser) {
+      connectWebSocket()
+    }
+    return () => {
+      if (ws) {
+        ws.deactivate()
+      }
+    }
+  }, [currentUser])
+
+  // Kết nối WebSocket
+  const connectWebSocket = () => {
+    if (isConnecting || !currentUser) return
+
+    const wsUrl = import.meta.env.VITE_WEBSOCKET_URL
+    setIsConnecting(true)
+    const token = localStorage.getItem("accessToken")
+    const socket = new SockJS(wsUrl)
+    const stompClient = new Client({
+      webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+      debug: (str: string) => {
+        console.log(str)
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    })
+
+    stompClient.activate()
+    stompClient.onConnect = () => {
+      console.log("Connected to WebSocket")
+      setWs(stompClient)
+      setIsConnecting(false)
+      reconnectAttempts.current = 0
+
+      // Subscribe vào private channel
+      stompClient.subscribe(`/user/${currentUser.id}/queue/messages`, (message) => {
+        try {
+          const data = JSON.parse(message.body)
+          console.log("Received private message:", data)
+
+          // Kiểm tra xem tin nhắn đã tồn tại chưa
+          if (messages.some((m) => m.id === data.id)) {
+            return
+          }
+
+          // Nếu là tin nhắn mới, thêm vào danh sách
+          const newMessage = {
+            id: data.id,
+            text: data.content || data.text || "",
+            timestamp: data.timestamp,
+            sender: data.sender,
+            isRead: false,
+            conversationId: data.conversationId,
+            receiver: data.receiver,
+            ...(data.fileUrl && {
+              fileUrl: data.fileUrl,
+              fileType: data.fileType,
+              fileName: data.fileName,
+            }),
+          }
+
+          setMessages((prev) =>
+            [...prev, newMessage].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
+          )
+
+          // Cập nhật lastMessage trong conversations
+          setConversations((prev) =>
+            prev.map((conv) => {
+              if (conv.id === data.conversationId) {
+                return {
+                  ...conv,
+                  lastMessage: {
+                    id: data.id,
+                    text: data.content || data.text || "",
+                    timestamp: data.timestamp,
+                    isRead: false,
+                    senderId: Number(data.senderId),
+                  },
+                  unreadCount: conv.id === selectedConversation?.id ? 0 : conv.unreadCount + 1,
+                }
+              }
+              return conv
+            }),
+          )
+        } catch (error) {
+          console.error("Error parsing private message:", error)
+        }
+      })
+
+      // Subscribe vào public channel
+      stompClient.subscribe("/topic/public", (message) => {
+        try {
+          const data = JSON.parse(message.body)
+          console.log("Received public message:", data)
+
+          // Chỉ xử lý tin nhắn liên quan đến người dùng hiện tại
+          if (data.senderId === currentUser.id || data.receiverId === currentUser.id) {
+            // Kiểm tra xem tin nhắn đã tồn tại chưa
+            if (messages.some((m) => m.id === data.id)) {
+              return
+            }
+
+            const newMessage = {
+              id: data.id,
+              text: data.content || data.text || "",
+              timestamp: data.timestamp,
+              senderId: Number(data.senderId),
+              isRead: false,
+              conversationId: data.conversationId,
+              receiverId: data.receiverId,
+              ...(data.fileUrl && {
+                fileUrl: data.fileUrl,
+                fileType: data.fileType,
+                fileName: data.fileName,
+              }),
+            }
+
+            setMessages((prev) =>
+              [...prev, newMessage].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
+            )
+
+            // Cập nhật lastMessage trong conversations
+            setConversations((prev) =>
+              prev.map((conv) => {
+                if (conv.id === data.conversationId) {
+                  return {
+                    ...conv,
+                    lastMessage: {
+                      id: data.id,
+                      text: data.content || data.text || "",
+                      timestamp: data.timestamp,
+                      isRead: false,
+                      senderId: Number(data.senderId),
+                    },
+                    unreadCount: conv.id === selectedConversation?.id ? 0 : conv.unreadCount + 1,
+                  }
+                }
+                return conv
+              }),
+            )
+          }
+        } catch (error) {
+          console.error("Error parsing public message:", error)
+        }
+      })
+    }
+
+    stompClient.onStompError = (error) => {
+      console.error("WebSocket connection error:", error)
+      setIsConnecting(false)
+      handleReconnect()
+    }
+  }
+
+  // Xử lý kết nối lại
+  const handleReconnect = () => {
+    if (reconnectAttempts.current < maxReconnectAttempts) {
+      reconnectAttempts.current++
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000)
+
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})`)
+        connectWebSocket()
+      }, delay)
+    } else {
+      console.error("Max reconnection attempts reached")
+      setIsConnecting(false)
+    }
+  }
+
+  // Thêm useEffect để tự động cập nhật tin nhắn mỗi 10 giây
+  useEffect(() => {
+    if (selectedConversation) {
+      const intervalId = setInterval(() => {
+        loadMessages()
+      }, 10000) // 10 giây
+
+      return () => {
+        clearInterval(intervalId)
+      }
+    }
+  }, [selectedConversation])
+
+  // Thêm useEffect để xử lý cuộn
+  useEffect(() => {
+    if (shouldScroll && messages.length > 0) {
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+        }
+        setShouldScroll(false)
+      }, 100)
+    }
+  }, [messages, shouldScroll])
+
+  useEffect(() => {
+    // Check if there's a user to message directly from profile page
+    const messageUserData = sessionStorage.getItem("messageUser")
+    if (messageUserData) {
+      try {
+        const userData = JSON.parse(messageUserData)
+        if (userData.openChatDirectly) {
+          // Find if there's an existing conversation with this user
+          const existingConversation = conversations.find((conv) => conv.user.id === userData.id)
+
+          if (existingConversation) {
+            // If conversation exists, select it
+            handleSelectConversation(existingConversation)
+          } else {
+            // If no existing conversation, create a new one
+            const newConversation: Conversation = {
+              id: Date.now(),
+              user: {
+                id: userData.id,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                email: userData.email,
+                avatar: userData.avatar,
+                isOnline: false,
+              },
+              lastMessage: {
+                id: 0,
+                text: "Bắt đầu cuộc trò chuyện",
+                timestamp: new Date().toISOString(),
+                isRead: true,
+                senderId: currentUser?.id || 0,
+              },
+              unreadCount: 0,
+            }
+
+            // Add to conversations and select it
+            setConversations((prev) => [newConversation, ...prev])
+            handleSelectConversation(newConversation)
+          }
+
+          // Clear the sessionStorage after processing
+          sessionStorage.removeItem("messageUser")
+        }
+      } catch (error) {
+        console.error("Error parsing messageUser data:", error)
+        sessionStorage.removeItem("messageUser")
+      }
+    }
+  }, [conversations, currentUser])
 
   return (
     <BasePage>
@@ -358,14 +484,28 @@ const MessagesPage: React.FC = () => {
                 flexDirection: "column",
               }}
             >
-              {isMobile && <MobileChatHeader conversation={selectedConversation} onBack={handleBackToList} />}
-              <ChatArea
-                conversation={selectedConversation}
-                messages={messages}
-                currentUserId={currentUser?.id || 999}
-                onSendMessage={handleSendMessage}
-                messagesEndRef={messagesEndRef}
-              />
+              {/* {isMobile && <MobileChatHeader conversation={selectedConversation} onBack={handleBackToList} />} */}
+              {selectedConversation ? (
+                <ChatArea
+                  conversation={selectedConversation}
+                  messages={messages}
+                  currentUserId={currentUser?.id || 0}
+                  onSendMessage={handleSendMessage}
+                  messagesEndRef={messagesEndRef}
+                  ws={ws}
+                  showEmojiPicker={showEmojiPicker}
+                  onEmojiClick={handleEmojiClick}
+                  toggleEmojiPicker={toggleEmojiPicker}
+                  isUploading={isUploading}
+                  truncateFileName={truncateFileName}
+                />
+              ) : (
+                <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Typography variant="h6" color="text.secondary">
+                    Chọn một cuộc trò chuyện để bắt đầu
+                  </Typography>
+                </Box>
+              )}
             </Grid>
           )}
         </Grid>

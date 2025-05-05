@@ -156,7 +156,7 @@ public class FriendshipController {
 
             List<Map<String, Object>> sentRequests = friendshipService.getSentFriendRequests(currentUser.getId())
                     .stream()
-                    .map(friendship -> mapFriendshipToResponse(friendship, request))
+                    .map(friendship -> mapSentFriendshipToResponse(friendship, request))
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(sentRequests);
@@ -213,9 +213,9 @@ public class FriendshipController {
             String currentUserEmail = getCurrentUserEmail();
             User currentUser = userRepository.findByEmail(currentUserEmail)
                     .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại"));
-    
+
             List<Map<String, Object>> suggestions = friendshipService.getFriendSuggestions(currentUser.getId());
-    
+
             List<Map<String, Object>> suggestionsWithImages = suggestions.stream()
                     .map(suggestion -> {
                         Map<String, Object> suggestionWithImage = new HashMap<>(suggestion);
@@ -227,13 +227,13 @@ public class FriendshipController {
                         return suggestionWithImage;
                     })
                     .collect(Collectors.toList());
-    
+
             return ResponseEntity.ok(suggestionsWithImages);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi lấy danh sách gợi ý kết bạn: " + e.getMessage());
         }
-    }    
+    }
 
     @GetMapping("/status/{userId}")
     @PreAuthorize("isAuthenticated()")
@@ -266,9 +266,36 @@ public class FriendshipController {
         }
     }
 
+    @GetMapping("/user/{userId}/friends")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getFriendsByUserId(@PathVariable Long userId, HttpServletRequest request) {
+        try {
+            List<Map<String, Object>> friends = friendshipService.getFriends(userId)
+                    .stream()
+                    .map(friendship -> mapFriendshipToResponse(friendship, request))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(friends);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi lấy danh sách bạn bè: " + e.getMessage());
+        }
+    }
+
     // Helper methods
     private String getCurrentUserEmail() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
+    private Map<String, Object> mapSentFriendshipToResponse(Friendship friendship, HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", friendship.getId());
+        response.put("status", friendship.getStatus());
+        response.put("user", mapUserBasicInfo(friendship.getReceiver(), request));
+        response.put("createdAt", friendship.getCreatedAt());
+        response.put("acceptedAt", friendship.getAcceptedAt());
+        response.put("active", friendship.isActive());
+        return response;
     }
 
     private Map<String, Object> mapFriendshipToResponse(Friendship friendship, HttpServletRequest request) {
@@ -276,10 +303,18 @@ public class FriendshipController {
         response.put("id", friendship.getId());
         response.put("status", friendship.getStatus());
 
+        // Lấy thông tin người bạn (không phải người dùng hiện tại)
         String currentUserEmail = getCurrentUserEmail();
-        User otherUser = friendship.getRequester().getEmail().equals(currentUserEmail)
-                ? friendship.getReceiver()
-                : friendship.getRequester();
+        User otherUser;
+
+        // Nếu người dùng hiện tại là người gửi, lấy người nhận làm bạn
+        if (friendship.getRequester().getEmail().equals(currentUserEmail)) {
+            otherUser = friendship.getReceiver();
+        }
+        // Nếu người dùng hiện tại là người nhận, lấy người gửi làm bạn
+        else {
+            otherUser = friendship.getRequester();
+        }
 
         response.put("user", mapUserBasicInfo(otherUser, request));
         response.put("createdAt", friendship.getCreatedAt());
@@ -298,5 +333,17 @@ public class FriendshipController {
         userInfo.put("lastName", user.getLastName());
         userInfo.put("avatar", user.getAvatar());
         return userInfo;
+    }
+
+    @GetMapping("/{friendshipId}/other-user")
+    public ResponseEntity<User> getOtherUserInFriendship(
+            @PathVariable Long friendshipId,
+            @RequestParam Long userId) {
+        try {
+            User otherUser = friendshipService.getOtherUserInFriendship(friendshipId, userId);
+            return ResponseEntity.ok(otherUser);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

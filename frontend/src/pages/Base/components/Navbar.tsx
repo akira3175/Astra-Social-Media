@@ -1,5 +1,4 @@
-"use client"
-
+import { useLocation } from "react-router-dom";
 import type React from "react"
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
@@ -24,7 +23,7 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material"
-import { Chat, Search, Settings, Logout, Person, Menu as MenuIcon, Home, Explore, Bookmark } from "@mui/icons-material"
+import { Chat, Search, Settings, Logout, Person, Menu as MenuIcon, Home, Group, Bookmark } from "@mui/icons-material"
 import { logout } from "../../../services/authService"
 import { useCurrentUser } from "../../../contexts/currentUserContext"
 import NotificationDropdown from "../../../components/Notifications/NotificationDropdown"
@@ -33,14 +32,19 @@ interface NavbarProps {
   onMenuToggle?: () => void
 }
 
-const Navbar: React.FC<NavbarProps> = ({}) => {
+const Navbar: React.FC<NavbarProps> = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const { currentUser } = useCurrentUser() ?? {}
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialQuery = queryParams.get("q") || ""; // Get the 'q' parameter or default to an empty string
+  const [searchQuery, setSearchQuery] = useState(initialQuery); // Initialize with the query param
+
   const [showMobileSearch, setShowMobileSearch] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const open = Boolean(anchorEl)
   const navigate = useNavigate()
 
@@ -55,16 +59,15 @@ const Navbar: React.FC<NavbarProps> = ({}) => {
   const handleLogout = () => {
     logout()
   }
-
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
       if (isMobile) {
-        setShowMobileSearch(false)
+        setShowMobileSearch(false);
       }
     }
-  }
+  };
 
   const toggleMobileSearch = () => {
     setShowMobileSearch(!showMobileSearch)
@@ -72,6 +75,10 @@ const Navbar: React.FC<NavbarProps> = ({}) => {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen)
+  }
+
+  const toggleChat = () => {
+    setIsChatOpen(!isChatOpen)
   }
 
   return (
@@ -128,37 +135,37 @@ const Navbar: React.FC<NavbarProps> = ({}) => {
               AstraSocial
             </Typography>
 
-            {/* Search bar - Desktop */}
-            {!isMobile && (
-              <Box component="form" onSubmit={handleSearch} sx={{ flexGrow: 1, maxWidth: "500px" }}>
-                <TextField
-                  placeholder="Tìm kiếm..."
-                  size="small"
-                  fullWidth
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "20px",
-                      bgcolor: "rgba(0, 0, 0, 0.04)",
-                    },
-                  }}
-                />
-              </Box>
-            )}
+           {/* Search bar - Desktop */}
+      {!isMobile && (
+        <Box component="form" onSubmit={handleSearch} sx={{ flexGrow: 1, maxWidth: "500px" }}>
+          <TextField
+            placeholder="Tìm kiếm..."
+            size="small"
+            fullWidth
+            value={searchQuery} // Controlled input
+            onChange={(e) => setSearchQuery(e.target.value)} // Update state on input change
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "20px",
+                bgcolor: "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          />
+        </Box>
+      )}
 
             {/* User menu */}
             <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
               {isMobile && (
                 <IconButton
-                  color="inherit"
+                  color="primary"
                   onClick={toggleMobileSearch}
                   sx={{ outline: "none", "&:focus": { outline: "none" } }}
                 >
@@ -169,9 +176,16 @@ const Navbar: React.FC<NavbarProps> = ({}) => {
               {/* Notification Dropdown */}
               <NotificationDropdown />
 
-              <IconButton color="inherit" sx={{ outline: "none", "&:focus": { outline: "none" } }}>
-                <Chat />
-              </IconButton>
+              {/* Chat Icon */}
+              <Link to="/messages">
+                <IconButton
+                  color="inherit"
+                  onClick={toggleChat}
+                  sx={{ outline: "none", "&:focus": { outline: "none" } }}
+                >
+                  <Chat />
+                </IconButton>
+              </Link>
               <IconButton
                 onClick={handleProfileClick}
                 aria-controls={open ? "profile-menu" : undefined}
@@ -225,41 +239,41 @@ const Navbar: React.FC<NavbarProps> = ({}) => {
             </Box>
           </Toolbar>
 
-          {/* Mobile Search Bar */}
-          {isMobile && showMobileSearch && (
-            <Box
-              component="form"
-              onSubmit={handleSearch}
-              sx={{
-                py: 1,
-                px: 2,
-                borderTop: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <TextField
-                placeholder="Tìm kiếm..."
-                size="small"
-                fullWidth
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "20px",
-                    bgcolor: "rgba(0, 0, 0, 0.04)",
-                  },
-                }}
-              />
-            </Box>
-          )}
+         {/* Mobile Search Bar */}
+      {isMobile && showMobileSearch && (
+        <Box
+          component="form"
+          onSubmit={handleSearch}
+          sx={{
+            py: 1,
+            px: 2,
+            borderTop: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <TextField
+            placeholder="Tìm kiếm..."
+            size="small"
+            fullWidth
+            autoFocus
+            value={searchQuery} // Controlled input
+            onChange={(e) => setSearchQuery(e.target.value)} // Update state on input change
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "20px",
+                bgcolor: "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          />
+        </Box>
+      )}
         </Container>
       </AppBar>
 
@@ -310,11 +324,11 @@ const Navbar: React.FC<NavbarProps> = ({}) => {
             </ListItemIcon>
             <ListItemText primary="Trang cá nhân" />
           </ListItem>
-          <ListItem component={Link} to="/explore" onClick={() => setMobileMenuOpen(false)}>
+          <ListItem component={Link} to="/friends" onClick={() => setMobileMenuOpen(false)}>
             <ListItemIcon>
-              <Explore />
+              <Group />
             </ListItemIcon>
-            <ListItemText primary="Khám phá" />
+            <ListItemText primary="Bạn bè" />
           </ListItem>
           <ListItem component={Link} to="/notifications" onClick={() => setMobileMenuOpen(false)}>
             <ListItemIcon>

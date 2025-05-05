@@ -1,5 +1,7 @@
+"use client"
+
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { AxiosError } from "axios"
 import {
@@ -20,6 +22,8 @@ import {
   Stack,
   TextField,
   Button,
+  Menu,
+  MenuItem,
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import type { User } from "../../types/user"
@@ -35,16 +39,15 @@ import ProfileFriends from "./components/ProfileFriends"
 import PostList from "../../pages/Home/components/PostList"
 import { usePostStore } from "../../stores/postStore"
 import CreatePost from "../../pages/Home/components/CreatePost"
-
-import ChatBox from "../../components/ChatBox/ChatBox"
 import CameraAltIcon from "@mui/icons-material/CameraAlt"
 import EditIcon from "@mui/icons-material/Edit"
 import { Chat } from "@mui/icons-material"
 import { useTheme } from "@mui/material/styles"
 import useMediaQuery from "@mui/material/useMediaQuery"
+import { PersonAdd } from "@mui/icons-material"
+import friendshipService from "../../services/friendshipService"
 
-
-const ProfileContainer = styled(Container)(({ }) => ({
+const ProfileContainer = styled(Container)(({}) => ({
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
@@ -82,7 +85,7 @@ const BackgroundImage = styled("img")(({ theme }) => ({
   backgroundColor: theme.palette.grey[400],
 }))
 
-const BackgroundImageBox = styled(Box)(({ }) => ({
+const BackgroundImageBox = styled(Box)(({}) => ({
   position: "relative",
   width: "100%",
   aspectRatio: "14/3",
@@ -164,11 +167,17 @@ const ProfilePage: React.FC = () => {
   const { email } = useParams<{ email: string }>()
   const { currentUser, setCurrentUser } = useCurrentUser()
   const [profile, setProfile] = useState<User | null>(null)
-  const [] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [notification, setNotification] = useState<{
+    type: "success" | "error"
+    message: string
+  } | null>(null)
+  const [friendshipStatus, setFriendshipStatus] = useState<{
+    status: string
+    friendshipId: number | null
+  } | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const backgroundInputRef = useRef<HTMLInputElement>(null)
   const theme = useTheme()
@@ -181,8 +190,18 @@ const ProfilePage: React.FC = () => {
 
   const { userPosts, isLoadingUserPosts, fetchPostsByUserEmail } = usePostStore()
 
-  const [isChatOpen, setIsChatOpen] = useState(false)
-  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(null)
+  const isCurrentUser = useMemo(() => currentUser?.email === profile?.email, [currentUser, profile])
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const open = Boolean(anchorEl)
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -190,8 +209,10 @@ const ProfilePage: React.FC = () => {
         try {
           setIsLoading(true)
           const data = await getUserByEmail(email)
+          console.log("Profile data loaded:", data)
+          console.log("Profile ID:", data?.id)
+          console.log("Profile Email:", data?.email)
           setProfile(data)
-          console.log(data)
           setIsLoading(false)
         } catch (error) {
           console.error("Failed to load profile:", error)
@@ -217,6 +238,20 @@ const ProfilePage: React.FC = () => {
     loadPosts()
   }, [email, currentUser, fetchPostsByUserEmail])
 
+  useEffect(() => {
+    const checkFriendshipStatus = async () => {
+      if (profile && !isCurrentUser) {
+        try {
+          const status = await friendshipService.getFriendshipStatus(profile.id)
+          setFriendshipStatus(status)
+        } catch (error) {
+          console.error("Error checking friendship status:", error)
+        }
+      }
+    }
+    checkFriendshipStatus()
+  }, [profile, isCurrentUser])
+
   const handleEditProfile = () => {
     if (profile) {
       setEditedFirstName(profile.firstName || "")
@@ -235,17 +270,27 @@ const ProfilePage: React.FC = () => {
       try {
         await updateUserName(editedFirstName, editedLastName)
         // Cập nhật profile sau khi lưu thành công
-        const updatedProfile = { ...profile, firstName: editedFirstName, lastName: editedLastName }
+        const updatedProfile = {
+          ...profile,
+          firstName: editedFirstName,
+          lastName: editedLastName,
+        }
         setProfile(updatedProfile)
         setOpenEditModal(false)
-        setNotification({ type: "success", message: "Tên đã được cập nhật thành công" })
+        setNotification({
+          type: "success",
+          message: "Tên đã được cập nhật thành công",
+        })
         // Cập nhật currentUser nếu đây là người dùng hiện tại
         if (isCurrentUser) {
           setCurrentUser(updatedProfile)
         }
       } catch (error) {
         console.error("Failed to update profile:", error)
-        setNotification({ type: "error", message: "Không thể cập nhật tên. Vui lòng thử lại." })
+        setNotification({
+          type: "error",
+          message: "Không thể cập nhật tên. Vui lòng thử lại.",
+        })
       } finally {
         setIsUpdating(false)
       }
@@ -266,7 +311,10 @@ const ProfilePage: React.FC = () => {
 
       setCurrentUser(updatedUser)
       setProfile(updatedUser)
-      setNotification({ type: "success", message: "Ảnh đã được cập nhật thành công" })
+      setNotification({
+        type: "success",
+        message: "Ảnh đã được cập nhật thành công",
+      })
     } catch (error) {
       setNotification({
         type: "error",
@@ -323,8 +371,55 @@ const ProfilePage: React.FC = () => {
 
   const handleStartChat = () => {
     if (profile) {
-      setSelectedReceiverId(profile.id.toString())
-      setIsChatOpen(true)
+      // Store the user information in sessionStorage with additional flag to open chat directly
+      sessionStorage.setItem(
+        "messageUser",
+        JSON.stringify({
+          id: profile.id,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          avatar: profile.avatar || undefined,
+          openChatDirectly: true, // Add this flag to indicate we want to open the chat directly
+        }),
+      )
+
+      // Navigate to the messages page
+      navigate("/messages")
+    }
+  }
+
+  const handleAddFriend = async () => {
+    if (profile) {
+      try {
+        await friendshipService.sendFriendRequest(profile.email)
+        const status = await friendshipService.getFriendshipStatus(profile.id)
+        setFriendshipStatus(status)
+      } catch (error) {
+        console.error("Error sending friend request:", error)
+      }
+    }
+  }
+
+  const handleCancelFriendRequest = async () => {
+    if (profile) {
+      try {
+        await friendshipService.cancelFriendRequest(profile.email)
+        setFriendshipStatus(null)
+      } catch (error) {
+        console.error("Error canceling friend request:", error)
+      }
+    }
+  }
+
+  const handleUnfriend = async () => {
+    if (profile && friendshipStatus?.friendshipId) {
+      try {
+        await friendshipService.removeFriend(friendshipStatus.friendshipId)
+        setFriendshipStatus(null)
+      } catch (error) {
+        console.error("Error unfriending:", error)
+      }
     }
   }
 
@@ -343,8 +438,6 @@ const ProfilePage: React.FC = () => {
   if (!profile) {
     return <NotFound />
   }
-
-  const isCurrentUser = currentUser?.email === profile.email
 
   return (
     <BasePage>
@@ -407,15 +500,58 @@ const ProfilePage: React.FC = () => {
                           {profile.email}
                         </Typography>
                         {!isCurrentUser && (
-                          <Button
-                            variant="contained"
-                            startIcon={<Chat />}
-                            onClick={handleStartChat}
-                            size="medium"
-                            sx={{ mt: 1 }}
-                          >
-                            Nhắn tin
-                          </Button>
+                          <Box sx={{ display: "flex", gap: 1 }}>
+                            {friendshipStatus?.status === "ACCEPTED" ? (
+                              <>
+                                <Button
+                                  variant="contained"
+                                  startIcon={<PersonAdd />}
+                                  onClick={handleClick}
+                                  size="medium"
+                                  sx={{ mt: 1 }}
+                                >
+                                  Bạn bè
+                                </Button>
+                                <Menu
+                                  anchorEl={anchorEl}
+                                  open={open}
+                                  onClose={handleClose}
+                                  onClick={handleClose}
+                                  transformOrigin={{
+                                    horizontal: "right",
+                                    vertical: "top",
+                                  }}
+                                  anchorOrigin={{
+                                    horizontal: "right",
+                                    vertical: "bottom",
+                                  }}
+                                >
+                                  <MenuItem onClick={handleUnfriend}>Hủy kết bạn</MenuItem>
+                                </Menu>
+                              </>
+                            ) : (
+                              <Button
+                                variant="contained"
+                                startIcon={<PersonAdd />}
+                                onClick={
+                                  friendshipStatus?.status === "PENDING" ? handleCancelFriendRequest : handleAddFriend
+                                }
+                                size="medium"
+                                sx={{ mt: 1 }}
+                              >
+                                {friendshipStatus?.status === "PENDING" ? "Hủy lời mời" : "Kết bạn"}
+                              </Button>
+                            )}
+                            <Button
+                              variant="contained"
+                              startIcon={<Chat />}
+                              onClick={handleStartChat}
+                              size="medium"
+                              sx={{ mt: 1 }}
+                            >
+                              Nhắn tin
+                            </Button>
+                          </Box>
                         )}
                       </AvatarBox>
                     </ProfileContent>
@@ -455,13 +591,13 @@ const ProfilePage: React.FC = () => {
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={4}>
                     {/* Tiểu sử */}
-                    <ProfileBio profile={profile} isCurrentUser={isCurrentUser} refreshUserData={refreshUserData}/>
+                    <ProfileBio profile={profile} isCurrentUser={isCurrentUser} refreshUserData={refreshUserData} />
 
                     {/* Danh sách hình ảnh */}
                     <ProfilePhotos />
 
                     {/* Danh sách bạn bè */}
-                    <ProfileFriends />
+                    <ProfileFriends userEmail={profile?.email} userId={profile?.id} />
                   </Grid>
 
                   <Grid item xs={12} md={8}>
@@ -529,14 +665,6 @@ const ProfilePage: React.FC = () => {
             </Alert>
           </Snackbar>
         </ProfileScrollContainer>
-
-        {/* ChatBox */}
-        <ChatBox
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          receiverId={selectedReceiverId || ""}
-          currentUserId={currentUser?.id.toString() || ""}
-        />
       </ProfileContainer>
     </BasePage>
   )

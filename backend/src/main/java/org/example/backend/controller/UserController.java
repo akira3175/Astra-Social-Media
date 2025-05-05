@@ -22,8 +22,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -53,7 +55,6 @@ public class UserController {
         User newUser = userService.createUser(user);
         return ResponseEntity.ok(newUser);
     }
-
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
@@ -187,12 +188,39 @@ public class UserController {
         User userCurrent = userService.getUserInfo(email);
 
         Page<UserDocument> users = userService.searchUsers(keyword, isStaff, isActive, page, size, userCurrent);
-        return users.map(user -> ImageUtils.addDomainToImage(user, request));
+        return users.map(user -> addDomainToImage(user, request));
+    }
+
+    private User addDomainToImage(User user, HttpServletRequest request) {
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
+        user.setBackground(
+                (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
+                        : null);
+        return user;
+    }
+
+    private UserDocument addDomainToImage(UserDocument user, HttpServletRequest request) {
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        user.setAvatar((user.getAvatar() != null && !user.getAvatar().isEmpty()) ? baseUrl + user.getAvatar() : null);
+        user.setBackground(
+                (user.getBackground() != null && !user.getBackground().isEmpty()) ? baseUrl + user.getBackground()
+                        : null);
+        return user;
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<User>> getAllUsers(HttpServletRequest request) {
+        List<User> users = userService.getAllUsers().stream()
+                .map(user -> addDomainToImage(user, request))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(users);
     }
 
     @PatchMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String token,
-                                            @RequestBody Map<String, String> request) {
+            @RequestBody Map<String, String> request) {
         token = token.replace("Bearer ", "").trim();
         String email = jwtUtil.extractEmail(token);
         String oldPassword = request.get("oldPassword");

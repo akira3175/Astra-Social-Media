@@ -1,11 +1,12 @@
-package org.example.backend.model;
+package org.example.backend.dto;
 
 import lombok.Data;
 
 @Data
-public class ChatUser {
+public class ChatUserDTO {
     private String id;
-    private String name;
+    private String firstName;
+    private String lastName;
     private String avatar;
     private String lastMessage;
     private String lastMessageTime;

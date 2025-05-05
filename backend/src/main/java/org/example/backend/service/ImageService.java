@@ -17,10 +17,8 @@ public class ImageService {
 
     @Autowired
     private ImageRepository imageRepository;
-
     @Autowired
     private PostRepository postRepository;
-
     @Autowired
     private CommentRepository commentRepository;
 

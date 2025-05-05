@@ -1,93 +1,217 @@
-import type React from "react"
-import { Avatar, Box, Paper, Typography, alpha } from "@mui/material"
-import { styled } from "@mui/material/styles"
-import DoneAllIcon from "@mui/icons-material/DoneAll"
-import type { Message } from "../../../types/message"
+import React from 'react';
+import { Box, Typography, Avatar, Paper } from '@mui/material';
+import { AttachFile, Description } from '@mui/icons-material';
+import type { Message } from '../../../types/message';
+import { alpha } from '@mui/material/styles';
+import MessageService from '../../../services/messageService';
 
 interface MessageBubbleProps {
-  message: Message
-  isCurrentUser: boolean
-  showAvatar: boolean
-  isLastInGroup: boolean
-  avatar: string
+  message: Message;
+  isCurrentUser: boolean;
+  showAvatar: boolean;
+  avatar?: string;
 }
 
-const StyledPaper = styled(Paper, {
-  shouldForwardProp: (prop) => prop !== "isCurrentUser" && prop !== "showAvatar",
-})<{ isCurrentUser: boolean; showAvatar: boolean }>(({ theme, isCurrentUser, showAvatar }) => ({
-  padding: theme.spacing(1.5),
-  maxWidth: "75%",
-  borderRadius: 16,
-  wordBreak: "break-word",
-  backgroundColor: isCurrentUser ? alpha(theme.palette.primary.main, 0.9) : theme.palette.background.paper,
-  color: isCurrentUser ? theme.palette.primary.contrastText : theme.palette.text.primary,
-  boxShadow: theme.shadows[1],
-  marginBottom: theme.spacing(0.5),
-  borderTopLeftRadius: !isCurrentUser && showAvatar ? 4 : 16,
-  borderTopRightRadius: isCurrentUser ? 4 : 16,
-}))
+const MessageBubble: React.FC<MessageBubbleProps> = ({
+  message,
+  isCurrentUser,
+  showAvatar,
+  avatar
+}) => {
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  };
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isCurrentUser, showAvatar, isLastInGroup, avatar }) => {
+  const renderAttachment = () => {
+    if (!message.fileUrl) return null;
+
+    const handleFileClick = async (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (message.fileUrl) {
+        try {
+          const token = localStorage.getItem('accessToken');
+          if (!token) {
+            console.error('No access token found');
+            return;
+          }
+
+          const response = await MessageService.downloadFile(message.fileUrl);
+
+          if (!response) {
+            throw new Error('Download failed');
+          }
+
+          const blob = new Blob([response], { type: response.type });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = message.fileName || 'file';
+          document.body.appendChild(link);
+          link.click();
+
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error('Error downloading file:', error);
+        }
+      }
+    };
+
+    switch (message.attachmentType) {
+      case 'image':
+        return (
+          <Box
+            component="img"
+            src={message.fileUrl}
+            alt={message.fileName || 'Image'}
+            sx={{
+              maxWidth: '100%',
+              maxHeight: '300px',
+              borderRadius: 1,
+              mt: 1,
+              objectFit: 'contain',
+              cursor: 'pointer',
+              '&:hover': {
+                opacity: 0.9
+              }
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              window.open(message.fileUrl, '_blank');
+            }}
+          />
+        );
+      case 'video':
+        return (
+          <Box
+            component="video"
+            src={message.fileUrl}
+            controls
+            sx={{
+              maxWidth: '100%',
+              maxHeight: '300px',
+              borderRadius: 1,
+              mt: 1
+            }}
+          />
+        );
+      case 'document':
+        return (
+          <Box
+            onClick={handleFileClick}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              p: 1,
+              mt: 1,
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+              borderRadius: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2)
+              }
+            }}
+          >
+            <Description fontSize="small" />
+            <Typography variant="body2" noWrap>
+              {message.fileName || 'Document'}
+            </Typography>
+          </Box>
+        );
+      default:
+        return (
+          <Box
+            onClick={handleFileClick}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              p: 1,
+              mt: 1,
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+              borderRadius: 1,
+              cursor: 'pointer',
+              '&:hover': {
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2)
+              }
+            }}
+          >
+            <AttachFile fontSize="small" />
+            <Typography variant="body2" noWrap>
+              {message.fileName || 'File'}
+            </Typography>
+          </Box>
+        );
+    }
+  };
+
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: isCurrentUser ? "row-reverse" : "row",
-        alignItems: "flex-end",
-        mb: isLastInGroup ? 2 : 0.5,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: isCurrentUser ? 'flex-end' : 'flex-start',
+        mb: 1,
+        maxWidth: '70%',
+        ml: isCurrentUser ? 'auto' : 0,
+        mr: isCurrentUser ? 0 : 'auto'
       }}
     >
-      {showAvatar && !isCurrentUser ? (
+      {showAvatar && (
         <Avatar
           src={avatar}
+          alt="Avatar"
           sx={{
             width: 32,
             height: 32,
-            mr: 1,
-            mb: 1,
-            border: (theme) => `2px solid ${alpha(theme.palette.background.paper, 0.8)}`,
+            mb: 0.5,
+            alignSelf: isCurrentUser ? 'flex-end' : 'flex-start'
           }}
         />
-      ) : (
-        <Box sx={{ width: 32, height: 32, mr: 1 }} />
       )}
-      <Box
+      <Paper
+        elevation={0}
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: isCurrentUser ? "flex-end" : "flex-start",
-          maxWidth: "75%",
+          p: 1.5,
+          borderRadius: 2,
+          bgcolor: (theme) =>
+            isCurrentUser
+              ? alpha(theme.palette.primary.main, 0.1)
+              : alpha(theme.palette.grey[300], 0.5),
+          position: 'relative',
+          maxWidth: '100%'
         }}
       >
-        <StyledPaper isCurrentUser={isCurrentUser} showAvatar={showAvatar}>
-          <Typography variant="body2">{message.text}</Typography>
-        </StyledPaper>
-        <Box
+        {message.text && (
+          <Typography
+            variant="body2"
+            sx={{
+              wordBreak: 'break-word',
+              whiteSpace: 'pre-wrap'
+            }}
+          >
+            {message.text}
+          </Typography>
+        )}
+        {renderAttachment()}
+        <Typography
+          variant="caption"
           sx={{
-            display: "flex",
-            alignItems: "center",
+            display: 'block',
             mt: 0.5,
-            mb: 1,
-            ml: isCurrentUser ? 0 : 1,
-            mr: isCurrentUser ? 1 : 0,
+            textAlign: 'right',
+            color: 'text.secondary'
           }}
         >
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
-            {message.timestamp}
-          </Typography>
-          {isCurrentUser && (
-            <DoneAllIcon
-              sx={{
-                ml: 0.5,
-                fontSize: "0.9rem",
-                color: message.isRead ? "primary.main" : "text.disabled",
-              }}
-            />
-          )}
-        </Box>
-      </Box>
+          {formatTime(message.timestamp)}
+        </Typography>
+      </Paper>
     </Box>
-  )
-}
+  );
+};
 
-export default MessageBubble
+export default MessageBubble;

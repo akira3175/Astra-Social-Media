@@ -18,13 +18,10 @@ import java.util.UUID;
 public class PasswordResetService {
     @Autowired
     private PasswordResetTokenRepository tokenRepo;
-
     @Autowired
     private UserRepository userRepo;
-
     @Autowired
     private JavaMailSender mailSender;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
 

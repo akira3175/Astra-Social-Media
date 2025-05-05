@@ -31,5 +31,5 @@ export interface Post {
   commentsCount: number;
   saved?: boolean;
   originalPost?: Post;
-  isDeleted?: boolean;
+  deleted?: boolean;
 }

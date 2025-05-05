@@ -15,7 +15,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table
+@Table(name = "`user`")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -1,6 +1,20 @@
-import type { User } from "./user"
+import { User } from "./user"
 
-export interface MessagePreview {
+export interface Message {
+  id: number
+  text: string
+  timestamp: string
+  isRead: boolean
+  fileUrl?: string
+  hasAttachment?: boolean
+  attachmentType?: 'image' | 'video' | 'document' | 'file'
+  fileName?: string
+  sender: User
+  receiver: User
+  [key: string]: any
+}
+
+export interface LastMessage {
   id: number
   text: string
   timestamp: string
@@ -8,13 +22,9 @@ export interface MessagePreview {
   senderId: number
 }
 
-export interface Message extends MessagePreview {
-  attachments?: string[]
-}
-
 export interface Conversation {
   id: number
   user: User
-  lastMessage: MessagePreview
+  lastMessage: LastMessage
   unreadCount: number
 }

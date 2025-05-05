@@ -19,33 +19,24 @@ interface PageResponse<T> {
 }
 
 export interface PostPageParams {
+  keyword?: string;
   page: number;
   size: number;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
 }
 
-export const searchPost = async ({keyword,page,size}:{size?:number,keyword:string,page?:string}):Promise<Post[]> =>{
-  const token = tokenService.getAccessToken();
-  if (!token) {
-    throw new Error("No authentication token found");
-  }
+export const searchPost = async ({keyword,page,size}:{size?:number,keyword:string,page?:number}):Promise<Post[]> =>{
 
   try {
-    const response = await api.get<ApiResponse<Post[]>>(
-      `/posts/search?keyword=${keyword}${size??`&size=${size}`}${page??`&page=${page}`}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    const response = await api.get<PageResponse<Post>>(
+      `/posts/search?keyword=${keyword}${size ? `&size=${size}` : ""}${page ? `&page=${page}` : ""}`
     );
 
-    if (response.data && response.data.status === 200 && response.data.data) {
-      return response.data.data as Post[];
+    if (response.data) {
+      return response.data.content as Post[];
     } else {
-      throw new Error(response.data.message || "Failed to get post");
+      throw new Error("Failed to get post");
     }
   } catch (error) {
     console.error("Error getting post:", error);
@@ -82,7 +73,7 @@ const createPost = async (payload: CreatePostPayload): Promise<Post> => {
   }
 };
 
-const getAllPosts = async (): Promise<Post[]> => {
+export const getAllPosts = async (): Promise<Post[]> => {
   const token = tokenService.getAccessToken();
   if (!token) {
     throw new Error("No authentication token found");
@@ -100,7 +91,7 @@ const getAllPosts = async (): Promise<Post[]> => {
     );
 
     if (response.data && response.data.status === 200 && response.data.data) {
-      return response.data.data;
+      return response.data.data as Post[];
     } else {
       throw new Error(response.data.message || "Failed to get all posts");
     }
@@ -392,6 +383,7 @@ const getPosts = async (params: PostPageParams): Promise<PageResponse<Post>> => 
 };
 
 export const PostService = {
+  searchPost,
   createPost,
   getAllPosts,
   getPostById,
@@ -402,5 +394,5 @@ export const PostService = {
   getRepostsByPostId,
   deletePost,
   getPostsByUserEmail,
-  getPosts
+  getPosts,
 };

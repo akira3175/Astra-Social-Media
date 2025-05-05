@@ -25,143 +25,168 @@ import {
   Tooltip,
   Alert,
   InputAdornment,
+  Grid,
+  Divider,
+  CircularProgress,
 } from "@mui/material"
-import { Visibility, Block, CheckCircle, FilterList, Search } from "@mui/icons-material"
+import {
+  Search,
+  Visibility,
+  Block,
+  CheckCircle,
+  Person,
+  CalendarToday,
+  Email,
+} from "@mui/icons-material"
 import AdminLayout from "./components/AdminLayout"
+import { getUsers, banUser, unbanUser } from "../../services/adminService"
+import { User } from "../../types/user"
 
-// Định nghĩa kiểu dữ liệu
-interface User {
-  id: number
-  name: string
-  username: string
-  email: string
-  avatar: string
-  status: "active" | "inactive" | "banned"
-  role: "user" | "moderator" | "admin"
-  registeredDate: string
-  lastActive: string
+// Interface for UI representation of user
+interface UserUI extends User {
+  status: "active" | "banned";
+  registeredDate: string | undefined;
+  lastActive: string | undefined;
+  name: string;
+  email: string;
+  id: number;
+  avatar: string;
+  firstName: string;
+  lastName: string;
+  bio: string;
+  isSuperUser: boolean;
+  isStaff: boolean;
+  isActive: boolean;
+  dateJoined: string;
+  lastLogin: string;
 }
 
-// Dữ liệu mẫu
-const SAMPLE_USERS: User[] = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    username: "nguyenvana",
-    email: "nguyenvana@example.com",
-    avatar: "https://i.pravatar.cc/150?img=1",
-    status: "active",
-    role: "admin",
-    registeredDate: "2023-01-15",
-    lastActive: "2023-05-20 14:30",
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    username: "tranthib",
-    email: "tranthib@example.com",
-    avatar: "https://i.pravatar.cc/150?img=5",
-    status: "active",
-    role: "user",
-    registeredDate: "2023-02-10",
-    lastActive: "2023-05-19 09:15",
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    username: "levanc",
-    email: "levanc@example.com",
-    avatar: "https://i.pravatar.cc/150?img=8",
-    status: "inactive",
-    role: "user",
-    registeredDate: "2023-03-05",
-    lastActive: "2023-04-30 16:45",
-  },
-  {
-    id: 4,
-    name: "Phạm Thị D",
-    username: "phamthid",
-    email: "phamthid@example.com",
-    avatar: "https://i.pravatar.cc/150?img=10",
-    status: "banned",
-    role: "user",
-    registeredDate: "2023-03-20",
-    lastActive: "2023-04-15 11:20",
-  },
-  {
-    id: 5,
-    name: "Hoàng Văn E",
-    username: "hoangvane",
-    email: "hoangvane@example.com",
-    avatar: "https://i.pravatar.cc/150?img=11",
-    status: "active",
-    role: "user",
-    registeredDate: "2023-04-01",
-    lastActive: "2023-05-18 13:10",
-  },
-]
+// Transform backend user data to UI format
+const transformUserToUI = (user: User): UserUI => {
+  return {
+    ...user,
+    status: user.isActive ? "active" : "banned",
+    registeredDate: user.dateJoined,
+    lastActive: user.lastLogin || user.dateJoined,
+    name: `${user.firstName} ${user.lastName}`,
+    email: user.email,
+    id: user.id,
+    avatar: user.avatar,
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
+    bio: user.bio || "",
+    isSuperUser: user.isSuperUser || false,
+    isStaff: user.isStaff || false,
+    isActive: user.isActive || false,
+    dateJoined: user.dateJoined || "",
+    lastLogin: user.lastLogin || "",
+  }
+}
 
 const UserManagementPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<UserUI[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<UserUI[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [selectedUser, setSelectedUser] = useState<UserUI | null>(null)
   const [openViewDialog, setOpenViewDialog] = useState(false)
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "banned">("all")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Tải dữ liệu người dùng
+  // Fetch users data
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await getUsers({ page: 0, size: 100 }) // Fetch all users for now
+      const transformedUsers = response.map(transformUserToUI)
+      setUsers(transformedUsers)
+      setFilteredUsers(transformedUsers)
+    } catch (err) {
+      setError("Không thể tải danh sách người dùng. Vui lòng thử lại sau.")
+      console.error("Error fetching users:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load users on component mount
   useEffect(() => {
-    // Giả lập API call
-    setTimeout(() => {
-      setUsers(SAMPLE_USERS)
-      setFilteredUsers(SAMPLE_USERS)
-    }, 500)
+    fetchUsers()
   }, [])
 
-  // Lọc người dùng khi tìm kiếm
+  // Filter users when search query or status filter changes
   useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredUsers(users)
-    } else {
-      const filtered = users.filter(
-        (user) =>
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-      setFilteredUsers(filtered)
-    }
-    setPage(0)
-  }, [searchQuery, users])
+    let filtered = users
 
-  // Xử lý thay đổi trang
+    // Filter by status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((user) => user.status === statusFilter)
+    }
+
+    // Filter by search query
+    if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (user) =>
+          user.name.toLowerCase().includes(query) ||
+          user.email.toLowerCase().includes(query)||
+          user.id.toString().includes(query)
+      )
+    }
+
+
+
+    setFilteredUsers(filtered)
+    setPage(0)
+  }, [searchQuery, users, statusFilter])
+
+  // Handle page change
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage)
   }
 
-  // Xử lý thay đổi số hàng mỗi trang
+  // Handle rows per page change
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(Number.parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  // Xử lý khóa/mở khóa người dùng
-  const handleToggleUserStatus = (user: User) => {
-    const newStatus = user.status === "active" ? "banned" : "active"
-    // const updatedUsers = users.map((u) => (u.id === user.id ? { ...u, status: newStatus } : u))
+  // Handle user status toggle (ban/unban)
+  const handleToggleUserStatus = async (user: UserUI) => {
+    try {
+      if (user.status === "active") {
+        await banUser(user.id)
+      } else {
+        await unbanUser(user.id)
+      }
 
-    // setUsers(updatedUsers)
-    // setFilteredUsers(updatedUsers)
+      // Update local state
+      const updatedUsers = users.map((u) =>
+        u.id === user.id
+          ? { ...u, status: u.status === "active" ? "banned" : "active" }
+          : u
+      ) as UserUI[]
+      setUsers(updatedUsers)
+      setFilteredUsers(updatedUsers)
 
-    setNotification({
-      type: "success",
-      message: `Đã ${newStatus === "active" ? "mở khóa" : "khóa"} tài khoản ${user.name} thành công`,
-    })
+      setNotification({
+        type: "success",
+        message: `Đã ${user.status === "active" ? "khóa" : "mở khóa"} người dùng thành công`,
+      })
+    } catch (err) {
+      setNotification({
+        type: "error",
+        message: `Không thể ${user.status === "active" ? "khóa" : "mở khóa"} người dùng. Vui lòng thử lại sau.`,
+      })
+      console.error("Error toggling user status:", err)
+    }
   }
 
-  // Hiển thị thông báo
+  // Clear notification after 3 seconds
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => {
@@ -171,6 +196,43 @@ const UserManagementPage: React.FC = () => {
     }
   }, [notification])
 
+  // Handle status filter change
+  const handleStatusFilterChange = (status: "all" | "active" | "banned") => {
+    setStatusFilter(status)
+  }
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleString("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+        </Box>
+      </AdminLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
+      </AdminLayout>
+    )
+  }
+
   return (
     <AdminLayout>
       <Box sx={{ mb: 4 }}>
@@ -178,7 +240,7 @@ const UserManagementPage: React.FC = () => {
           Quản lý người dùng
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Quản lý thông tin và quyền của người dùng trong hệ thống
+          Quản lý tất cả người dùng trong hệ thống
         </Typography>
       </Box>
 
@@ -190,12 +252,12 @@ const UserManagementPage: React.FC = () => {
 
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 2 }}>
             <TextField
               placeholder="Tìm kiếm người dùng..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ width: "50%" }}
+              sx={{ width: { xs: "100%", sm: "50%" } }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -205,9 +267,29 @@ const UserManagementPage: React.FC = () => {
               }}
               size="small"
             />
-            <Box>
-              <Button variant="outlined" startIcon={<FilterList />} sx={{ mr: 1 }}>
-                Lọc
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Button
+                variant={statusFilter === "all" ? "contained" : "outlined"}
+                onClick={() => handleStatusFilterChange("all")}
+                size="small"
+              >
+                Tất cả
+              </Button>
+              <Button
+                variant={statusFilter === "active" ? "contained" : "outlined"}
+                onClick={() => handleStatusFilterChange("active")}
+                size="small"
+                color="success"
+              >
+                Đang hoạt động
+              </Button>
+              <Button
+                variant={statusFilter === "banned" ? "contained" : "outlined"}
+                onClick={() => handleStatusFilterChange("banned")}
+                size="small"
+                color="error"
+              >
+                Đã khóa
               </Button>
             </Box>
           </Box>
@@ -219,9 +301,9 @@ const UserManagementPage: React.FC = () => {
                   <TableCell>ID</TableCell>
                   <TableCell>Người dùng</TableCell>
                   <TableCell>Email</TableCell>
-                  <TableCell>Vai trò</TableCell>
-                  <TableCell>Trạng thái</TableCell>
                   <TableCell>Ngày đăng ký</TableCell>
+                  <TableCell>Lần đăng nhập cuối</TableCell>
+                  <TableCell>Trạng thái</TableCell>
                   <TableCell>Thao tác</TableCell>
                 </TableRow>
               </TableHead>
@@ -231,39 +313,20 @@ const UserManagementPage: React.FC = () => {
                     <TableCell>{user.id}</TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Avatar src={user.avatar} sx={{ mr: 2 }} />
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {user.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            @{user.username}
-                          </Typography>
-                        </Box>
+                        <Avatar src={user.avatar || undefined} sx={{ width: 32, height: 32, mr: 1 }} />
+                        <Typography variant="body2">{user.name}</Typography>
                       </Box>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.registeredDate ? formatDate(user.registeredDate) : "Không có dữ liệu"}</TableCell>
+                    <TableCell>{user.lastActive ? formatDate(user.lastActive) : "Không có dữ liệu"}</TableCell>
                     <TableCell>
                       <Chip
-                        label={user.role === "admin" ? "Quản trị viên" : "Người dùng"}
-                        color={user.role === "admin" ? "primary" : "default"}
+                        label={user.status === "active" ? "Đang hoạt động" : "Đã khóa"}
+                        color={user.status === "active" ? "success" : "error"}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={
-                          user.status === "active"
-                            ? "Hoạt động"
-                            : user.status === "inactive"
-                              ? "Không hoạt động"
-                              : "Bị cấm"
-                        }
-                        color={user.status === "active" ? "success" : user.status === "inactive" ? "warning" : "error"}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{user.registeredDate}</TableCell>
                     <TableCell>
                       <Tooltip title="Xem chi tiết">
                         <IconButton
@@ -277,13 +340,13 @@ const UserManagementPage: React.FC = () => {
                         </IconButton>
                       </Tooltip>
                       {user.status === "active" ? (
-                        <Tooltip title="Khóa tài khoản">
+                        <Tooltip title="Khóa người dùng">
                           <IconButton size="small" onClick={() => handleToggleUserStatus(user)}>
                             <Block fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       ) : (
-                        <Tooltip title="Kích hoạt tài khoản">
+                        <Tooltip title="Mở khóa người dùng">
                           <IconButton size="small" onClick={() => handleToggleUserStatus(user)}>
                             <CheckCircle fontSize="small" />
                           </IconButton>
@@ -316,60 +379,125 @@ const UserManagementPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog xem chi tiết */}
-      <Dialog open={openViewDialog} onClose={() => setOpenViewDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Thông tin người dùng</DialogTitle>
-        <DialogContent>
+      {/* User details dialog */}
+      <Dialog open={openViewDialog} onClose={() => setOpenViewDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Chi tiết người dùng</DialogTitle>
+        <DialogContent dividers>
           {selectedUser && (
             <Box sx={{ pt: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                <Avatar src={selectedUser.avatar} sx={{ width: 80, height: 80, mr: 3 }} />
-                <Box>
-                  <Typography variant="h6">{selectedUser.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    @{selectedUser.username}
-                  </Typography>
-                  <Chip
-                    label={selectedUser.role === "admin" ? "Quản trị viên" : "Người dùng"}
-                    color={selectedUser.role === "admin" ? "primary" : "default"}
-                    size="small"
-                    sx={{ mt: 1 }}
-                  />
-                </Box>
-              </Box>
+              {/* User info */}
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <Avatar
+                      src={selectedUser.avatar || undefined}
+                      sx={{ width: 120, height: 120, mb: 2 }}
+                    />
+                    <Typography variant="h6">{selectedUser.name}</Typography>
+                    <Chip
+                      label={selectedUser.status === "active" ? "Đang hoạt động" : "Đã khóa"}
+                      color={selectedUser.status === "active" ? "success" : "error"}
+                      sx={{ mt: 1 }}
+                    />
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={8}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Person sx={{ mr: 1, color: "text.secondary" }} />
+                      <Typography variant="body1">
+                        <strong>Tên:</strong> {selectedUser.name}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Email sx={{ mr: 1, color: "text.secondary" }} />
+                      <Typography variant="body1">
+                        <strong>Email:</strong> {selectedUser.email}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <CalendarToday sx={{ mr: 1, color: "text.secondary" }} />
+                      <Typography variant="body1">
+                        <strong>Ngày đăng ký:</strong> {selectedUser.registeredDate ? formatDate(selectedUser.registeredDate) : "Không có dữ liệu"}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <CalendarToday sx={{ mr: 1, color: "text.secondary" }} />
+                      <Typography variant="body1">
+                        <strong>Lần đăng nhập cuối:</strong> {selectedUser.lastActive ? formatDate(selectedUser.lastActive) : "Không có dữ liệu"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
 
-              <Typography variant="subtitle2" gutterBottom>
-                Thông tin liên hệ
-              </Typography>
-              <Typography variant="body2" paragraph>
-                Email: {selectedUser.email}
-              </Typography>
+              <Divider sx={{ my: 3 }} />
 
-              <Typography variant="subtitle2" gutterBottom>
-                Thông tin tài khoản
-              </Typography>
-              <Typography variant="body2">
-                Trạng thái:{" "}
-                <Chip
-                  label={
-                    selectedUser.status === "active"
-                      ? "Hoạt động"
-                      : selectedUser.status === "inactive"
-                        ? "Không hoạt động"
-                        : "Bị cấm"
-                  }
-                  color={
-                    selectedUser.status === "active"
-                      ? "success"
-                      : selectedUser.status === "inactive"
-                        ? "warning"
-                        : "error"
-                  }
-                  size="small"
-                />
-              </Typography>
-              <Typography variant="body2">Ngày đăng ký: {selectedUser.registeredDate}</Typography>
-              <Typography variant="body2">Hoạt động gần nhất: {selectedUser.lastActive}</Typography>
+              {/* Additional info */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Thông tin tài khoản
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" color="text.secondary">
+                          ID:
+                        </Typography>
+                        <Typography variant="body2">{selectedUser.id}</Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Vai trò:
+                        </Typography>
+                        <Typography variant="body2">
+                          {selectedUser.isSuperUser ? "Admin" : selectedUser.isStaff ? "Staff" : "User"}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Trạng thái:
+                        </Typography>
+                        <Chip
+                          label={selectedUser.status === "active" ? "Đang hoạt động" : "Đã khóa"}
+                          color={selectedUser.status === "active" ? "success" : "error"}
+                          size="small"
+                        />
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Paper variant="outlined" sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Thông tin cá nhân
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Họ:
+                        </Typography>
+                        <Typography variant="body2">{selectedUser.lastName}</Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Tên:
+                        </Typography>
+                        <Typography variant="body2">{selectedUser.firstName}</Typography>
+                      </Box>
+                      {selectedUser.bio && (
+                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Giới thiệu:
+                          </Typography>
+                          <Typography variant="body2">{selectedUser.bio}</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
             </Box>
           )}
         </DialogContent>
@@ -384,7 +512,7 @@ const UserManagementPage: React.FC = () => {
                 setOpenViewDialog(false)
               }}
             >
-              {selectedUser.status === "active" ? "Khóa tài khoản" : "Kích hoạt tài khoản"}
+              {selectedUser.status === "active" ? "Khóa người dùng" : "Mở khóa người dùng"}
             </Button>
           )}
         </DialogActions>

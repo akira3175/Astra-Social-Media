@@ -6,7 +6,6 @@ import {
   List,
   ListItem,
   ListItemAvatar,
-  ListItemButton,
   ListItemText,
   Paper,
   Typography,
@@ -40,18 +39,18 @@ interface RightSidebarProps {
 }
 
 // Thêm nhiều xu hướng để test scroll
-const TRENDING_TOPICS = [
-  "#TinMới",
-  "#CôngNghệ",
-  "#DuLịch",
-  "#ẨmThực",
-  "#ThểThao",
-  "#GiảiTrí",
-  "#KhoaHọc",
-  "#SứcKhỏe",
-  "#GiáoDục",
-  "#KinhTế",
-];
+// const TRENDING_TOPICS = [
+//   "#TinMới",
+//   "#CôngNghệ",
+//   "#DuLịch",
+//   "#ẨmThực",
+//   "#ThểThao",
+//   "#GiảiTrí",
+//   "#KhoaHọc",
+//   "#SứcKhỏe",
+//   "#GiáoDục",
+//   "#KinhTế",
+// ];
 
 const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -155,7 +154,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
         )}
       </List>
       <Divider sx={{ my: 2 }} />
-      <Typography variant="h6" sx={{ mb: 2 }}>
+      {/* <Typography variant="h6" sx={{ mb: 2 }}>
          Xu hướng
        </Typography>
        <List disablePadding>
@@ -166,7 +165,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
              </ListItemButton>
            </ListItem>
          ))}
-       </List>
+       </List> */}
       <Box sx={{ mt: 3 }}>
         <Typography variant="caption" color="text.secondary">
           © 2025 AstraSocial
