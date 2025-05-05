@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.example.backend.dto.NotificationDTO;
+import org.example.backend.mapper.NotificationMapper;
 
 import java.util.List;
 
@@ -28,6 +29,9 @@ public class NotificationController {
     private NotificationRepository notificationRepository;
     @Autowired
     private JwtUtil jwtUtil;
+    @Autowired
+    private NotificationMapper notificationMapper;
+
 
     @GetMapping("/{userId}")
     public List<Notification> getUserNotifications(@PathVariable Long userId) {
@@ -63,7 +67,7 @@ public class NotificationController {
 
         return notificationRepository
                 .findByReceiverIdOrderByCreatedAtDesc(user.getId(), pageable)
-                .map(notificationService::toDTO);
+                .map(notificationMapper::toDTO);
     }
 
     @PostMapping("/send")

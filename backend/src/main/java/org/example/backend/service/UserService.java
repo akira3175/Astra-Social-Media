@@ -4,11 +4,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.elasticsearch.document.UserDocument;
 import org.example.backend.elasticsearch.repository.UserESRepository;
-import org.example.backend.entity.Friendship;
 import org.example.backend.entity.User;
 import org.example.backend.exception.AppException;
 import org.example.backend.exception.ErrorCode;
-import org.example.backend.repository.FriendshipRepository;
 import org.example.backend.repository.RefreshTokenRepository;
 import org.example.backend.repository.UserRepository;
 import org.example.backend.security.JwtUtil;
@@ -22,24 +20,21 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
+import org.example.backend.mapper.UserMapper;
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final FriendshipRepository friendshipRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final FileStorageService fileStorageService;
     private final UserESRepository userESRepository;
+    private final UserMapper userMapper;
 
     // Tạo user mới (mã hóa mật khẩu)
     public User createUser(User user) {
@@ -230,54 +225,6 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
-//    public List<Map<String, Object>> getSuggestedUsers(Long currentUserId) {
-//        User currentUser = userRepository.findById(currentUserId)
-//                .orElseThrow(() -> new RuntimeException("Current user not found"));
-//
-//        return userRepository.findTop6ByOrderByMutualFriendsDesc().stream()
-//                .filter(user -> !user.getId().equals(currentUserId))
-//                .map(user -> {
-//                    Map<String, Object> userMap = new HashMap<>();
-//                    userMap.put("id", user.getId());
-//                    userMap.put("name", user.getLastName() + user.getFirstName());
-//                    userMap.put("email", user.getEmail());
-//                    userMap.put("avatar", user.getAvatar());
-//                    userMap.put("mutualFriends", user.getMutualFriends() != null ? user.getMutualFriends() : 0);
-//                    userMap.put("status", null);
-//
-//                    // Tìm friendship giữa currentUser và user
-//                    Optional<Friendship> friendship = friendshipRepository.findByUser1AndUser2(currentUser, user);
-//                    if (friendship.isEmpty()) {
-//                        friendship = friendshipRepository.findByUser1AndUser2(user, currentUser);
-//                    }
-//
-//                    if (friendship.isPresent()) {
-//                        System.out.println(
-//                                "Found friendship for user " + user.getFirstName() + ": " + friendship.get().getId());
-//                        userMap.put("friendshipStatus", friendship.get().getStatus().name());
-//                        userMap.put("isUser1", friendship.get().getRequester().getId().equals(currentUserId));
-//                        userMap.put("friendshipId", friendship.get().getId());
-//                    } else {
-//                        System.out.println("No friendship found for user " + user.getFirstName());
-//                        userMap.put("friendshipStatus", null);
-//                        userMap.put("isUser1", null);
-//                        userMap.put("friendshipId", null);
-//                    }
-//
-//                    return userMap;
-//                })
-//                .collect(Collectors.toList());
-//    }
-
-    public List<User> getFriendsList(String userId) {
-        try {
-            Long id = Long.parseLong(userId);
-            return userRepository.findFriendsById(id);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Invalid user ID format");
-        }
-    }
-
     public List<String> getAllUsersEmails() {
         return userRepository.findAll().stream()
                 .map(User::getEmail)
@@ -292,44 +239,15 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    private UserDocument convertToUserDocument(User user) {
-        UserDocument userDocument = new UserDocument();
-        userDocument.setId(user.getId().toString());
-        userDocument.setEmail(user.getEmail());
-        userDocument.setFirstName(user.getFirstName());
-        userDocument.setLastName(user.getLastName());
-        userDocument.setAvatar(user.getAvatar());
-        userDocument.setBio(user.getBio());
-        userDocument.setIsStaff(user.getIsStaff());
-        userDocument.setIsSuperUser(user.getIsSuperUser());
-        userDocument.setIsActive(user.getIsActive());
-        userDocument.setBackground(user.getBackground());
-        userDocument.setMutualFriends(user.getMutualFriends());
-        userDocument.setFullName(userDocument.getLastName() + " " + userDocument.getFirstName());
-
-        ZonedDateTime zonedDateTime;
-        if (user.getLastLogin() == null) {
-            zonedDateTime = null;
-        } else {
-            zonedDateTime = user.getLastLogin().atZone(ZoneId.of("UTC"));
-        }
-        userDocument.setLastLogin(zonedDateTime);
-
-        zonedDateTime = user.getDateJoined().atZone(ZoneId.of("UTC"));
-        userDocument.setDateJoined(zonedDateTime);
-
-        return userDocument;
-    }
-
     public void saveUserToES(User user) {
-        UserDocument userDocument = convertToUserDocument(user);
+        UserDocument userDocument = userMapper.toDocument(user);
         userESRepository.save(userDocument);
     }
 
     public void saveAllUsersToES() {
         List<User> users = userRepository.findAll();
         List<UserDocument> userDocuments = users.stream()
-                .map(this::convertToUserDocument)
+                .map(userMapper::toDocument)
                 .toList();
 
         userESRepository.saveAll(userDocuments);

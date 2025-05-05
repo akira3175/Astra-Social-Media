@@ -16,7 +16,6 @@ public class OtpService {
 
     @Autowired
     private OtpVerificationRepository otpRepo;
-
     @Autowired
     private JavaMailSender mailSender;
 

@@ -78,19 +78,6 @@ public class PostController {
         }
     }
 
-    // @GetMapping("/user/{userId}")
-    // public ResponseEntity<ApiResponse<List<Post>>> getPostsByUserId(@PathVariable
-    // Long userId) {
-    // List<Post> posts = postService.getPostsByUserId(userId);
-    // ApiResponse<List<Post>> response = ApiResponse.<List<Post>>builder()
-    // .status(HttpStatus.OK.value())
-    // .message("Lấy danh sách bài đăng theo người dùng thành công")
-    // .data(posts)
-    // .timestamp(System.currentTimeMillis())
-    // .build();
-    // return ResponseEntity.ok(response);
-    // }
-
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PostDTO>> getPostById(@PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {

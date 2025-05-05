@@ -23,10 +23,8 @@ public class LikeController {
 
     @Autowired
     private LikeService likeService;
-
     @Autowired
     private PostService postService; 
-
     @Autowired
     private CommentService commentService;
 
