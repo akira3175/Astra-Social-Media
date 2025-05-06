@@ -166,7 +166,7 @@ public class UserService {
                     isActive, pageable);
         } else {
             userDocuments = userESRepository.findByFullNameContainingIgnoreCaseAndIsStaffAndIsActive(keyword, isStaff,
-                    false, pageable);
+                    true, pageable);
         }
 
         return userDocuments;
