@@ -91,9 +91,7 @@ const SearchPage: React.FC = () => {
 
   const searchUsers = async () => {
     try {
-      console.log("Searching users with query:", searchQuery)
       const response = await UserService.searchUsers(searchQuery, false, true, 0, 10)
-      console.log("Search users response:", response)
       setUsers(response)
     } catch (error) {
       console.error("Error searching users:", error)
@@ -103,13 +101,11 @@ const SearchPage: React.FC = () => {
 
   const searchPosts = async () => {
     try {
-      console.log("Searching posts with query:", searchQuery)
       const response = await PostService.searchPost({
         keyword: searchQuery,
         page: 0,
         size: 10,
       })
-      console.log("Search posts response:", response)
       setPosts(response || [])
     } catch (error) {
       console.error("Error searching posts:", error)

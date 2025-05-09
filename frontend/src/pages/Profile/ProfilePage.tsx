@@ -209,9 +209,6 @@ const ProfilePage: React.FC = () => {
         try {
           setIsLoading(true)
           const data = await getUserByEmail(email)
-          console.log("Profile data loaded:", data)
-          console.log("Profile ID:", data?.id)
-          console.log("Profile Email:", data?.email)
           setProfile(data)
           setIsLoading(false)
         } catch (error) {

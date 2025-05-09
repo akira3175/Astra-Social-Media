@@ -370,7 +370,6 @@ export const adminLogin = async ({
 export const unlockPost = async (postId: number): Promise<void> => {
   try {
     await api.post<ApiResponse<void>>(`/admin/posts/${postId}/unlock`);
-    console.log(`Post with ID ${postId} unlocked successfully.`);
   } catch (error) {
     console.error(`Error unlocking post with ID ${postId}:`, error);
     throw new Error("Failed to unlock post");

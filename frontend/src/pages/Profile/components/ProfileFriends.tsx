@@ -46,10 +46,6 @@ const ProfileFriends: React.FC<ProfileFriendsProps> = ({
     setError(null);
     setLoading(true);
 
-    console.log("Target email for friends:", targetEmail); // Debug log
-    console.log("Target userId for friends:", userId); // Debug log
-    console.log("Profile being viewed - Email:", targetEmail, "ID:", userId); // Debug log
-
     loadFriends(targetEmail, userId);
   }, [targetEmail, userId]);
 
@@ -68,8 +64,6 @@ const ProfileFriends: React.FC<ProfileFriendsProps> = ({
 
       // Lọc và map danh sách bạn bè dựa trên vai trò người gửi/nhận
       const viewedProfileId = userId || id;
-      console.log("Data received from API:", JSON.stringify(data, null, 2)); // Debug log chi tiết
-      console.log("Viewed profile ID:", viewedProfileId); // Debug log
 
       if (!Array.isArray(data)) {
         console.error("Data is not an array:", data);
@@ -79,29 +73,18 @@ const ProfileFriends: React.FC<ProfileFriendsProps> = ({
 
       const filteredFriends = (data as unknown as Friendship[])
         .map((friendship) => {
-          console.log(
-            "Processing friendship:",
-            JSON.stringify(friendship, null, 2)
-          ); // Debug log chi tiết
-
           if (!friendship.user) {
-            console.log("Missing user in friendship:", friendship);
             return null;
           }
 
-          console.log("User ID in friendship:", friendship.user.id);
-          console.log("Viewed profile ID:", viewedProfileId);
-
           // Nếu user trong friendship trùng với viewedProfileId
           if (friendship.user.id === viewedProfileId) {
-            console.log("Getting friend info for friendship:", friendship.id);
             // Gọi API để lấy thông tin người bạn
             return api
               .get(
                 `/friendships/${friendship.id}/other-user?userId=${viewedProfileId}`
               )
               .then((response: { data: User }) => {
-                console.log("Friend response:", response.data);
                 return {
                   ...friendship,
                   user: response.data,
@@ -115,7 +98,6 @@ const ProfileFriends: React.FC<ProfileFriendsProps> = ({
 
           // Nếu user trong friendship khác với viewedProfileId
           // thì đây chính là thông tin người bạn cần hiển thị
-          console.log("Using existing user info:", friendship.user);
           return Promise.resolve({
             ...friendship,
             user: friendship.user,
@@ -125,11 +107,9 @@ const ProfileFriends: React.FC<ProfileFriendsProps> = ({
 
       // Đợi tất cả các promise hoàn thành
       const finalFriends = await Promise.all(filteredFriends);
-      console.log("Final friends before filtering:", finalFriends);
 
       // Lọc bỏ các friendship null
       const validFriends = finalFriends.filter((friend) => friend !== null);
-      console.log("Valid friends after filtering:", validFriends);
 
       setFriends(validFriends);
       setError(null);
@@ -158,13 +138,10 @@ const ProfileFriends: React.FC<ProfileFriendsProps> = ({
 
   const handleViewAll = () => {
     if (targetEmail) {
-      // Nếu đang xem profile của người khác, truyền thêm email
       navigate(`/friends?user=${targetEmail}`);
     } else if (userId) {
-      // Nếu có userId, truyền thêm userId
       navigate(`/friends?userId=${userId}`);
     } else {
-      // Nếu không có email hoặc userId, xem danh sách bạn bè của mình
       navigate("/friends");
     }
   };

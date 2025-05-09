@@ -17,15 +17,12 @@ const useWebSocket = () => {
     // Mở kết nối khi component mount
     wsClient.connect(
       () => {
-        console.log("✅ WS connected");
         dispatch(setConnectionStatus(true)); // Cập nhật trạng thái kết nối
       },
       (msg) => {
-        console.log("📩 New message: ", msg);
         dispatch(setMessages(msg)); // Cập nhật tin nhắn mới vào store
       },
       (err) => {
-        console.error("❌ WS error:", err);
         dispatch(setError(err)); // Cập nhật lỗi vào store
       }
     );

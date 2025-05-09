@@ -132,22 +132,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
-      debug: (str) => {
-        console.log(str)
-      },
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
     })
 
     client.onConnect = () => {
-      console.log("Connected to WebSocket")
-
       // Subscribe to notifications
       client.subscribe("/user/queue/notifications", (message) => {
         try {
           const newNotification = JSON.parse(message.body) as Notification
-          console.log("New notification received:", newNotification)
 
           setNotifications((prevNotifications) => {
             const updatedNotifications = [newNotification, ...prevNotifications]
@@ -164,7 +158,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
 
     client.onStompError = (frame) => {
-      console.error("STOMP error:", frame.headers, frame.body)
       setError("Failed to connect to notification service")
     }
 
