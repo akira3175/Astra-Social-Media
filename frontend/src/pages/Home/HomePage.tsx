@@ -8,7 +8,7 @@ import PostList from "./components/PostList"
 import MobileBottomNav from "./components/MobileBottomNav"
 import { usePostStore } from "../../stores/postStore"
 import { Outlet } from 'react-router-dom';
-
+import ChatBubble from "../../components/AIChatBox/ChatBubble";
 const HomePage: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
@@ -158,6 +158,7 @@ const HomePage: React.FC = () => {
 
         {/* Mobile bottom navigation */}
         {isMobile && <MobileBottomNav />}
+        <ChatBubble />
       </BasePage>
       <Outlet /> {/* Thêm này để render PostDetailModal */}
     </>
