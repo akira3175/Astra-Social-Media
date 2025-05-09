@@ -219,16 +219,16 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
                     <Badge
                       overlap="circular"
                       anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                      variant="dot"
-                      color="success"
-                      sx={{
-                        "& .MuiBadge-badge": {
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          border: "2px solid white",
-                        },
-                      }}
+                      // variant="dot"
+                      // color="success"
+                      // sx={{
+                      //   "& .MuiBadge-badge": {
+                      //     width: 10,
+                      //     height: 10,
+                      //     borderRadius: "50%",
+                      //     border: "2px solid white",
+                      //   },
+                      // }}
                     >
                       <Avatar
                         src={conversation.user.avatar ? conversation.user.avatar : undefined}
