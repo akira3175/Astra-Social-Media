@@ -102,10 +102,10 @@ export const getAllPosts = async (): Promise<Post[]> => {
   }
 };
 
-export const getImages = async (): Promise<Image[]> => {
+export const getImages = async (email: string): Promise<Image[]> => {
   try {
     const response = await api.get<ApiResponse<Image[]>>(
-      `/posts/images`,
+      `/posts/images?email=${email}`,
       {
         headers: {
           "Content-Type": "application/json",

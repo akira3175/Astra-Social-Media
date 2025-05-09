@@ -113,8 +113,7 @@ public class PostController {
     }
 
     @GetMapping("/images")
-    public ResponseEntity<ApiResponse<List<Image>>> getImages(@RequestHeader("Authorization") String token) {
-        String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+    public ResponseEntity<ApiResponse<List<Image>>> getImages(@RequestParam String email) {
         User user = userService.getUserInfo(email);
         List<Image> images = imageService.getImagesFromLatestPosts(user, 9);
         ApiResponse<List<Image>> response = ApiResponse.<List<Image>>builder()

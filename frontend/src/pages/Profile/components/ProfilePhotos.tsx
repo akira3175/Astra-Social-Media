@@ -4,11 +4,14 @@ import { getImages } from "../../../services/PostService"
 import { useEffect } from "react"
 import { useState } from "react"
 import type { Image } from "../../../types/image"
-const ProfilePhotos: React.FC = () => {
+import type { User } from "../../../types/user"
+
+const ProfilePhotos: React.FC<{ user: User }> = ({ user }) => {
   const [images, setImages] = useState<Image[]>([])
 
   useEffect(() => {
-    getImages().then(setImages)
+    console.log(user)
+    getImages(user.email).then(setImages)
   }, [])
 
   return (
