@@ -192,7 +192,7 @@ public class FriendshipService {
     }
 
     public List<Friendship> getFriends(Long userId) {
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại"));
 
         // Tìm tất cả bạn bè từ cả hai hướng (người dùng là người gửi hoặc người nhận)

@@ -6,7 +6,6 @@ import org.example.backend.dto.ChatUserDTO;
 import org.example.backend.entity.ChatMessage;
 import org.example.backend.entity.User;
 import org.example.backend.repository.ChatMessageRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -41,8 +40,7 @@ public class ChatService {
 
     // Maximum allowed file size in bytes (10MB)
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-    @Autowired
+    
     public ChatService(
             ChatMessageRepository chatMessageRepository,
             UserService userService,

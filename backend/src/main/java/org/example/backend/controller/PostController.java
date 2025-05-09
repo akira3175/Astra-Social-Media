@@ -20,6 +20,7 @@ import org.example.backend.dto.CreatePostRequest;
 import org.example.backend.dto.PostDTO;
 import org.example.backend.dto.UpdatePostRequest;
 import org.example.backend.mapper.PostMapper;
+import org.example.backend.service.ImageService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,9 @@ public class PostController {
     private UserService userService;
     @Autowired
     private PostMapper postMapper;
+    @Autowired
+    private ImageService imageService;
+
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PostDTO>>> getAllPosts(
@@ -106,6 +110,18 @@ public class PostController {
 
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
+    }
+
+    @GetMapping("/images")
+    public ResponseEntity<ApiResponse<List<Image>>> getImages() {
+        List<Image> images = imageService.getImagesFromLatestPosts(9);
+        ApiResponse<List<Image>> response = ApiResponse.<List<Image>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Lấy danh sách ảnh thành công")
+                .data(images)
+                .timestamp(System.currentTimeMillis())
+                .build();
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping

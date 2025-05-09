@@ -3,14 +3,12 @@ package org.example.backend.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.backend.entity.User;
-import org.example.backend.exception.AppException;
 import org.example.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.example.backend.exception.ErrorCode;
 
 @Component
 public class AdminInterceptor implements HandlerInterceptor {

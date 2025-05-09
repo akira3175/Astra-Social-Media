@@ -6,11 +6,9 @@ import { User } from "../../../types/user"
 interface UserListProps {
   users: User[]
   isLoading: boolean
-  onAddFriend: (userId: number) => void
-  friendIds?: number[] // IDs of users that are already friends
 }
 
-const UserList: React.FC<UserListProps> = ({ users, isLoading, onAddFriend, friendIds = [] }) => {
+const UserList: React.FC<UserListProps> = ({ users, isLoading }) => {
   if (isLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
@@ -32,7 +30,7 @@ const UserList: React.FC<UserListProps> = ({ users, isLoading, onAddFriend, frie
   return (
     <Box>
       {users.map((user) => (
-        <UserItem key={user.id} user={user} onAddFriend={onAddFriend} isFriend={friendIds.includes(user.id)} />
+        <UserItem key={user.id} user={user} />
       ))}
     </Box>
   )

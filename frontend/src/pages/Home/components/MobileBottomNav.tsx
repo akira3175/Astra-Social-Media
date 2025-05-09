@@ -1,8 +1,8 @@
 import type React from "react"
 import { Link } from "react-router-dom"
 import { Box, IconButton, Paper } from "@mui/material"
-import { Chat, Create, Explore, Home as HomeIcon, Notifications, Person } from "@mui/icons-material"
-
+import { Chat, Create, Home as HomeIcon, Notifications, Person, People } from "@mui/icons-material"
+import { useCurrentUser } from "../../../contexts/currentUserContext"
 interface MobileNavItem {
   icon: React.ReactNode
   path: string
@@ -10,12 +10,13 @@ interface MobileNavItem {
 }
 
 const MobileBottomNav: React.FC = () => {
+  const { currentUser } = useCurrentUser()
   const navItems: MobileNavItem[] = [
     { icon: <HomeIcon />, path: "/", active: true },
-    { icon: <Explore />, path: "/explore" },
+    { icon: <People />, path: "/friends" },
     { icon: <Notifications />, path: "/notifications" },
     { icon: <Chat />, path: "/messages" },
-    { icon: <Person />, path: "/profile" },
+    { icon: <Person />, path: "/profile/" + currentUser?.email },
   ]
 
   return (

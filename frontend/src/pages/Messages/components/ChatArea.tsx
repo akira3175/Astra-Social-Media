@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import {
@@ -404,7 +402,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
               {conversation.user.lastName} {conversation.user.firstName}
             </Typography>
-            <Typography
+            {/* <Typography
               variant="caption"
               color={conversation.user.isOnline ? "success.main" : "text.secondary"}
               sx={{ display: "flex", alignItems: "center" }}
@@ -421,7 +419,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 }}
               />
               {conversation.user.isOnline ? "Đang hoạt động" : "Không hoạt động"}
-            </Typography>
+            </Typography> */}
           </Box>
         </Box>
       </Box>

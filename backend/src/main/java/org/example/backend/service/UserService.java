@@ -237,7 +237,7 @@ public class UserService {
     }
 
     public List<String> getFriendsEmails(String email) {
-        User user = userRepository.findByEmail(email)
+        userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return userRepository.findFriendsByEmail(email).stream()
                 .map(User::getEmail)

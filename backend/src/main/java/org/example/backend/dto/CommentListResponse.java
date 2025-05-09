@@ -2,8 +2,6 @@ package org.example.backend.dto;
 
 import java.util.List;
 
-import org.example.backend.entity.Comment;
-
 import lombok.Builder;
 import lombok.Data;
 

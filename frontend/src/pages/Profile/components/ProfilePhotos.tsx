@@ -1,27 +1,26 @@
 import type React from "react"
-import { Box, Button, Grid, Paper, Typography } from "@mui/material"
-
+import { Box, Grid, Paper, Typography } from "@mui/material"
+import { getImages } from "../../../services/PostService"
+import { useEffect } from "react"
+import { useState } from "react"
+import type { Image } from "../../../types/image"
 const ProfilePhotos: React.FC = () => {
-  // Dữ liệu mẫu cho ảnh
-  const SAMPLE_PHOTOS = [
-    "https://source.unsplash.com/random/300x300?nature",
-    "https://source.unsplash.com/random/300x300?city",
-    "https://source.unsplash.com/random/300x300?people",
-    "https://source.unsplash.com/random/300x300?food",
-    "https://source.unsplash.com/random/300x300?travel",
-    "https://source.unsplash.com/random/300x300?animals",
-  ]
+  const [images, setImages] = useState<Image[]>([])
+
+  useEffect(() => {
+    getImages().then(setImages)
+  }, [])
 
   return (
     <Paper sx={{ p: 2, mb: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="h6">Ảnh</Typography>
-        <Button size="small" sx={{ textTransform: "none", outline: "none", "&:focus": { outline: "none" } }}>
+        {/* <Button size="small" sx={{ textTransform: "none", outline: "none", "&:focus": { outline: "none" } }}>
           Xem tất cả
-        </Button>
+        </Button> */}
       </Box>
       <Grid container spacing={1}>
-        {SAMPLE_PHOTOS.map((photo, index) => (
+        {images.map((photo, index) => (
           <Grid item xs={4} key={index}>
             <Box
               sx={{
@@ -34,7 +33,7 @@ const ProfilePhotos: React.FC = () => {
             >
               <Box
                 component="img"
-                src={photo}
+                src={photo.url}
                 alt={`Photo ${index + 1}`}
                 sx={{
                   position: "absolute",

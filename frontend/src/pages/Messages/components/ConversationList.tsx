@@ -71,7 +71,8 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
 
   // Kết hợp danh sách cuộc trò chuyện với danh sách người dùng
   const combinedConversations = conversations.map(conversation => {
-    const user = users.find(u => u.id === conversation.user.id);
+    const user = users.find(u => Number(u.id) === Number(conversation.user.id));
+    console.log("User:", user)
     return {
       ...conversation,
       user: {
@@ -87,9 +88,9 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
   });
 
   // Thêm các người dùng chưa có trong danh sách cuộc trò chuyện
-  const newUsers = users.filter(user =>
-    !conversations.some(conv => conv.user.id === user.id)
-  ).map(user => ({
+  const newUsers = users.filter(user => {
+    return !conversations.some(conv => conv.user.id === Number(user.id))
+  }).map(user => ({
     id: Date.now() + Math.floor(Math.random() * 1000),
     user: {
       id: user.id,
@@ -218,16 +219,16 @@ const ConversationList: React.FC<ConversationListProps> = ({ conversations, sele
                     <Badge
                       overlap="circular"
                       anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                      variant="dot"
-                      color="success"
-                      sx={{
-                        "& .MuiBadge-badge": {
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          border: "2px solid white",
-                        },
-                      }}
+                      // variant="dot"
+                      // color="success"
+                      // sx={{
+                      //   "& .MuiBadge-badge": {
+                      //     width: 10,
+                      //     height: 10,
+                      //     borderRadius: "50%",
+                      //     border: "2px solid white",
+                      //   },
+                      // }}
                     >
                       <Avatar
                         src={conversation.user.avatar ? conversation.user.avatar : undefined}

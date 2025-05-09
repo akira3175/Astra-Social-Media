@@ -32,9 +32,6 @@ public class CommentService {
     private LikeRepository likeRepository;  
 
     @Autowired
-    private ImageRepository imageRepository;
-
-    @Autowired
     private NotificationService notificationService;
 
     public List<Comment> getAllComments() {

@@ -29,7 +29,6 @@ import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import PostDetailModal from './pages/Home/components/PostDetailModal';
 import CreatePostModal from './pages/Home/components/CreatePostModal';
-import ChatBubble from "./components/AIChatBox/ChatBubble";
 import OTPVerificationPage from "./pages/Auth/OTPVerificationPage";
 import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/Auth/ResetPasswordPage";
@@ -213,7 +212,6 @@ const AppContent: React.FC = () => {
             </BasePage>} 
           />
         </Routes>
-        {isAuthenticated() && <ChatBubble />}
       </Router>
     </>
   );

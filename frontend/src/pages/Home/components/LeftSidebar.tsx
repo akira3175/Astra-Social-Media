@@ -1,7 +1,7 @@
 import type React from "react"
 import { Link } from "react-router-dom"
 import { Button, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper } from "@mui/material"
-import { Chat, Explore, Home as HomeIcon, Notifications, Person, Settings } from "@mui/icons-material"
+import { Chat, Home as HomeIcon, Notifications, Person, Settings } from "@mui/icons-material"
 
 interface MenuItem {
   text: string
@@ -21,13 +21,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className }) => {
   // Danh sách menu chính
   const mainMenuItems: MenuItem[] = [
     { text: "Trang chủ", icon: <HomeIcon />, path: "/", active: true },
-    { text: "Khám phá", icon: <Explore />, path: "/explore" },
     { text: "Thông báo", icon: <Notifications />, path: "/notifications" },
-    {
-      text: "Tin nhắn",
-      icon: <Chat />,
-      path: "/messages",
-    },
+    { text: "Tin nhắn", icon: <Chat />, path: "/messages" },
     { text: "Cài đặt", icon: <Settings />, path: "/settings" },
   ]
 
