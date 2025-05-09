@@ -21,13 +21,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ className }) => {
   // Danh sách menu chính
   const mainMenuItems: MenuItem[] = [
     { text: "Trang chủ", icon: <HomeIcon />, path: "/", active: true },
-    { text: "Khám phá", icon: <Explore />, path: "/explore" },
     { text: "Thông báo", icon: <Notifications />, path: "/notifications" },
-    {
-      text: "Tin nhắn",
-      icon: <Chat />,
-      path: "/messages",
-    },
+    { text: "Tin nhắn", icon: <Chat />, path: "/messages" },
     { text: "Cài đặt", icon: <Settings />, path: "/settings" },
   ]
 
