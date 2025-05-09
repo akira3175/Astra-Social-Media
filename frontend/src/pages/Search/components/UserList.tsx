@@ -32,7 +32,7 @@ const UserList: React.FC<UserListProps> = ({ users, isLoading, onAddFriend, frie
   return (
     <Box>
       {users.map((user) => (
-        <UserItem key={user.id} user={user} onAddFriend={onAddFriend} isFriend={friendIds.includes(user.id)} />
+        <UserItem key={user.id} user={user} onAddFriend={onAddFriend} />
       ))}
     </Box>
   )

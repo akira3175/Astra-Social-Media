@@ -6,10 +6,9 @@ import { User } from "../../../types/user"
 interface UserItemProps {
   user: User
   onAddFriend: (userId: number) => void
-  isFriend?: boolean
 }
 
-const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend, isFriend = false }) => {
+const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend }) => {
   return (
     <Card sx={{ mb: 2, width: "100%" }}>
       <CardContent sx={{ p: 2 }}>
@@ -51,7 +50,7 @@ const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend, isFriend = false
             </Box>
           </Box>
 
-          <Button
+          {/* <Button
             variant={isFriend ? "outlined" : "contained"}
             color={isFriend ? "primary" : "primary"}
             size="small"
@@ -59,7 +58,7 @@ const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend, isFriend = false
             sx={{ minWidth: 100, ml: 2 }}
           >
             {isFriend ? "Đã kết bạn" : "Kết bạn"}
-          </Button>
+          </Button> */}
         </Box>
       </CardContent>
     </Card>
