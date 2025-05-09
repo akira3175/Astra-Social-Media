@@ -3,7 +3,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import org.example.backend.dto.UserDTO;
 import org.example.backend.entity.Comment;
 import org.example.backend.entity.Image;
 import org.example.backend.entity.Like;

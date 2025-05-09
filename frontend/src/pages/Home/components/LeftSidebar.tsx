@@ -1,7 +1,7 @@
 import type React from "react"
 import { Link } from "react-router-dom"
 import { Button, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper } from "@mui/material"
-import { Chat, Explore, Home as HomeIcon, Notifications, Person, Settings } from "@mui/icons-material"
+import { Chat, Home as HomeIcon, Notifications, Person, Settings } from "@mui/icons-material"
 
 interface MenuItem {
   text: string

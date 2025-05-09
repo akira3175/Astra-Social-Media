@@ -5,14 +5,11 @@ import org.example.backend.entity.Post;
 import org.example.backend.entity.User;
 import org.example.backend.repository.LikeRepository;
 import org.example.backend.repository.CommentRepository;
-import org.example.backend.repository.UserRepository;
 import org.example.backend.repository.PostRepository;
 import java.util.Collections;
 import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.elasticsearch.document.PostDocument;
-import org.example.backend.exception.AppException;
-import org.example.backend.exception.ErrorCode;
 
 
 @Component

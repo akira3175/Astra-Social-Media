@@ -1,14 +1,13 @@
 import type React from "react"
-import { Box, Avatar, Typography, Button, Card, CardContent } from "@mui/material"
+import { Box, Avatar, Typography, Card, CardContent } from "@mui/material"
 import { Link } from "react-router-dom"
 import { User } from "../../../types/user"
 
 interface UserItemProps {
   user: User
-  onAddFriend: (userId: number) => void
 }
 
-const UserItem: React.FC<UserItemProps> = ({ user, onAddFriend }) => {
+const UserItem: React.FC<UserItemProps> = ({ user }) => {
   return (
     <Card sx={{ mb: 2, width: "100%" }}>
       <CardContent sx={{ p: 2 }}>

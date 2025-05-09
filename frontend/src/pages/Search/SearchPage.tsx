@@ -40,7 +40,7 @@ const SearchPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([])
   const [activeFilter, setActiveFilter] = useState("all") // all, people, posts, etc.
   const [isLoading, setIsLoading] = useState(false)
-  const [friendIds, setFriendIds] = useState<number[]>([])
+  // const [friendIds, setFriendIds] = useState<number[]>([])
   const [notification, setNotification] = useState<{
     open: boolean
     message: string
@@ -152,25 +152,25 @@ const SearchPage: React.FC = () => {
   }
 
   // Xử lý kết bạn
-  const handleAddFriend = (userId: number) => {
-    if (friendIds.includes(userId)) {
-      // Nếu đã là bạn, hủy kết bạn
-      setFriendIds(friendIds.filter((id) => id !== userId))
-      setNotification({
-        open: true,
-        message: "Đã hủy kết bạn",
-        type: "info",
-      })
-    } else {
-      // Nếu chưa là bạn, thêm bạn
-      setFriendIds([...friendIds, userId])
-      setNotification({
-        open: true,
-        message: "Đã gửi lời mời kết bạn",
-        type: "success",
-      })
-    }
-  }
+  // const handleAddFriend = (userId: number) => {
+  //   if (friendIds.includes(userId)) {
+  //     // Nếu đã là bạn, hủy kết bạn
+  //     setFriendIds(friendIds.filter((id) => id !== userId))
+  //     setNotification({
+  //       open: true,
+  //       message: "Đã hủy kết bạn",
+  //       type: "info",
+  //     })
+  //   } else {
+  //     // Nếu chưa là bạn, thêm bạn
+  //     setFriendIds([...friendIds, userId])
+  //     setNotification({
+  //       open: true,
+  //       message: "Đã gửi lời mời kết bạn",
+  //       type: "success",
+  //     })
+  //   }
+  // }
 
   const handleCloseNotification = () => {
     setNotification({
@@ -219,7 +219,7 @@ const SearchPage: React.FC = () => {
               >
                 <Typography variant="h6">Người dùng</Typography>
               </Box>
-              <UserList users={users} isLoading={false} onAddFriend={handleAddFriend} friendIds={friendIds} />
+              <UserList users={users} isLoading={false} />
             </Box>
           )}
 
@@ -266,7 +266,7 @@ const SearchPage: React.FC = () => {
     }
 
     if (activeFilter === "people") {
-      return <UserList users={users} isLoading={false} onAddFriend={handleAddFriend} friendIds={friendIds} />
+      return <UserList users={users} isLoading={false} />
     }
 
     if (activeFilter === "posts") {
