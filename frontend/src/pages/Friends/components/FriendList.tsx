@@ -38,7 +38,6 @@ const FriendList: React.FC = () => {
       setLoading(true);
       const data = await friendshipService.getFriends();
       setFriends(data as unknown as Friendship[]);
-      console.log("friends", data);
       setError(null);
     } catch (error) {
       if (error instanceof Error) {

@@ -33,7 +33,6 @@ const FriendRequests: React.FC = () => {
       setLoading(true);
       const data = await friendshipService.getPendingFriendRequests();
       setRequests(data as unknown as Friendship[]);
-      console.log("requests", data);
       setError(null);
     } catch (error) {
       console.error("Lỗi khi tải lời mời kết bạn:", error);
@@ -139,7 +138,6 @@ const FriendRequests: React.FC = () => {
         // Hiển thị danh sách lời mời kết bạn
         <Grid container spacing={3}>
           {requests.map((request) => {
-            console.log("Rendering request:", request);
             return (
               <Grid item xs={12} sm={6} md={4} lg={3} key={request.id}>
                 <Card>

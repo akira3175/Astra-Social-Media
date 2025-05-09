@@ -36,7 +36,6 @@ class WebSocketClient {
   ): void {
     const token = tokenService.getAccessToken();
     if (!token) {
-      console.error('❌ No token found');
       onError('Không tìm thấy token xác thực');
       return;
     }
@@ -45,19 +44,15 @@ class WebSocketClient {
       // Lấy URL từ biến môi trường
       const baseSocketUrl = import.meta.env.VITE_WEBSOCKET_URL;
       if (!baseSocketUrl) {
-        console.error('❌ WebSocket URL not configured');
         onError('URL WebSocket chưa được cấu hình');
         return;
       }
-
-      console.log('📡 Connecting to WebSocket at:', baseSocketUrl);
 
       // Tạo kết nối SockJS
       const socket = new SockJS(`${baseSocketUrl}?token=${token}`);
 
       // Xử lý lỗi SockJS
-      socket.onerror = (error) => {
-        console.error('❌ SockJS error:', error);
+      socket.onerror = () => {
         onError('Lỗi kết nối SockJS');
       };
 
@@ -67,18 +62,12 @@ class WebSocketClient {
         connectHeaders: {
           Authorization: `Bearer ${token}`,
         },
-        debug: (str) => {
-          if (import.meta.env.DEV) {
-            console.log('🔄 STOMP:', str);
-          }
-        },
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
 
         // Xử lý khi kết nối thành công
         onConnect: () => {
-          console.log('✅ Connected to WebSocket!');
           this.reconnectAttempts = 0; // Reset số lần thử kết nối lại
           onConnect();
 
@@ -92,22 +81,18 @@ class WebSocketClient {
             this.subscribe(`/user/queue/notifications`, onMessage);
             this.subscribe(`/user/queue/friend-status`, onMessage);
             this.subscribe(`/user/queue/all-users-status`, onMessage);
-            console.log("onMessage", onMessage);
           }
         },
 
         // Xử lý lỗi STOMP
         onStompError: (frame) => {
-          console.error('❌ STOMP error:', frame.headers['message']);
           console.error('Additional details:', frame.body);
           onError(frame.headers['message'] || 'Lỗi kết nối STOMP');
         },
 
         // Xử lý khi mất kết nối
         onWebSocketClose: () => {
-          console.warn('⚠️ WebSocket connection closed');
           if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            console.error('❌ Max reconnect attempts reached');
             onError('Không thể kết nối lại sau nhiều lần thử');
           }
           this.reconnectAttempts++;
@@ -118,7 +103,6 @@ class WebSocketClient {
       this.client.activate();
 
     } catch (error) {
-      console.error('❌ Error initializing WebSocket:', error);
       onError('Lỗi khởi tạo kết nối WebSocket');
     }
   }
@@ -133,7 +117,6 @@ class WebSocketClient {
     }
 
     if (!this.subscriptions[topic]) {
-      console.log(`📥 Subscribing to ${topic}`);
       this.subscriptions[topic] = this.client.subscribe(topic, (message) => {
         try {
           const parsedMessage = JSON.parse(message.body);
@@ -151,7 +134,6 @@ class WebSocketClient {
    */
   unsubscribe(topic: string): void {
     if (this.subscriptions[topic]) {
-      console.log(`📤 Unsubscribing from ${topic}`);
       this.subscriptions[topic].unsubscribe();
       delete this.subscriptions[topic];
     }
@@ -192,7 +174,6 @@ class WebSocketClient {
     if (this.client) {
       this.client.deactivate();
       this.client = null;
-      console.log('❌ Disconnected from WebSocket');
     }
   }
 

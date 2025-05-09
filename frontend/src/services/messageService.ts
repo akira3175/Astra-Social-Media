@@ -8,7 +8,6 @@ class MessageService {
             const response = await api.get(`/chat/messages/${receiverId}`, {
                 params: { limit }
             });
-            console.log(response.data)
             return response.data;
         } catch (error) {
             console.error('Error getting messages:', error);
@@ -36,7 +35,6 @@ class MessageService {
     async getChatUsers(): Promise<User[]> {
         try {
             const response = await api.get(`/chat/users/`);
-            console.log("response.data", response.data)
             return response.data;
         } catch (error) {
             console.error('Error getting chat users:', error);

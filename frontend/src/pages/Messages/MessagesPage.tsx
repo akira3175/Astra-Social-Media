@@ -114,8 +114,6 @@ const MessagesPage: React.FC = () => {
       fileName,
     }
 
-    console.log("Sending message:", message)
-
     // Thêm tin nhắn vào danh sách ngay lập tức
     setMessages((prev) => {
       const newMessages = [...prev, message]
@@ -141,7 +139,6 @@ const MessagesPage: React.FC = () => {
     const subscription = ws.subscribe(`/user/${currentUser?.id}/queue/messages`, (message) => {
       try {
         const data = JSON.parse(message.body)
-        console.log("Received message:", data)
 
         // Xử lý URL file
         let processedFileUrl = data.fileUrl
@@ -207,9 +204,6 @@ const MessagesPage: React.FC = () => {
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
-      debug: (str: string) => {
-        console.log(str)
-      },
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
@@ -217,7 +211,6 @@ const MessagesPage: React.FC = () => {
 
     stompClient.activate()
     stompClient.onConnect = () => {
-      console.log("Connected to WebSocket")
       setWs(stompClient)
       setIsConnecting(false)
       reconnectAttempts.current = 0
@@ -226,7 +219,6 @@ const MessagesPage: React.FC = () => {
       stompClient.subscribe(`/user/${currentUser.id}/queue/messages`, (message) => {
         try {
           const data = JSON.parse(message.body)
-          console.log("Received private message:", data)
 
           // Kiểm tra xem tin nhắn đã tồn tại chưa
           if (messages.some((m) => m.id === data.id)) {
@@ -281,7 +273,6 @@ const MessagesPage: React.FC = () => {
       stompClient.subscribe("/topic/public", (message) => {
         try {
           const data = JSON.parse(message.body)
-          console.log("Received public message:", data)
 
           // Chỉ xử lý tin nhắn liên quan đến người dùng hiện tại
           if (data.senderId === currentUser.id || data.receiverId === currentUser.id) {
@@ -353,7 +344,6 @@ const MessagesPage: React.FC = () => {
       }
 
       reconnectTimeoutRef.current = setTimeout(() => {
-        console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})`)
         connectWebSocket()
       }, delay)
     } else {

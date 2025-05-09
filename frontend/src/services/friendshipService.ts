@@ -293,7 +293,6 @@ class FriendshipService {
       const response = await api.get(
         `/friendships/user/${userId}/friends?status=ACCEPTED`
       );
-      console.log("Friends API response:", response.data); // Debug log
 
       // Lọc và map lại dữ liệu để lấy thông tin người bạn
       const friends = response.data.map((friendship: Friendship) => {
@@ -336,11 +335,9 @@ class FriendshipService {
       const response = await api.get(
         `/friendships/user/${userId}/friends?status=ACCEPTED`
       );
-      console.log("Friends API response:", response.data); // Debug log
 
       // Lọc và map lại dữ liệu để lấy thông tin người bạn
       const friends = response.data.map((friendship: Friendship) => {
-        console.log("Processing friendship:", friendship); // Debug log
 
         // Kiểm tra xem friendship có requester và receiver không
         const friendId =
@@ -356,10 +353,8 @@ class FriendshipService {
           return Promise.resolve(friendship);
         }
 
-        console.log("Getting friend info for ID:", friendId); // Debug log
         // Gọi API để lấy thông tin người bạn
         return api.get(`/users/${friendId}`).then((friendResponse) => {
-          console.log("Friend info response:", friendResponse.data); // Debug log
           return {
             ...friendship,
             user: friendResponse.data,
