@@ -1,6 +1,7 @@
 package org.example.backend.repository;
 
 import org.example.backend.entity.ChatMessage;
+import org.example.backend.entity.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
