@@ -157,7 +157,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       })
     }
 
-    client.onStompError = (frame) => {
+    client.onStompError = () => {
       setError("Failed to connect to notification service")
     }
 
