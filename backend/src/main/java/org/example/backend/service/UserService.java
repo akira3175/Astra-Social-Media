@@ -97,6 +97,9 @@ public class UserService {
 
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
+            if (!user.getIsActive()) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
 
             if (passwordEncoder.matches(password, user.getPassword())) {
                 // Xóa refresh token cũ (nếu có)
