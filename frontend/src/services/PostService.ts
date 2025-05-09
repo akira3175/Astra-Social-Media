@@ -3,6 +3,7 @@ import type { Post } from "../types/post";
 import type { ApiResponse } from "../types/apiResponse";
 import { tokenService } from "./tokenService";
 import { api } from "../configs/api"
+import type { Image } from "../types/image";
 
 interface CreatePostPayload {
   content: string;
@@ -97,6 +98,28 @@ export const getAllPosts = async (): Promise<Post[]> => {
     }
   } catch (error) {
     console.error("Error getting all posts:", error);
+    throw error;
+  }
+};
+
+export const getImages = async (): Promise<Image[]> => {
+  try {
+    const response = await api.get<ApiResponse<Image[]>>(
+      `/posts/images`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.data && response.data.status === 200 && response.data.data) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message || "Failed to get images");
+    }
+  } catch (error) {
+    console.error("Error getting images:", error);
     throw error;
   }
 };
