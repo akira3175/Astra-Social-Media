@@ -591,7 +591,7 @@ const ProfilePage: React.FC = () => {
                     <ProfileBio profile={profile} isCurrentUser={isCurrentUser} refreshUserData={refreshUserData} />
 
                     {/* Danh sách hình ảnh */}
-                    <ProfilePhotos />
+                    <ProfilePhotos user={profile} />
 
                     {/* Danh sách bạn bè */}
                     <ProfileFriends userEmail={profile?.email} userId={profile?.id} />

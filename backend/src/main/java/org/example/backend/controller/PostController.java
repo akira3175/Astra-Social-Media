@@ -113,8 +113,9 @@ public class PostController {
     }
 
     @GetMapping("/images")
-    public ResponseEntity<ApiResponse<List<Image>>> getImages() {
-        List<Image> images = imageService.getImagesFromLatestPosts(9);
+    public ResponseEntity<ApiResponse<List<Image>>> getImages(@RequestParam String email) {
+        User user = userService.getUserInfo(email);
+        List<Image> images = imageService.getImagesFromLatestPosts(user, 9);
         ApiResponse<List<Image>> response = ApiResponse.<List<Image>>builder()
                 .status(HttpStatus.OK.value())
                 .message("Lấy danh sách ảnh thành công")

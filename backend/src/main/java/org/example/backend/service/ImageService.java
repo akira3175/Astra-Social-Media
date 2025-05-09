@@ -3,6 +3,7 @@ package org.example.backend.service;
 import org.example.backend.entity.Comment;
 import org.example.backend.entity.Image;
 import org.example.backend.entity.Post;
+import org.example.backend.entity.User;
 import org.example.backend.repository.ImageRepository;
 import org.example.backend.repository.PostRepository;
 import org.example.backend.repository.CommentRepository;
@@ -28,9 +29,9 @@ public class ImageService {
         return imageRepository.findAll();
     }
 
-    public List<Image> getImagesFromLatestPosts(int limit) {
+    public List<Image> getImagesFromLatestPosts(User user, int limit) {
         Pageable pageable = PageRequest.of(0, limit);
-        return imageRepository.findImagesByPost(pageable);
+        return imageRepository.findImagesByPostAndUser(user, pageable);
     }
 
     public Optional<Image> getImageById(Long id) {
